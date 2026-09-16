@@ -51,7 +51,7 @@ jobs:
       - name: Generated types are current
         run: |
           supabase gen types typescript --local --schema public > /tmp/database.ts
-          diff <(tail -n +7 types/database.ts) <(tail -n +7 /tmp/database.ts)             || (echo "types/database.ts is stale — run npm run db:types" && exit 1)
+          node scripts/check-types-drift.mjs /tmp/database.ts
       - name: RLS integration tests
         run: |
           eval "$(supabase status -o env | sed 's/^/export /')"
