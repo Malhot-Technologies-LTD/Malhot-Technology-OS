@@ -81,7 +81,7 @@ export function UserAvatar({
   className?: string;
 }) {
   return (
-    <Avatar className={cn("size-7", className)}>
+    <Avatar className={cn("size-8", className)}>
       {avatarUrl ? <AvatarImage src={avatarUrl} alt="" /> : null}
       <AvatarFallback className="text-xs">{initials(name)}</AvatarFallback>
     </Avatar>

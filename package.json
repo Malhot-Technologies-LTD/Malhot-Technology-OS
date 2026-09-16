@@ -13,7 +13,14 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "test:integration": "vitest run --config vitest.integration.config.mts",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "db:test": "supabase test db",
+    "db:env": "supabase status -o env",
+    "prepare": "husky"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
@@ -52,7 +59,9 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
     "eslint-plugin-jsx-a11y": "^6.10.2",
+    "husky": "^9.1.7",
     "jsdom": "^29.1.1",
+    "lint-staged": "^17.5.1",
     "prettier": "^3.9.7",
     "prettier-plugin-tailwindcss": "^0.8.1",
     "supabase": "^2.117.0",
@@ -60,5 +69,14 @@
     "tsx": "^4.23.13",
     "typescript": "^5",
     "vitest": "^5.0.1"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,mts}": [
+      "prettier --write",
+      "eslint --max-warnings=0"
+    ],
+    "*.{mjs,js,json,css}": [
+      "prettier --write"
+    ]
   }
 }

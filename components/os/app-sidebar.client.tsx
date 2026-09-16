@@ -34,8 +34,8 @@ export function AppSidebar({ collapsed, onToggle, user }: Props) {
     >
       <div
         className={cn(
-          "flex h-12 items-center border-b border-border",
-          collapsed ? "justify-center" : "justify-between px-3",
+          "flex h-14 items-center border-b border-border",
+          collapsed ? "justify-center" : "justify-between px-4",
         )}
       >
         {!collapsed ? (
@@ -55,7 +55,7 @@ export function AppSidebar({ collapsed, onToggle, user }: Props) {
         </Button>
       </div>
 
-      <nav aria-label="Sections" className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-2">
+      <nav aria-label="Sections" className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
         {PRIMARY_NAV.map((item) => (
           <NavLink
             key={item.href}
@@ -68,7 +68,7 @@ export function AppSidebar({ collapsed, onToggle, user }: Props) {
         ))}
       </nav>
 
-      <div className="flex flex-col gap-0.5 border-t border-border p-2">
+      <div className="flex flex-col gap-1 border-t border-border p-3">
         <NavLink
           href="/os/notifications"
           label="Notifications"
@@ -107,7 +107,7 @@ function NavLink({
       href={href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "flex h-8 items-center gap-2.5 rounded-md px-2 text-sm text-fg-muted transition-colors duration-[120ms] hover:bg-surface hover:text-fg",
+        "flex h-10 items-center gap-3 rounded-md px-3 text-[15px] text-fg-muted transition-colors duration-[120ms] hover:bg-surface hover:text-fg",
         active && "bg-surface font-medium text-fg shadow-s",
         collapsed && "justify-center px-0",
       )}
