@@ -1,0 +1,139 @@
+/*
+ * Malhot design tokens — the single source of colour, radius and shadow.
+ * Documented in docs/design/design-system.md. Named by role, never by hue.
+ *
+ * Two layers:
+ *   1. Malhot tokens (--bg, --fg, --brand, --status-*)  — what designers and docs talk about
+ *   2. shadcn aliases (--background, --primary, …)      — what the copied UI components consume
+ * Only layer 1 holds literal values. Layer 2 always references layer 1.
+ */
+
+:root {
+  /* Neutral surfaces (cool grey, slight blue bias) */
+  --bg: oklch(0.985 0.002 250);
+  --bg-subtle: oklch(0.965 0.003 250);
+  --surface: oklch(1 0 0);
+  --surface-raised: oklch(1 0 0);
+  --border: oklch(0.9 0.004 250);
+  --border-strong: oklch(0.8 0.006 250);
+
+  /* Text */
+  --fg: oklch(0.18 0.01 255);
+  --fg-muted: oklch(0.45 0.01 255);
+  --fg-subtle: oklch(0.6 0.01 255);
+
+  /* Brand accent — provisional cobalt (OD-6). One token to change. */
+  --brand: oklch(0.52 0.19 262);
+  --brand-fg: oklch(1 0 0);
+  --brand-subtle: oklch(0.95 0.03 262);
+  --focus: var(--brand);
+
+  /* Status — used only where the colour carries status meaning */
+  --status-neutral-fg: oklch(0.45 0.01 255);
+  --status-neutral-bg: oklch(0.965 0.003 250);
+  --status-neutral-border: oklch(0.88 0.005 250);
+  --status-info-fg: oklch(0.45 0.06 250);
+  --status-info-bg: oklch(0.96 0.02 250);
+  --status-info-border: oklch(0.88 0.04 250);
+  --status-progress-fg: oklch(0.55 0.13 75);
+  --status-progress-bg: oklch(0.97 0.04 85);
+  --status-progress-border: oklch(0.9 0.08 85);
+  --status-review-fg: oklch(0.5 0.15 300);
+  --status-review-bg: oklch(0.96 0.03 300);
+  --status-review-border: oklch(0.9 0.06 300);
+  --status-success-fg: oklch(0.5 0.13 150);
+  --status-success-bg: oklch(0.96 0.04 150);
+  --status-success-border: oklch(0.88 0.08 150);
+  --status-warning-fg: oklch(0.6 0.15 50);
+  --status-warning-bg: oklch(0.97 0.04 60);
+  --status-warning-border: oklch(0.9 0.08 60);
+  --status-danger-fg: oklch(0.52 0.2 25);
+  --status-danger-bg: oklch(0.96 0.03 25);
+  --status-danger-border: oklch(0.88 0.07 25);
+
+  /* Shape */
+  --radius-s: 4px;
+  --radius-m: 6px;
+  --radius-l: 10px;
+  --radius: var(--radius-l);
+
+  /* Elevation — floating layers only */
+  --shadow-s: 0 1px 2px oklch(0 0 0 / 0.06);
+  --shadow-m: 0 4px 12px oklch(0 0 0 / 0.08);
+  --shadow-l: 0 12px 32px oklch(0 0 0 / 0.12);
+
+  /* ---- shadcn aliases (do not put literal values here) ---- */
+  --background: var(--bg);
+  --foreground: var(--fg);
+  --card: var(--surface);
+  --card-foreground: var(--fg);
+  --popover: var(--surface-raised);
+  --popover-foreground: var(--fg);
+  --primary: var(--brand);
+  --primary-foreground: var(--brand-fg);
+  --secondary: var(--bg-subtle);
+  --secondary-foreground: var(--fg);
+  --muted: var(--bg-subtle);
+  --muted-foreground: var(--fg-muted);
+  --accent: var(--brand-subtle);
+  --accent-foreground: var(--fg);
+  --destructive: var(--status-danger-fg);
+  --input: var(--border-strong);
+  --ring: var(--brand);
+  --sidebar: var(--bg-subtle);
+  --sidebar-foreground: var(--fg);
+  --sidebar-primary: var(--brand);
+  --sidebar-primary-foreground: var(--brand-fg);
+  --sidebar-accent: var(--surface);
+  --sidebar-accent-foreground: var(--fg);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--brand);
+  --chart-1: var(--brand);
+  --chart-2: oklch(0.6 0.08 250);
+  --chart-3: oklch(0.7 0.04 250);
+  --chart-4: oklch(0.55 0.01 255);
+  --chart-5: oklch(0.8 0.006 250);
+}
+
+[data-theme="dark"] {
+  --bg: oklch(0.16 0.008 255);
+  --bg-subtle: oklch(0.19 0.008 255);
+  --surface: oklch(0.21 0.008 255);
+  --surface-raised: oklch(0.24 0.008 255);
+  --border: oklch(0.3 0.008 255);
+  --border-strong: oklch(0.38 0.008 255);
+
+  --fg: oklch(0.95 0.004 250);
+  --fg-muted: oklch(0.72 0.006 250);
+  --fg-subtle: oklch(0.58 0.006 250);
+
+  --brand: oklch(0.68 0.16 262);
+  --brand-fg: oklch(0.15 0.02 262);
+  --brand-subtle: oklch(0.27 0.06 262);
+
+  --status-neutral-fg: oklch(0.72 0.006 250);
+  --status-neutral-bg: oklch(0.24 0.008 255);
+  --status-neutral-border: oklch(0.32 0.008 255);
+  --status-info-fg: oklch(0.75 0.07 250);
+  --status-info-bg: oklch(0.25 0.03 250);
+  --status-info-border: oklch(0.35 0.05 250);
+  --status-progress-fg: oklch(0.8 0.13 80);
+  --status-progress-bg: oklch(0.26 0.05 80);
+  --status-progress-border: oklch(0.36 0.08 80);
+  --status-review-fg: oklch(0.78 0.12 300);
+  --status-review-bg: oklch(0.26 0.05 300);
+  --status-review-border: oklch(0.36 0.08 300);
+  --status-success-fg: oklch(0.78 0.13 150);
+  --status-success-bg: oklch(0.25 0.05 150);
+  --status-success-border: oklch(0.35 0.08 150);
+  --status-warning-fg: oklch(0.8 0.14 55);
+  --status-warning-bg: oklch(0.27 0.05 55);
+  --status-warning-border: oklch(0.37 0.08 55);
+  --status-danger-fg: oklch(0.75 0.17 25);
+  --status-danger-bg: oklch(0.27 0.06 25);
+  --status-danger-border: oklch(0.37 0.09 25);
+
+  --shadow-s: 0 1px 2px oklch(0 0 0 / 0.3);
+  --shadow-m: 0 4px 12px oklch(0 0 0 / 0.4);
+  --shadow-l: 0 12px 32px oklch(0 0 0 / 0.5);
+}
