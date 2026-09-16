@@ -1,0 +1,8 @@
+<h2>Your sign-in link</h2>
+<p>Open the link below to sign in to Malhot OS. It works once and expires in one hour.</p>
+<p>
+  <a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=magiclink&next={{ .RedirectTo }}"
+    >Sign in to Malhot OS</a
+  >
+</p>
+<p>If you did not request this, you can ignore this email.</p>

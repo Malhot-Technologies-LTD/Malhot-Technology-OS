@@ -1,0 +1,8 @@
+<h2>Reset your password</h2>
+<p>Open the link below to choose a new password for Malhot OS. It works once and expires in one hour.</p>
+<p>
+  <a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=recovery&next={{ .RedirectTo }}"
+    >Choose a new password</a
+  >
+</p>
+<p>If you did not request this, your password is unchanged and you can ignore this email.</p>
