@@ -23,15 +23,6 @@ test("login form validates before submitting", async ({ page }) => {
   await expect(page.getByText("Enter your password")).toBeVisible();
 });
 
-test("wrong password shows a clear error and stays on the page", async ({ page }) => {
-  await page.goto("/login");
-  await page.getByLabel("Email").fill("nobody@example.com");
-  await page.getByLabel("Password").fill("definitely-not-the-password");
-  await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page.locator('[data-slot="field-error"]')).toContainText(/not right|invited/);
-  await expect(page).toHaveURL(/\/login/);
-});
-
 test("callback errors are explained on the login page", async ({ page }) => {
   await page.goto(
     "/auth/callback?error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired",
@@ -48,6 +39,16 @@ test("open redirects are neutralised", async ({ page }) => {
 
 test.describe("with an account", () => {
   test.skip(!credentials, "E2E_EMAIL / E2E_PASSWORD not set");
+
+  // Needs a reachable auth server, which only the account-configured environments have.
+  test("wrong password shows a clear error and stays on the page", async ({ page }) => {
+    await page.goto("/login");
+    await page.getByLabel("Email").fill("nobody@example.com");
+    await page.getByLabel("Password").fill("definitely-not-the-password");
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page.locator('[data-slot="field-error"]')).toContainText(/not right|invited/);
+    await expect(page).toHaveURL(/\/login/);
+  });
 
   test("signs in, lands on the dashboard, and signs out", async ({ page }) => {
     await page.goto("/login?next=%2Fos%2Fsettings%2Fprofile");
