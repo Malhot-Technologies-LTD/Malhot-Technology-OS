@@ -8,19 +8,21 @@ import type { OrgRole } from "@/types/domain";
  * (docs/engineering/testing-strategy.md#fixtures). Never point these at the
  * hosted project: the tests create and delete users and organisations.
  *
- * Environment (from `npx supabase status -o env`):
- *   SUPABASE_URL, SUPABASE_ANON_KEY (or SUPABASE_PUBLISHABLE_KEY), SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_SECRET_KEY)
+ * Environment: the names printed by `npx supabase status -o env` (API_URL, ANON_KEY /
+ * PUBLISHABLE_KEY, SERVICE_ROLE_KEY / SECRET_KEY) or their SUPABASE_-prefixed equivalents.
  */
 
 export type Client = SupabaseClient<Database>;
 
-const url = process.env.SUPABASE_URL ?? "http://127.0.0.1:54321";
-const anonKey = process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.SUPABASE_ANON_KEY ?? "";
-const serviceKey = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+const env = (...names: string[]) => names.map((n) => process.env[n]).find((v) => v && v.length > 0) ?? "";
+
+const url = env("SUPABASE_URL", "API_URL") || "http://127.0.0.1:54321";
+const anonKey = env("SUPABASE_PUBLISHABLE_KEY", "SUPABASE_ANON_KEY", "PUBLISHABLE_KEY", "ANON_KEY");
+const serviceKey = env("SUPABASE_SECRET_KEY", "SUPABASE_SERVICE_ROLE_KEY", "SECRET_KEY", "SERVICE_ROLE_KEY");
 
 if (!anonKey || !serviceKey) {
   throw new Error(
-    "Integration tests need SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY (run `npx supabase status -o env`).",
+    "Integration tests need the local anon and service-role keys (eval \"$(npx supabase status -o env | sed 's/^/export /')\").",
   );
 }
 if (!/127\.0\.0\.1|localhost/.test(url)) {

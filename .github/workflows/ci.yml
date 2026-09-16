@@ -54,6 +54,7 @@ jobs:
           node scripts/check-types-drift.mjs /tmp/database.ts
       - name: RLS integration tests
         run: |
+          supabase status -o env | sed -E 's/=.*/=…/'
           eval "$(supabase status -o env | sed 's/^/export /')"
           npm run test:integration
 
