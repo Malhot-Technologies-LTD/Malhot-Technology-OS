@@ -66,7 +66,7 @@ An execution session ("Sprint 3 regression on staging") that selects cases (`tes
 One case executed once in one run: pass / fail / blocked, actual result, optional bug. Re-running a case creates a new result in a new run; history is preserved.
 
 ## Bug
-A defect. Lifecycle `open → in_progress → fixed → retest → closed`, reopen from `retest` to `open` (increments `reopen_count`). Marking `fixed` automatically transitions to `retest` (the trigger rewrites the status) and notifies QA/reporter. Bugs may link to the task where they were found and to the failing test result. Severity is separate from task priority.
+A defect, identified as `KEY-Bn` (own per-project sequence, so `MAL-42` is always a task and `MAL-B7` always a bug). Lifecycle `open → in_progress → fixed → retest → closed`, reopen from `retest` to `open` (increments `reopen_count`). Marking `fixed` automatically transitions to `retest` (the trigger rewrites the status) and notifies QA/reporter. Bugs may link to the task where they were found and to the failing test result. Severity is separate from task priority.
 
 ## Document
 A professional artefact tied to a project (or organisation-level for admins). Content is Tiptap JSON; `plain_text` is extracted for search and previews. Approval increments `version` and snapshots into `document_versions`. `template_key` records which generator created it. Approved documents are read-only; edits require "return to draft" (which creates a new working version).

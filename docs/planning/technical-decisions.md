@@ -21,7 +21,7 @@ Status legend: **Accepted** · **Proposed (needs approval)** · Superseded.
 
 **Consequences.** Discipline on server/client boundaries (documented in frontend architecture); Node runtime for API routes needing crypto/Octokit; one deployable.
 
-## ADR-002 — Supabase over a custom backend — Accepted
+## ADR-002 — Supabase over a custom backend — Accepted (confirmed OD-1, 2026-09-16)
 
 **Context.** Need Postgres, auth, file storage, realtime, with minimal operations.
 
@@ -33,7 +33,7 @@ Status legend: **Accepted** · **Proposed (needs approval)** · Superseded.
 - Firebase: document model fights the relational nature of this domain (traceability joins, reports); weaker SQL reporting.
 - Neon stack: excellent Postgres (branching is attractive for previews), but auth/storage/realtime are newer and less integrated; Supabase's RLS-first auth model and SSR helpers fit the security design more directly today. Neon remains a credible alternative for the database if Supabase ever becomes a constraint — the schema is plain Postgres.
 
-**Decision.** Supabase (Postgres, Auth, Storage, Realtime). **Flagged for confirmation** because Neon tooling exists in the environment — see `open-decisions.md` OD-1.
+**Decision.** Supabase (Postgres, Auth, Storage, Realtime). Confirmed by the owner (OD-1). Project: hosted Supabase (new publishable/secret key format).
 
 **Consequences.** Authorisation implemented as RLS + triggers; service role confined; Pro plan for production.
 
@@ -88,17 +88,17 @@ See `architecture/integrations.md`. Rejected PATs (long-lived, personal, broad) 
 
 Cookie-less, aggregate, no consent banner, no third-party script weight. Nothing on `/os` (internal usage is visible through activity; no tracking of staff). Alternative Plausible is equivalent; Vercel chosen for zero setup. Google Analytics rejected (consent burden, privacy).
 
-## ADR-015 — Health derived, `At Risk` not a status — Proposed (needs approval)
+## ADR-015 — Health derived, `At Risk` not a status — Accepted (OD-2, 2026-09-16)
 
-Deviation from the brief. Rationale in `product/project-lifecycle.md`. Approval item OD-2.
+Deviation from the brief, approved. Rationale in `product/project-lifecycle.md`.
 
-## ADR-016 — Invite-only, no public sign-up; email/password + magic link in v1 — Proposed (needs approval)
+## ADR-016 — Invite-only, no public sign-up; email/password + magic link in v1 — Accepted (OD-3, 2026-09-16)
 
-An internal operating system should not have a sign-up page. GitHub OAuth deferred to avoid account-linking edge cases in v1. Approval item OD-3.
+An internal operating system should not have a sign-up page. OAuth sign-in was briefly pulled into v1 and then deferred again by the owner to keep the v1 surface small; the linking design lives in ADR-025 (Proposed) for when it is picked up.
 
-## ADR-017 — Single Next.js app, OS under `/os` path (not a subdomain) — Proposed (needs approval)
+## ADR-017 — Single Next.js app, OS under `/os` path (not a subdomain) — Accepted (OD-5; domain to be decided later)
 
-One deployment, shared cookies and components, simple auth redirects. A subdomain (`app.malhot.tech`) would need cookie domain configuration and either two Vercel projects or rewrites. Path prefix is simpler; can be revisited. Approval item OD-5.
+One deployment, shared cookies and components, simple auth redirects. A subdomain (`app.malhot.tech`) would need cookie domain configuration and either two Vercel projects or rewrites. Path prefix is simpler; can be revisited. Domain is deferred; `NEXT_PUBLIC_SITE_URL` carries whatever origin is current.
 
 ## ADR-018 — Package manager: npm — Accepted
 
@@ -127,3 +127,13 @@ Server + client error capture with PII scrubbing, release tracking via source ma
 ## ADR-024 — Typography: Geist Sans + Geist Mono; accent colour provisional — Proposed (needs approval)
 
 One family across website and OS for cohesion; open-source and self-hosted. Accent (cobalt) chosen in the absence of brand guidelines. Approval item OD-6.
+
+## ADR-025 — Invite-only with OAuth sign-in (GitHub, Google) as additional methods — Proposed (deferred to roadmap, 2026-09-16)
+
+**Context.** Owner wants GitHub and Google sign-in in v1; the system must stay invite-only.
+
+**Options.** (a) OAuth as sign-up path with allow-listed domains; (b) OAuth as sign-in only, linked to invited accounts by verified email; (c) defer.
+
+**Decision (when adopted).** (b). Accounts are created only by invitation (email provider). GitHub/Google identities link automatically to an existing account with the same verified email (Supabase automatic linking); OAuth for unknown emails fails with a clear message because sign-up is disabled. Users may link/unlink identities in Settings → Security. Provider credentials live in the Supabase dashboard; the GitHub App's OAuth client is reused for GitHub sign-in.
+
+**Consequences.** Login page gains two provider buttons and error mapping; invitation UI hints to invite the address used on GitHub/Google; e2e adds an OAuth-failure path (real provider round-trips are not automated). Rules in `architecture/authentication-architecture.md`.

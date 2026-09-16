@@ -1,23 +1,40 @@
 # HANDOFF
 
 ## Current Task
-Phase 0 — Documentation & Architecture for the Malhot Technologies platform (public website + Malhot OS).
-No application code exists yet; the repository was empty at session start. Phase 0 must be complete and approved before implementation.
+Phase 1 — Foundation, auth, shell (`docs/planning/implementation-phases.md`). Goal: a newly invited user can sign in, land on an empty dashboard and edit their profile; RLS tests pass for identity tables; e2e journeys 1–2 pass; deploy to preview works.
 
 ## Status
-In progress — writing the `/docs` package.
+In progress — auth and shell are built and verified end to end against the hosted Supabase project (`moqmqosagtwlpxeqpknn`). Remaining Phase 1 items are listed below; several need the owner (bootstrap, dashboard settings, Vercel).
 
 ## Progress
-- [x] Inspect repository (empty, not a git repo) and toolchain (Node 24, npm 11, git, gh, Docker; no pnpm, no Supabase CLI)
-- [x] Fix cross-cutting decisions (stack, auth, roles, schema, deviations from brief)
-- [ ] Write /docs (architecture, product, database, design, engineering, features, planning)
-- [ ] Implementation-readiness report to user
-- [ ] Human approval of open decisions (see docs/planning/open-decisions.md)
+- [x] Supabase MCP connected (`.mcp.json`, project scope); migrations 0001–0004 applied to the hosted project; `types/database.ts` generated from it; security advisor clean apart from intentional/Supabase-owned items
+- [x] `lib/auth` (`safeNext`, cached `getAuthState`/`requireViewer`), `lib/actions/validation.ts`, `lib/forms/action-errors.ts`
+- [x] `features/auth`: password, magic link, sign-out (global), forgot/reset password, profile update; error mapping with unit tests. OAuth (GitHub/Google) removed from v1 by the owner — ADR-025 stays Proposed for the roadmap
+- [x] Routes: `/login`, `/forgot-password`, `/reset-password`, `/auth/callback` (PKCE `code` **and** `token_hash` links), `/invite/[token]`; `/` placeholder; error/not-found boundaries
+- [x] OS shell: `(os)` layout with anonymous / no-access / member states, sidebar (collapsible, cookie-persisted), topbar, command palette (nav only), user menu, settings → profile + appearance, placeholder pages for later sections
+- [x] Invitation acceptance (`lib/supabase/elevated/invitations.ts` + `features/organization`); `scripts/bootstrap-org.ts`, `scripts/invite-member.ts`
+- [x] Supabase email templates (`supabase/templates/`) wired in `config.toml`
+- [x] Tooling: Vitest (16 unit tests), Playwright (journey 1 incl. profile edit — 6 e2e tests), Prettier, `ci.yml`
+- [x] Journeys 1 and 2 verified in a browser against the hosted project using the real bootstrap/invite scripts with temporary accounts (deleted afterwards; DB is empty)
+- [ ] **Owner:** run `npx tsx scripts/bootstrap-org.ts --email … --name … --org "Malhot Technologies" --slug malhot` (secret key is in `.env.local`; consider rotating it, it was shared in chat)
+- [ ] **Owner, Supabase dashboard:** Auth → disable sign-ups, min password 12 + leaked-password check, Site URL + redirect allow-list (`http://localhost:3000/**`, Vercel URLs), paste the three email templates (`docs/architecture/authentication-architecture.md`)
+- [ ] RLS integration test harness + pgTAP (needs local Supabase via Docker: `npx supabase start`)
+- [ ] `lib/permissions.ts` (`can()`) — spec'd for Phase 3 but the shell will need it as soon as pages carry actions
+- [ ] Vercel project env vars (`docs/engineering/environment-variables.md#vercel-configuration`), Sentry, Husky pre-commit
 
 ## Working Notes
-Source of truth for all decisions: `docs/planning/technical-decisions.md` (ADR style) and `docs/database/schema.md`.
-Deviations from the original brief are deliberate and listed in `docs/planning/open-decisions.md`.
-Next step on resume: if docs are incomplete, continue writing files in the order listed in `docs/README.md`; then deliver the readiness report. Do not start application code until the open decisions are approved.
+- Migration file names carry the versions the MCP recorded (`20260916194516_foundation`, `…194550_identity`, `…194636_hardening`, `…201208_fix_last_owner_cascade`) so `supabase db push` treats them as applied. Apply future migrations the same way (MCP `apply_migration`, then save the file with the recorded version) or link the CLI and `db push` — do not mix without checking `supabase_migrations.schema_migrations`.
+- 0004 fixes a real bug found while cleaning up: `protect_last_owner` fired during cascade from `organizations`, making organisations undeletable.
+- `.env.local` holds URL, publishable key and secret key (never committed).
+- Server-initiated auth emails must link to `/auth/callback?token_hash=…&type=…&next={{ .RedirectTo }}` (see `supabase/templates/README.md`); the default Supabase templates will not work with this app.
+- Project grants on invitations are stored but not applied until `project_members` exists (Phase 3); acceptance then moves into one SQL function for atomicity.
+- Theme: next-themes only (per device). The docs' "persist in profile" is deferred until something reads it.
+- Prettier is configured to ignore `*.md` — running it on docs reflows every table.
+- Local checks: `npm run format:check && npm run lint && npm run typecheck && npm test`; e2e: `E2E_BASE_URL=http://localhost:3000 E2E_EMAIL=… E2E_PASSWORD=… npm run test:e2e` against `npm run build && npm start`.
+- Next step on resume: bootstrap the real organisation (needs the owner's email/name — OD-9), then Phase 1's RLS integration harness (local Supabase) and `lib/permissions.ts`, then Vercel/CI secrets.
 
 ## Recently Completed
-- (none yet)
+- Journey 2 (invite → accept) verified end to end; OAuth deferred from v1; work committed and pushed (2026-09-16).
+- Phase 1 auth + shell slice, migrations applied to hosted Supabase, e2e journey 1 green (2026-09-16).
+- Open decisions OD-1/2/3/4/5/12 resolved; docs updated for OAuth sign-in and new key format (2026-09-16).
+- Phase 0 documentation package (2026-09-16).

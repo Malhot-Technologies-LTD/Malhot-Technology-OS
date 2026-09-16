@@ -33,7 +33,7 @@ Single Next.js application at the repository root. Feature-oriented where behavi
 │   └── marketing/                website components
 ├── content/                      typed marketing content (mdx case studies, services, team)
 ├── lib/                          shared, framework-level code (no feature knowledge)
-│   ├── supabase/                 client.ts (browser), server.ts (RSC/actions), admin.ts (service role, server-only), middleware.ts
+│   ├── supabase/                 client.ts (browser), server.ts (RSC/actions), admin.ts (service role, server-only), proxy.ts, elevated/ (documented service-role operations)
 │   ├── auth/                     context.ts (getViewer, requireViewer, requireProjectContext)
 │   ├── permissions.ts            can()
 │   ├── events/                   emit(), event types, rendering helpers

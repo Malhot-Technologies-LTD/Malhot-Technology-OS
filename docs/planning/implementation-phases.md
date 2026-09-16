@@ -15,7 +15,7 @@ Deliverable: `/docs` complete, readiness report, open decisions approved.
 - Supabase local; migrations 1 to 2 (enums, identity tables), auth trigger, RLS helpers, first policies; type generation; pgTAP harness; RLS integration test harness with role fixtures.
 - Auth: login (password, magic link), callback, forgot/reset, invite acceptance, sign-out, proxy redirects, `requireViewer()`, no-access state; bootstrap script.
 - OS shell: sidebar, topbar, command palette scaffold, notifications bell (static), settings → profile/appearance; error/not-found boundaries.
-- `ActionResult`, `withAction`, db error mapping; `emit_event` SQL with activity insert (notifications rules added per feature).
+- `ActionResult`, `withAction`, db error mapping. (`emit_event` moves to Phase 4 with the `activities`/`notifications` tables it writes to.)
 - CI pipeline green end to end; Vercel project + staging Supabase provisioned; Sentry.
 - **Done when:** a newly invited user can sign in, land on an empty dashboard, edit their profile; RLS tests pass for identity tables; e2e journeys 1 to 2 pass; deploy to preview works.
 
@@ -33,7 +33,7 @@ Deliverable: `/docs` complete, readiness report, open decisions approved.
 - **Done when:** journeys 3 to 4 pass; RLS matrix tests for these tables pass; permission unit tests cover the matrix; docs updated.
 
 ## Phase 4 — Tasks, comments, attachments, activity, notifications (2 to 3 weeks)
-- Migrations 4 and 7: tasks, dependencies, comments, attachments, activities, notifications; task triggers; search vectors; storage bucket + policies; realtime publication.
+- Migrations 4 and 7: tasks, dependencies, comments, attachments, activities, notifications; `emit_event` SQL; task triggers; search vectors; storage bucket + policies; realtime publication.
 - Board (dnd-kit, keyboard), list view + bulk, quick create, filters/URL state, task panel with all sections, My Tasks, creation form, positioning logic, cycle detection.
 - `emit_event` recipients rules for task events; notifications bell/popover/page with realtime; activity pages.
 - Overdue cron job (`/api/cron/daily`) with `CRON_SECRET`.

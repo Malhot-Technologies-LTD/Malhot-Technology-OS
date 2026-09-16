@@ -176,6 +176,6 @@ Integration tests assert that each matrix row behaves the same through the Serve
 
 ## Future roles
 
-Adding a role means: extend the enum, add a column to this matrix, update `lib/permissions.ts`, update the SQL helper `project_permission_group()`, add tests. No UI changes are required for a new project role beyond the selector.
+Adding a role means: extend the enum, add a column to this matrix, update `lib/permissions.ts`, update the SQL helper `project_group_of()`, add tests. No UI changes are required for a new project role beyond the selector.
 
 Candidate future roles: `client` (project viewer with commenting on approved documents only), `finance` (org role, reports only).

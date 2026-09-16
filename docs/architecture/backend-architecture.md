@@ -10,7 +10,7 @@ There is no separate backend service. "Backend" means the server side of the Nex
 | **Route Handlers** | Webhooks, cron, GitHub App callback, document export, health | Signature / bearer secret / session | Admin (service role) for webhooks & cron; user-scoped for export |
 | **RSC data loading** | Reads for pages | Session cookie | User-scoped |
 
-Rule: **a Server Action never uses the service-role client.** If a user flow needs elevation (e.g. accepting an invitation before membership exists), it is a narrowly-scoped function in `lib/supabase/admin.ts` with its own input validation, called from the action, and documented here:
+Rule: **a Server Action never uses the service-role client.** If a user flow needs elevation (e.g. accepting an invitation before membership exists), it is a narrowly-scoped function under `lib/supabase/elevated/` (the only code besides `app/api/` and `scripts/` allowed to import `lib/supabase/admin.ts`) with its own input validation, called from the action, and documented here:
 
 | Elevated operation | Why elevation is needed |
 |---|---|

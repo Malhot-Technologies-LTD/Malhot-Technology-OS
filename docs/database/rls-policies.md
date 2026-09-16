@@ -33,7 +33,7 @@ Notation: **S** select, **I** insert, **U** update, **D** delete. `member(p)` = 
 | documents | project docs: `member(project_id)` and (`status = approved` or group ≠ viewer); org docs: `orgadmin(organization_id)` | `contrib and writable` (org-level: orgadmin) | `contrib and writable` (status/author rules in trigger) | — (soft) |
 | document_versions | same as parent document select | — (trigger) | — | — |
 | activities | `project_id is null ? orgadmin(organization_id) : member(project_id)` | via `emit()` with user client: `orgmember(organization_id) and actor_id = me` | — | — |
-| notifications | `user_id = me` | — (service/emit: inserted with user client only when `actor_id = me`… see note) | `user_id = me` (read_at only, trigger) | `user_id = me` |
+| notifications | `user_id = me` | — (only via `emit_event()`, see note below) | `user_id = me` (read_at only, trigger) | `user_id = me` |
 | github_installations | `orgmember(organization_id)` | `orgadmin(organization_id)` | `orgadmin` | `orgadmin` |
 | github_repositories | `member(project_id)` | `manage and writable` | `manage` | `manage` |
 | github_issues / github_pull_requests | `member(project of repository)` | — (service) | — (service) | — |
