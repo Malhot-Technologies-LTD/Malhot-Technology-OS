@@ -21,7 +21,9 @@ export function mapDbError(error: PostgrestError): ActionError {
     const [, code, ...rest] = error.message.split(":");
     const detail = rest.join(":").trim();
     const mapped: ActionErrorCode =
-      code === "forbidden" || code === "invalid_transition" || code === "invariant" ? code : "invariant";
+      code === "forbidden" || code === "invalid_transition" || code === "invariant" || code === "rate_limited"
+        ? code
+        : "invariant";
     return { code: mapped, message: detail || defaultMessage(mapped) };
   }
 

@@ -3,8 +3,9 @@
 @import "shadcn/tailwind.css";
 @import "../styles/tokens.css";
 
-/* Dark mode is driven by data-theme on <html> (set by next-themes). */
-@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+/* Dark mode is driven by data-theme on <html> (set by next-themes) or on a wrapper (marketing site).
+   A nested data-theme="light" scope (light sections on the dark site) opts back out. */
+@custom-variant dark (&:where([data-theme="dark"]:not([data-theme="light"] *), [data-theme="dark"] *:not([data-theme="light"] *)));
 
 @theme inline {
   /* shadcn semantic colours, resolved from Malhot tokens (styles/tokens.css) */

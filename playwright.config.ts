@@ -18,7 +18,11 @@ export default defineConfig({
     trace: "on-first-retry",
     viewport: { width: 1366, height: 800 },
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+    // Website specs also run at phone size (docs/design/responsive-strategy.md: website is mobile-first).
+    { name: "mobile", use: { ...devices["Pixel 7"] }, testMatch: /website.spec.ts/ },
+  ],
   webServer: process.env.E2E_BASE_URL
     ? undefined
     : {

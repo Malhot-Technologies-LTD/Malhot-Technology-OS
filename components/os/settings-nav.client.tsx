@@ -6,15 +6,16 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const SECTIONS = [
-  { label: "Profile", href: "/os/settings/profile" },
-  { label: "Appearance", href: "/os/settings/appearance" },
+  { label: "Profile", href: "/os/settings/profile", adminOnly: false },
+  { label: "Appearance", href: "/os/settings/appearance", adminOnly: false },
+  { label: "Enquiries", href: "/os/settings/inquiries", adminOnly: true },
 ] as const;
 
-export function SettingsNav() {
+export function SettingsNav({ isAdmin }: { isAdmin: boolean }) {
   const pathname = usePathname();
   return (
     <nav aria-label="Settings sections" className="flex gap-1 md:w-48 md:flex-col">
-      {SECTIONS.map((section) => {
+      {SECTIONS.filter((section) => isAdmin || !section.adminOnly).map((section) => {
         const active = pathname === section.href;
         return (
           <Link

@@ -31,7 +31,7 @@ Single Next.js application at the repository root. Feature-oriented where behavi
 │   ├── ui/                       shadcn/ui primitives (owned, generated via CLI)
 │   ├── os/                       OS shell + shared operational components
 │   └── marketing/                website components
-├── content/                      typed marketing content (mdx case studies, services, team)
+├── content/                      typed marketing content (site, services, work, team, process) + README of content gaps
 ├── lib/                          shared, framework-level code (no feature knowledge)
 │   ├── supabase/                 client.ts (browser), server.ts (RSC/actions), admin.ts (service role, server-only), proxy.ts, elevated/ (documented service-role operations)
 │   ├── auth/                     context.ts (getViewer, requireViewer, requireProjectContext)

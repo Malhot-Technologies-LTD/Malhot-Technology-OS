@@ -110,7 +110,7 @@ Sidebar 240 px (collapsed 56 px), topbar 48 px, content padding 24 px, max conte
 
 ## Theming implementation
 
-`app/layout.tsx` sets `data-theme` from cookie (server) to avoid flash; `ThemeToggle` (OS only) writes cookie + profile preference. Website forces `data-theme="dark"` at the marketing layout level with explicit light sections via a `.section-light` scope that remaps tokens locally.
+The OS layout mounts next-themes, which writes `data-theme` on `<html>`; `ThemeToggle` (OS only) changes it. The website and auth layouts never mount the provider: they pin `data-theme="dark"` on a wrapper, and light sections re-scope with `data-theme="light"` (`tokens.css` defines light values on both `:root` and `[data-theme="light"]`). The Tailwind `dark:` variant is defined to stop at a nested light scope, so shadcn components render correctly inside light bands.
 
 ## Do / don't (review checklist)
 

@@ -2,7 +2,7 @@
  * GENERATED — do not edit by hand.
  * Regenerate after every migration with `npm run db:types`
  * (requires SUPABASE_ACCESS_TOKEN; see docs/engineering/environment-variables.md).
- * Source: supabase gen types typescript, project moqmqosagtwlpxeqpknn, 2026-09-16.
+ * Source: supabase gen types typescript, project moqmqosagtwlpxeqpknn, 2026-09-16 (migration 0005).
  */
 
 export type Json =
@@ -74,6 +74,84 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      inquiries: {
+        Row: {
+          budget_range: string | null
+          company: string | null
+          created_at: string
+          email: string
+          handled_at: string | null
+          handled_by: string | null
+          id: string
+          ip_hash: string | null
+          message: string
+          name: string
+          organization_id: string
+          source_path: string | null
+        }
+        Insert: {
+          budget_range?: string | null
+          company?: string | null
+          created_at?: string
+          email: string
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          ip_hash?: string | null
+          message: string
+          name: string
+          organization_id: string
+          source_path?: string | null
+        }
+        Update: {
+          budget_range?: string | null
+          company?: string | null
+          created_at?: string
+          email?: string
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          ip_hash?: string | null
+          message?: string
+          name?: string
+          organization_id?: string
+          source_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inquiries_handled_by_fkey"
+            columns: ["handled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inquiries_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inquiry_rate_limits: {
+        Row: {
+          count: number
+          ip_hash: string
+          window_start: string
+        }
+        Insert: {
+          count?: number
+          ip_hash: string
+          window_start: string
+        }
+        Update: {
+          count?: number
+          ip_hash?: string
+          window_start?: string
+        }
+        Relationships: []
       }
       invitations: {
         Row: {
@@ -260,6 +338,19 @@ export type Database = {
         Returns: undefined
       }
       shares_org_with: { Args: { other: string }; Returns: boolean }
+      submit_inquiry: {
+        Args: {
+          p_budget_range: string
+          p_company: string
+          p_email: string
+          p_ip_hash: string
+          p_limit?: number
+          p_message: string
+          p_name: string
+          p_source_path: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       bug_severity: "low" | "medium" | "high" | "critical"

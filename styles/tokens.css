@@ -8,7 +8,8 @@
  * Only layer 1 holds literal values. Layer 2 always references layer 1.
  */
 
-:root {
+:root,
+[data-theme="light"] {
   /* Neutral surfaces (cool grey, slight blue bias) */
   --bg: oklch(0.985 0.002 250);
   --bg-subtle: oklch(0.965 0.003 250);
@@ -20,7 +21,7 @@
   /* Text */
   --fg: oklch(0.18 0.01 255);
   --fg-muted: oklch(0.45 0.01 255);
-  --fg-subtle: oklch(0.6 0.01 255);
+  --fg-subtle: oklch(0.52 0.01 255);
 
   /* Brand accent — provisional cobalt (OD-6). One token to change. */
   --brand: oklch(0.52 0.19 262);
@@ -35,7 +36,7 @@
   --status-info-fg: oklch(0.45 0.06 250);
   --status-info-bg: oklch(0.96 0.02 250);
   --status-info-border: oklch(0.88 0.04 250);
-  --status-progress-fg: oklch(0.55 0.13 75);
+  --status-progress-fg: oklch(0.48 0.12 75);
   --status-progress-bg: oklch(0.97 0.04 85);
   --status-progress-border: oklch(0.9 0.08 85);
   --status-review-fg: oklch(0.5 0.15 300);
@@ -44,7 +45,7 @@
   --status-success-fg: oklch(0.5 0.13 150);
   --status-success-bg: oklch(0.96 0.04 150);
   --status-success-border: oklch(0.88 0.08 150);
-  --status-warning-fg: oklch(0.6 0.15 50);
+  --status-warning-fg: oklch(0.5 0.15 50);
   --status-warning-bg: oklch(0.97 0.04 60);
   --status-warning-border: oklch(0.9 0.08 60);
   --status-danger-fg: oklch(0.52 0.2 25);

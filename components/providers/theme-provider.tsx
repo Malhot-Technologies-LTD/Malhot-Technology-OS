@@ -4,18 +4,13 @@ import { ThemeProvider as NextThemesProvider } from "next-themes";
 import type { ReactNode } from "react";
 
 /**
- * Theme is written to <html data-theme="light|dark">; tokens.css reacts to it.
- * `forcedTheme` lets the marketing layout pin dark without exposing a toggle.
+ * OS-only: writes <html data-theme="light|dark">, which tokens.css and the `dark:`
+ * variant react to. The website and auth pages pin their register with a
+ * data-theme wrapper instead, so they never mount this.
  */
-export function ThemeProvider({ children, forcedTheme }: { children: ReactNode; forcedTheme?: "light" | "dark" }) {
+export function ThemeProvider({ children }: { children: ReactNode }) {
   return (
-    <NextThemesProvider
-      attribute="data-theme"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
-      forcedTheme={forcedTheme}
-    >
+    <NextThemesProvider attribute="data-theme" defaultTheme="system" enableSystem disableTransitionOnChange>
       {children}
     </NextThemesProvider>
   );

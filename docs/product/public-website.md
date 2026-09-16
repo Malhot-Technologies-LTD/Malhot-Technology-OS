@@ -77,7 +77,7 @@ Shared authentication page. Styled with website branding; on success redirects t
 
 ## Content model
 
-Marketing content (case studies, service copy, team) lives as **typed content files in the repository** (`content/work/*.mdx`, `content/services.ts`, `content/team.ts`) for v1:
+Marketing content (case studies, service copy, team) lives as **typed content files in the repository** (`content/work.ts`, `content/services.ts`, `content/team.ts`, `content/process.ts`, `content/site.ts`) for v1. Case studies are structured records (problem / solution / role / technology / outcome) rather than MDX: it keeps every study scannable and needs no pipeline; MDX can be added when long-form narrative content actually arrives. Entries flagged `placeholder: true` render a visible marker and must be replaced before launch (`content/README.md` lists the gaps).
 
 - Changes go through PR review like code — appropriate for a five-person team.
 - Fully static, fast, SEO-friendly.
