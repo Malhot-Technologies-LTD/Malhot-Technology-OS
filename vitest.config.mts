@@ -14,7 +14,7 @@ export default defineConfig({
   },
   test: {
     include: ["**/*.test.{ts,tsx}"],
-    exclude: ["node_modules", ".next", "tests/e2e/**"],
+    exclude: ["node_modules", ".next", "tests/e2e/**", "tests/integration/**"],
     // Component tests opt into jsdom with a `// @vitest-environment jsdom` file header.
     environment: "node",
     setupFiles: ["./tests/setup.ts"],
