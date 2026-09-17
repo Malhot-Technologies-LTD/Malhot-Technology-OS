@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/privacy" },
 };
 
-const UPDATED = "16 September 2026";
+const UPDATED = "17 September 2026";
 
 /**
  * Privacy notice for the contact form and analytics (docs/product/public-website.md).
@@ -20,9 +20,10 @@ export default function PrivacyPage() {
   return (
     <>
       <PageHero eyebrow="Legal" title="Privacy notice" lede={`Last updated ${UPDATED}.`} />
-      <Section className="py-12 md:py-16">
-        <div className="mx-auto flex max-w-[720px] flex-col gap-8 leading-relaxed text-fg-muted">
-          <p className="flex items-center gap-2 text-sm">
+
+      <Section className="py-14 md:py-20">
+        <div className="mx-auto flex max-w-[46rem] flex-col gap-10">
+          <p className="flex flex-wrap items-center gap-2 text-sm text-fg-muted">
             <PlaceholderMark /> Pending legal review and a named data controller contact.
           </p>
 
@@ -32,24 +33,24 @@ export default function PrivacyPage() {
 
           <Clause title="What we collect and why">
             <p>
-              <strong className="text-fg">Contact form.</strong> Your name, email address, optional company and budget
-              range, and your message. We use them only to reply to your enquiry and, if we work together, to set up the
-              project. We also store a one-way hash of your network address for 24 hours to limit automated submissions;
-              it cannot be turned back into your address.
+              <strong className="font-semibold text-fg">Contact form.</strong> Your name, email address, optional
+              company and budget range, and your message. We use them only to reply to your enquiry and, if we work
+              together, to set up the project. We also store a one-way hash of your network address for 24 hours to
+              limit automated submissions; it cannot be turned back into your address.
             </p>
             <p>
-              <strong className="text-fg">Analytics.</strong> We use cookie-less, aggregate page analytics (page views,
-              referrers, device class). No cookies are set and no individual visitor is identified.
+              <strong className="font-semibold text-fg">Analytics.</strong> We use cookie-less, aggregate page analytics
+              (page views, referrers, device class). No cookies are set and no individual visitor is identified.
             </p>
             <p>
-              <strong className="text-fg">Team login.</strong> The login area is for Malhot staff. It sets strictly
-              necessary session cookies for signed-in team members only.
+              <strong className="font-semibold text-fg">Team login.</strong> The login area is for {site.shortName}{" "}
+              staff. It sets strictly necessary session cookies for signed-in team members only.
             </p>
           </Clause>
 
           <Clause title="Where it is stored">
-            Enquiries are stored in our operations system, hosted on Supabase, and are visible only to Malhot
-            administrators. The website is served by Vercel.
+            Enquiries are stored in our internal systems and are visible only to {site.shortName} administrators. The
+            website is served by Vercel.
           </Clause>
 
           <Clause title="How long we keep it">
@@ -73,9 +74,11 @@ export default function PrivacyPage() {
 
 function Clause({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="flex flex-col gap-3">
-      <h2 className="text-xl font-bold tracking-[-0.01em] text-fg">{title}</h2>
-      {typeof children === "string" ? <p>{children}</p> : children}
+    <section className="flex flex-col gap-3 border-t border-border pt-6">
+      <h2 className="text-[22px] leading-snug font-bold tracking-[-0.025em] text-fg">{title}</h2>
+      <div className="flex flex-col gap-3 text-[17px] leading-relaxed text-fg-muted">
+        {typeof children === "string" ? <p>{children}</p> : children}
+      </div>
     </section>
   );
 }

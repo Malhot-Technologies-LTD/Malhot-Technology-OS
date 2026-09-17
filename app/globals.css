@@ -53,9 +53,18 @@
   --color-brand: var(--brand);
   --color-brand-fg: var(--brand-fg);
   --color-brand-subtle: var(--brand-subtle);
-  --color-site-blue-light: var(--site-blue-light);
+  --color-site-ink: var(--site-ink);
+  --color-site-ink-raised: var(--site-ink-raised);
+  --color-site-ink-line: var(--site-ink-line);
+  --color-site-ink-fg: var(--site-ink-fg);
+  --color-site-ink-fg-muted: var(--site-ink-fg-muted);
+  --color-site-ink-fg-subtle: var(--site-ink-fg-subtle);
+  --color-site-blue: var(--site-blue);
   --color-site-blue-deep: var(--site-blue-deep);
+  --color-site-blue-bright: var(--site-blue-bright);
   --color-site-navy: var(--site-navy);
+  --color-site-navy-soft: var(--site-navy-soft);
+  --font-site: var(--font-schibsted);
 
   /* Status colours: each has -fg, -bg, -border */
   --color-status-neutral-fg: var(--status-neutral-fg);
@@ -106,6 +115,15 @@
   html {
     @apply font-sans;
     font-variant-numeric: tabular-nums;
+  }
+  /*
+   * The OS wants tabular figures everywhere so data columns align. The website
+   * must not inherit it: in Schibsted Grotesk the tnum feature also widens the
+   * comma and full stop to a digit's advance, which shows as a gap before every
+   * piece of punctuation. Opt back in per element with the tabular-nums class.
+   */
+  [data-surface="site"] {
+    font-variant-numeric: normal;
   }
   body {
     @apply bg-background text-foreground;

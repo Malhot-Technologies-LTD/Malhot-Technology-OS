@@ -1,18 +1,27 @@
-import { ArrowRight, Mail, MapPin } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 
+import { Mark } from "@/components/marketing/mark";
 import { MobileNav } from "@/components/marketing/mobile-nav.client";
 import { Container } from "@/components/marketing/section";
 import { SiteButton } from "@/components/marketing/site-button";
 import { primaryNav, site } from "@/content/site";
+import { cn } from "@/lib/utils";
 
-export function Logo({ className }: { className?: string }) {
+/** White, sticky, one hairline rule. The plain business-site header. */
+
+export function Logo({ className, tone = "light" }: { className?: string; tone?: "light" | "ink" }) {
   return (
-    <Link href="/" className={className} aria-label={`${site.name} home`}>
-      <span className="flex items-center gap-2.5">
-        <Image src="/logo.png" alt="" width={36} height={36} priority className="size-9 rounded-md" />
-        <span className="text-lg font-bold tracking-tight text-fg">{site.name}</span>
+    <Link
+      href="/"
+      aria-label={`${site.name} home`}
+      className={cn(
+        "inline-flex items-center gap-2.5 rounded-[3px] outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2",
+        className,
+      )}
+    >
+      <Mark className={cn("h-[22px] w-[27px]", tone === "ink" ? "text-white" : "text-site-ink")} />
+      <span className={cn("text-[17px] font-bold tracking-[-0.02em]", tone === "ink" ? "text-white" : "text-fg")}>
+        {site.shortName}
       </span>
     </Link>
   );
@@ -20,49 +29,35 @@ export function Logo({ className }: { className?: string }) {
 
 export function SiteHeader() {
   return (
-    <>
-      <div className="hidden bg-site-navy text-xs text-white/80 md:block">
-        <Container className="flex h-9 items-center justify-between">
-          <div className="flex items-center gap-6">
-            <span className="inline-flex items-center gap-1.5">
-              <MapPin aria-hidden="true" className="size-3.5" /> {site.location}
-            </span>
-            <a href={`mailto:${site.contactEmail.value}`} className="inline-flex items-center gap-1.5 hover:text-white">
-              <Mail aria-hidden="true" className="size-3.5" /> {site.contactEmail.value}
-            </a>
-          </div>
-          <Link href="/login" className="hover:text-white">
+    <header className="sticky top-0 z-50 border-b border-border bg-white/95 backdrop-blur">
+      <Container className="flex h-[68px] items-center justify-between gap-6">
+        <Logo />
+
+        <nav aria-label="Primary" className="hidden items-center gap-8 lg:flex">
+          {primaryNav.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="text-[15px] font-medium text-fg-muted transition-colors duration-150 hover:text-fg"
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="flex items-center gap-4">
+          <Link
+            href="/login"
+            className="hidden text-[15px] font-medium text-fg-muted transition-colors hover:text-fg lg:inline"
+          >
             Team login
           </Link>
-        </Container>
-      </div>
-
-      <header className="sticky top-0 z-40 border-b border-border bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/80">
-        <Container className="flex h-[72px] items-center justify-between gap-6">
-          <Logo />
-
-          <nav aria-label="Primary" className="hidden items-center gap-1 md:flex">
-            {primaryNav.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="rounded-full px-3.5 py-2 text-sm font-medium text-fg-muted transition-colors duration-[120ms] hover:bg-bg-subtle hover:text-fg"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-
-          <div className="flex items-center gap-2">
-            <SiteButton asChild className="hidden md:inline-flex">
-              <Link href="/contact">
-                Start a project <ArrowRight aria-hidden="true" />
-              </Link>
-            </SiteButton>
-            <MobileNav />
-          </div>
-        </Container>
-      </header>
-    </>
+          <SiteButton asChild className="hidden sm:inline-flex">
+            <Link href="/contact">Start a project</Link>
+          </SiteButton>
+          <MobileNav />
+        </div>
+      </Container>
+    </header>
   );
 }

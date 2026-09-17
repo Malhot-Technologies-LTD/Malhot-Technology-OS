@@ -140,33 +140,52 @@
 }
 
 /*
- * Public website register (data-surface="site"). Light, brand-forward: the
- * logo's vivid blue gradient and navy. Same token names so shared components
- * keep working; the OS never sets this attribute.
+ * Public website register (data-surface="site"). A light reading surface with
+ * dark "ink" bands (hero, work, CTA, footer) that carry the brand: the logo's
+ * electric blue over a near-black navy. Shared components keep working because
+ * the token names are the same; the OS never sets this attribute.
  */
 [data-surface="site"] {
-  --bg: oklch(1 0 0);
-  --bg-subtle: oklch(0.975 0.008 250);
-  --surface: oklch(1 0 0);
-  --surface-raised: oklch(1 0 0);
-  --border: oklch(0.915 0.01 250);
-  --border-strong: oklch(0.84 0.015 250);
+  --bg: #ffffff;
+  --bg-subtle: #f4f6fb;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --border: #e2e6f0;
+  --border-strong: #c3cade;
 
-  --fg: oklch(0.21 0.04 268);
-  --fg-muted: oklch(0.46 0.025 265);
-  --fg-subtle: oklch(0.54 0.02 265);
+  --fg: #0b1020;
+  --fg-muted: #4b5468;
+  /* 5.0:1 on --bg-subtle, the worst case on this surface (WCAG 1.4.3 AA). */
+  --fg-subtle: #616981;
 
-  --brand: oklch(0.55 0.24 262);
-  --brand-fg: oklch(1 0 0);
-  --brand-subtle: oklch(0.955 0.03 258);
+  --brand: #1f5eff;
+  --brand-fg: #ffffff;
+  --brand-subtle: #eef3ff;
   --focus: var(--brand);
 
-  --site-blue-light: oklch(0.68 0.19 252);
-  --site-blue-deep: oklch(0.44 0.26 268);
-  --site-navy: oklch(0.2 0.045 268);
-  --site-gradient: linear-gradient(150deg, var(--site-blue-light) 0%, var(--site-blue-deep) 100%);
+  /* Dark bands. --site-ink is the page-dark surface; -raised sits on top of it. */
+  --site-ink: #070b1a;
+  --site-ink-raised: #0e1530;
+  --site-ink-line: rgb(255 255 255 / 0.12);
+  --site-ink-fg: #ffffff;
+  --site-ink-fg-muted: rgb(255 255 255 / 0.72);
+  --site-ink-fg-subtle: rgb(255 255 255 / 0.58);
 
-  --shadow-s: 0 1px 2px oklch(0.25 0.05 265 / 0.06);
-  --shadow-m: 0 8px 24px oklch(0.25 0.05 265 / 0.1);
-  --shadow-l: 0 20px 48px oklch(0.25 0.05 265 / 0.14);
+  /* Blue scale, read off the logo gradient. -bright is legible on ink. */
+  --site-blue: #1f5eff;
+  --site-blue-deep: #1230cf;
+  --site-blue-bright: #7aa2ff;
+  --site-blue-glow: rgb(43 107 255 / 0.5);
+
+  /* Kept for the legacy navy band styling until every usage moves to --site-ink. */
+  --site-navy: #070b1a;
+  --site-navy-soft: #0e1530;
+
+  --radius-s: 3px;
+  --radius-m: 5px;
+  --radius-l: 8px;
+
+  --shadow-s: 0 1px 2px rgb(11 16 32 / 0.06);
+  --shadow-m: 0 8px 24px rgb(11 16 32 / 0.08);
+  --shadow-l: 0 24px 60px rgb(11 16 32 / 0.14);
 }

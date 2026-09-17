@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
-import { FileCheck2 } from "lucide-react";
 
 import { CtaBand, FeatureList, PageHero } from "@/components/marketing/blocks";
-import { Accent, Section, SectionHeading } from "@/components/marketing/section";
+import { Accent, ChevronList, Section, SectionHead } from "@/components/marketing/section";
 import { stages } from "@/content/process";
 
 export const metadata: Metadata = {
   title: "Process",
   description:
-    "How a Malhot project runs from discovery to support: what happens at each stage and the documents you receive.",
+    "How a project runs from discovery to support: what happens at each stage and the documents you receive.",
   alternates: { canonical: "/process" },
 };
 
@@ -19,7 +18,7 @@ const DOCUMENTS = [
   "Testing report",
   "Deployment report",
   "Final project report",
-];
+] as const;
 
 export default function ProcessPage() {
   return (
@@ -31,35 +30,35 @@ export default function ProcessPage() {
             How we <Accent>work</Accent>
           </>
         }
-        lede="Seven stages, each with a clear output, so you always know where the project is and what you will receive next."
+        lede="Seven stages, each with a clear output, so you always know where the project is and what arrives next."
       />
 
-      <Section className="pt-12 md:pt-14">
-        <ol className="grid gap-6 md:grid-cols-2">
+      <Section>
+        <ol className="flex flex-col">
           {stages.map((stage, index) => (
             <li
               key={stage.key}
               id={stage.key}
-              className="flex scroll-mt-28 flex-col gap-5 rounded-2xl border border-border bg-white p-6 shadow-s md:p-8"
+              className="grid scroll-mt-24 gap-6 border-t border-border py-9 first:border-t-0 first:pt-0 md:grid-cols-12 md:gap-10"
             >
-              <div className="flex items-center gap-4">
-                <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-brand font-mono text-sm font-bold text-white">
-                  0{index + 1}
+              <div className="flex flex-col gap-2 md:col-span-4">
+                <span className="text-sm font-semibold text-brand tabular-nums">
+                  Stage {String(index + 1).padStart(2, "0")}
                 </span>
-                <div className="flex flex-col">
-                  <h2 className="text-xl font-bold tracking-[-0.01em] text-fg">{stage.name}</h2>
-                  <p className="text-sm text-fg-muted">{stage.summary}</p>
-                </div>
+                <h2 className="text-[22px] leading-snug font-bold tracking-[-0.02em] text-fg">{stage.name}</h2>
+                <p className="text-[15px] leading-relaxed text-fg-muted">{stage.summary}</p>
               </div>
-              <div className="grid gap-5 sm:grid-cols-2">
-                <div className="flex flex-col gap-2">
-                  <h3 className="text-xs font-bold tracking-wide text-fg-subtle uppercase">What we do</h3>
-                  <FeatureList items={stage.weDo} />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <h3 className="text-xs font-bold tracking-wide text-fg-subtle uppercase">What you receive</h3>
-                  <FeatureList items={stage.youGet} />
-                </div>
+
+              <div className="flex flex-col gap-3 md:col-span-5">
+                <h3 className="text-[12px] font-semibold tracking-[0.14em] text-fg-subtle uppercase">What we do</h3>
+                <FeatureList items={stage.weDo} />
+              </div>
+
+              <div className="flex flex-col gap-3 md:col-span-3">
+                <h3 className="text-[12px] font-semibold tracking-[0.14em] text-fg-subtle uppercase">
+                  What you receive
+                </h3>
+                <FeatureList items={stage.youGet} />
               </div>
             </li>
           ))}
@@ -67,26 +66,43 @@ export default function ProcessPage() {
       </Section>
 
       <Section tone="subtle" aria-labelledby="documents-heading">
-        <SectionHeading
+        <SectionHead
           id="documents-heading"
-          eyebrow="Documents"
-          title="Written down, every time"
-          lede="Generated from the project record, reviewed by a person, approved before delivery."
+          eyebrow="What you keep"
+          title="Six documents that outlive the engagement"
+          intro="Every project produces the same written record. If you replace us, or hire in-house, the next team starts with this rather than with archaeology."
         />
-        <ul className="mx-auto mt-10 grid max-w-4xl gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {DOCUMENTS.map((doc) => (
-            <li
-              key={doc}
-              className="flex items-center gap-3 rounded-xl border border-border bg-white px-4 py-3 text-sm font-semibold text-fg shadow-s"
-            >
-              <FileCheck2 aria-hidden="true" className="size-5 shrink-0 text-brand" />
-              {doc}
+        <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {DOCUMENTS.map((document) => (
+            <li key={document} className="border border-border bg-white p-5 text-[15px] font-semibold text-fg">
+              {document}
             </li>
           ))}
         </ul>
       </Section>
 
-      <CtaBand title="Ready to start at stage one?" />
+      <Section aria-labelledby="after-heading">
+        <SectionHead
+          id="after-heading"
+          eyebrow="After launch"
+          title="Shipping is the start of the support relationship"
+          intro="Software that nobody maintains degrades. We stay on to keep it healthy — or hand it over cleanly if you would rather run it yourself."
+        >
+          <ChevronList
+            items={[
+              "Bug fixes and small improvements",
+              "Dependency and security updates",
+              "Roadmap conversations, not upsells",
+              "A clean exit whenever you want one",
+            ]}
+          />
+        </SectionHead>
+      </Section>
+
+      <CtaBand
+        title="Ready to start at stage one?"
+        lede="Discovery begins with a conversation. Tell us the problem and we will take it from there."
+      />
     </>
   );
 }
