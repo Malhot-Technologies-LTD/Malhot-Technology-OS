@@ -138,3 +138,35 @@
   --shadow-m: 0 4px 12px oklch(0 0 0 / 0.4);
   --shadow-l: 0 12px 32px oklch(0 0 0 / 0.5);
 }
+
+/*
+ * Public website register (data-surface="site"). Light, brand-forward: the
+ * logo's vivid blue gradient and navy. Same token names so shared components
+ * keep working; the OS never sets this attribute.
+ */
+[data-surface="site"] {
+  --bg: oklch(1 0 0);
+  --bg-subtle: oklch(0.975 0.008 250);
+  --surface: oklch(1 0 0);
+  --surface-raised: oklch(1 0 0);
+  --border: oklch(0.915 0.01 250);
+  --border-strong: oklch(0.84 0.015 250);
+
+  --fg: oklch(0.21 0.04 268);
+  --fg-muted: oklch(0.46 0.025 265);
+  --fg-subtle: oklch(0.54 0.02 265);
+
+  --brand: oklch(0.55 0.24 262);
+  --brand-fg: oklch(1 0 0);
+  --brand-subtle: oklch(0.955 0.03 258);
+  --focus: var(--brand);
+
+  --site-blue-light: oklch(0.68 0.19 252);
+  --site-blue-deep: oklch(0.44 0.26 268);
+  --site-navy: oklch(0.2 0.045 268);
+  --site-gradient: linear-gradient(150deg, var(--site-blue-light) 0%, var(--site-blue-deep) 100%);
+
+  --shadow-s: 0 1px 2px oklch(0.25 0.05 265 / 0.06);
+  --shadow-m: 0 8px 24px oklch(0.25 0.05 265 / 0.1);
+  --shadow-l: 0 20px 48px oklch(0.25 0.05 265 / 0.14);
+}

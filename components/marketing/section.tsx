@@ -3,10 +3,9 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * Website layout primitives (docs/design/design-system.md#website).
- * Content is 1200px wide with 16/24px gutters; sections carry the vertical
- * rhythm. `tone="light"` re-scopes the tokens so light bands sit inside the
- * dark-dominant page.
+ * Website layout primitives. Light register (data-surface="site" in
+ * app/(marketing)/layout.tsx): white sections alternate with a faint blue-grey,
+ * with occasional navy/gradient bands for emphasis.
  */
 
 export function Container({ className, children }: { className?: string; children: ReactNode }) {
@@ -15,21 +14,20 @@ export function Container({ className, children }: { className?: string; childre
 
 type SectionProps = {
   id?: string;
-  tone?: "dark" | "light" | "subtle";
+  tone?: "white" | "subtle" | "navy";
   className?: string;
   children: ReactNode;
   "aria-labelledby"?: string;
 };
 
-export function Section({ id, tone = "dark", className, children, ...rest }: SectionProps) {
+export function Section({ id, tone = "white", className, children, ...rest }: SectionProps) {
   return (
     <section
       id={id}
-      data-theme={tone === "light" ? "light" : undefined}
       className={cn(
-        "py-16 md:py-24 lg:py-32",
-        tone === "light" && "bg-bg text-fg",
+        "py-16 md:py-20 lg:py-24",
         tone === "subtle" && "bg-bg-subtle",
+        tone === "navy" && "bg-site-navy text-white",
         className,
       )}
       {...rest}
@@ -42,24 +40,66 @@ export function Section({ id, tone = "dark", className, children, ...rest }: Sec
 type HeadingProps = {
   id?: string;
   eyebrow?: string;
-  title: string;
+  title: ReactNode;
   lede?: string;
   align?: "start" | "center";
   className?: string;
+  onNavy?: boolean;
 };
 
-export function SectionHeading({ id, eyebrow, title, lede, align = "start", className }: HeadingProps) {
+export function SectionHeading({
+  id,
+  eyebrow,
+  title,
+  lede,
+  align = "center",
+  className,
+  onNavy = false,
+}: HeadingProps) {
   return (
-    <div className={cn("flex max-w-3xl flex-col gap-4", align === "center" && "mx-auto text-center", className)}>
-      {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
-      <h2 id={id} className="text-[32px] leading-[1.1] font-semibold tracking-[-0.025em] md:text-[44px] lg:text-[48px]">
+    <div
+      className={cn(
+        "flex max-w-3xl flex-col gap-4",
+        align === "center" ? "mx-auto items-center text-center" : "items-start",
+        className,
+      )}
+    >
+      {eyebrow ? <Eyebrow onNavy={onNavy}>{eyebrow}</Eyebrow> : null}
+      <h2
+        id={id}
+        className={cn(
+          "text-[30px] leading-[1.12] font-bold tracking-[-0.02em] text-balance md:text-[40px] lg:text-[44px]",
+          onNavy ? "text-white" : "text-fg",
+        )}
+      >
         {title}
       </h2>
-      {lede ? <p className="text-lg leading-relaxed text-fg-muted">{lede}</p> : null}
+      {lede ? (
+        <p className={cn("max-w-2xl text-base leading-relaxed md:text-lg", onNavy ? "text-white/75" : "text-fg-muted")}>
+          {lede}
+        </p>
+      ) : null}
     </div>
   );
 }
 
-export function Eyebrow({ children }: { children: ReactNode }) {
-  return <p className="text-xs font-medium tracking-[0.08em] text-brand uppercase">{children}</p>;
+/** Label above headings: short rules either side, as on the reference site. */
+export function Eyebrow({ children, onNavy = false }: { children: ReactNode; onNavy?: boolean }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-3 text-xs font-semibold tracking-[0.14em] uppercase",
+        onNavy ? "text-white/80" : "text-brand",
+      )}
+    >
+      <span aria-hidden="true" className={cn("h-px w-6", onNavy ? "bg-white/50" : "bg-brand/60")} />
+      {children}
+      <span aria-hidden="true" className={cn("h-px w-6", onNavy ? "bg-white/50" : "bg-brand/60")} />
+    </span>
+  );
+}
+
+/** Brand-blue words inside a heading. */
+export function Accent({ children }: { children: ReactNode }) {
+  return <span className="text-brand">{children}</span>;
 }

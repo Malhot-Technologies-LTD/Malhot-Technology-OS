@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { CtaBand, FeatureList, PageHero, PlaceholderMark } from "@/components/marketing/blocks";
-import { Section } from "@/components/marketing/section";
+import { Accent, Container, Section } from "@/components/marketing/section";
+import { ServiceIcon } from "@/components/marketing/service-icons";
 import { services } from "@/content/services";
 import { caseStudies } from "@/content/work";
 
@@ -17,23 +18,30 @@ export default function ServicesPage() {
   return (
     <>
       <PageHero
-        eyebrow="Services"
-        title="What we build"
+        eyebrow="Our services"
+        title={
+          <>
+            Complete <Accent>software delivery</Accent>, one team
+          </>
+        }
         lede="Seven service areas, one way of working. Each engagement ends with software that runs and documents that explain it."
       />
 
-      <nav aria-label="Service areas" className="border-y border-border">
-        <div className="mx-auto flex max-w-[1200px] gap-1 overflow-x-auto px-4 py-3 md:px-6">
+      <nav
+        aria-label="Service areas"
+        className="sticky top-[72px] z-30 border-b border-border bg-white/90 backdrop-blur"
+      >
+        <Container className="flex gap-1 overflow-x-auto py-3">
           {services.map((service) => (
             <a
               key={service.slug}
               href={`#${service.slug}`}
-              className="shrink-0 rounded-md px-3 py-1.5 text-sm whitespace-nowrap text-fg-muted hover:bg-surface hover:text-fg"
+              className="shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium whitespace-nowrap text-fg-muted hover:bg-bg-subtle hover:text-fg"
             >
               {service.name}
             </a>
           ))}
-        </div>
+        </Container>
       </nav>
 
       {services.map((service, index) => {
@@ -42,29 +50,31 @@ export default function ServicesPage() {
           <Section
             key={service.slug}
             id={service.slug}
-            tone={index % 2 === 1 ? "light" : "dark"}
-            className="scroll-mt-20 py-14 md:py-20"
+            tone={index % 2 === 1 ? "subtle" : "white"}
+            className="scroll-mt-32 py-14 md:py-16"
             aria-labelledby={`${service.slug}-heading`}
           >
             <div className="grid gap-10 lg:grid-cols-[1.2fr_1fr] lg:gap-16">
               <div className="flex flex-col gap-5">
                 <div className="flex items-center gap-3">
-                  <span className="font-mono text-xs text-fg-subtle">0{index + 1}</span>
+                  <span className="flex size-12 items-center justify-center rounded-xl bg-brand text-white">
+                    <ServiceIcon slug={service.slug} className="size-6" />
+                  </span>
                   {service.placeholder ? <PlaceholderMark /> : null}
                 </div>
                 <h2
                   id={`${service.slug}-heading`}
-                  className="text-[32px] leading-[1.1] font-semibold tracking-[-0.025em] md:text-[40px]"
+                  className="text-[30px] leading-[1.1] font-bold tracking-[-0.02em] text-fg md:text-[38px]"
                 >
                   {service.name}
                 </h2>
-                <p className="text-lg text-fg-muted">{service.description}</p>
+                <p className="text-base leading-relaxed text-fg-muted md:text-lg">{service.description}</p>
                 {related.length > 0 ? (
                   <p className="text-sm text-fg-muted">
                     Related work:{" "}
                     {related.map((study, i) => (
                       <span key={study.slug}>
-                        <Link href={`/work/${study.slug}`} className="text-fg underline-offset-4 hover:underline">
+                        <Link href={`/work/${study.slug}`} className="font-semibold text-brand hover:underline">
                           {study.title}
                         </Link>
                         {i < related.length - 1 ? ", " : ""}
@@ -73,15 +83,13 @@ export default function ServicesPage() {
                   </p>
                 ) : null}
               </div>
-              <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-1">
+              <div className="grid gap-6 rounded-2xl border border-border bg-white p-6 shadow-s sm:grid-cols-2 lg:grid-cols-1">
                 <div className="flex flex-col gap-3">
-                  <h3 className="text-xs font-medium tracking-[0.08em] text-fg-subtle uppercase">What you get</h3>
+                  <h3 className="text-sm font-bold text-fg">What you get</h3>
                   <FeatureList items={service.outcomes} />
                 </div>
                 <div className="flex flex-col gap-3">
-                  <h3 className="text-xs font-medium tracking-[0.08em] text-fg-subtle uppercase">
-                    Typical deliverables
-                  </h3>
+                  <h3 className="text-sm font-bold text-fg">Typical deliverables</h3>
                   <FeatureList items={service.deliverables} />
                 </div>
               </div>

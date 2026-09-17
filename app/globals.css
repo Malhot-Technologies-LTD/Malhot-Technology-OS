@@ -53,6 +53,9 @@
   --color-brand: var(--brand);
   --color-brand-fg: var(--brand-fg);
   --color-brand-subtle: var(--brand-subtle);
+  --color-site-blue-light: var(--site-blue-light);
+  --color-site-blue-deep: var(--site-blue-deep);
+  --color-site-navy: var(--site-navy);
 
   /* Status colours: each has -fg, -bg, -border */
   --color-status-neutral-fg: var(--status-neutral-fg);

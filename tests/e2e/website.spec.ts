@@ -10,8 +10,8 @@ import { expect, test } from "@playwright/test";
 const canSubmit = Boolean(process.env.E2E_EMAIL && process.env.E2E_PASSWORD);
 
 const PAGES = [
-  { path: "/", heading: "We design, build and ship software systems." },
-  { path: "/services", heading: "What we build" },
+  { path: "/", heading: "Software that ships. Systems that last." },
+  { path: "/services", heading: "Complete software delivery, one team" },
   { path: "/work", heading: "Problems we have solved" },
   { path: "/process", heading: "How we work" },
   { path: "/about", heading: "A software company that ships" },
@@ -41,15 +41,15 @@ test("primary navigation reaches every section", async ({ page, isMobile }) => {
 
 test("case study pages open from the work index", async ({ page }) => {
   await page.goto("/work");
-  await page.getByRole("link", { name: /operations platform/i }).click();
-  await expect(page).toHaveURL(/\/work\/operations-platform$/);
+  await page.getByRole("link", { name: /delivery tracking tool/i }).click();
+  await expect(page).toHaveURL(/\/work\/delivery-tracking-tool$/);
   await expect(page.getByRole("heading", { level: 2, name: "Problem", exact: true })).toBeVisible();
 });
 
 test("login page is reachable from the website and noindexed", async ({ page, isMobile }) => {
   await page.goto("/");
   if (isMobile) await page.getByRole("button", { name: "Open menu" }).click();
-  await page.getByRole("link", { name: "Log in" }).first().click();
+  await page.getByRole("link", { name: "Team login" }).first().click();
   await expect(page).toHaveURL(/\/login$/);
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
 });
@@ -66,7 +66,7 @@ test("sitemap and robots exclude the OS", async ({ request }) => {
   const robots = await (await request.get("/robots.txt")).text();
   expect(robots).toMatch(/Disallow: \/os/);
   const sitemap = await (await request.get("/sitemap.xml")).text();
-  expect(sitemap).toContain("/work/operations-platform");
+  expect(sitemap).toContain("/work/delivery-tracking-tool");
   expect(sitemap).not.toContain("/os");
 });
 

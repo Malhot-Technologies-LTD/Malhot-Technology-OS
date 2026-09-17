@@ -14,6 +14,11 @@ names, metrics or people.
 | `team.ts` | Names, roles, one-line bios for the five team members | Marketing |
 | `about` page | Company story paragraph (currently marked placeholder) | Founders |
 | `privacy` page | Legal review, named data controller, retention period confirmation | Founders |
-| Imagery | No photography or product screenshots are used yet; case studies accept none until real assets exist | Marketing |
+| `images.ts` | Replace the Unsplash placeholder photos with Malhot's own team and office photography (same aspect ratios); then remove `images.unsplash.com` from `next.config.ts` | Marketing |
 
 Search for `placeholder: true` and `PlaceholderMark` to find every marked spot.
+
+## Rules
+
+- Malhot OS is internal. The website never shows it, names it or describes its screens.
+- No invented clients, metrics, quotes or people. Placeholders are marked `placeholder: true` and render a visible marker.

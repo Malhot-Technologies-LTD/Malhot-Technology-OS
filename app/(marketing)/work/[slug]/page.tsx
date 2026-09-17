@@ -3,8 +3,9 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { CtaBand, PageHero, PlaceholderMark } from "@/components/marketing/blocks";
+import { caseStudyPhoto, CtaBand, PageHero, PlaceholderMark } from "@/components/marketing/blocks";
 import { Section } from "@/components/marketing/section";
+import { Picture } from "@/components/marketing/visuals";
 import { getService } from "@/content/services";
 import { caseStudies, getCaseStudy } from "@/content/work";
 
@@ -46,24 +47,34 @@ export default async function CaseStudyPage({ params }: PageProps<"/work/[slug]"
         ) : null}
       </PageHero>
 
-      <Section tone="light" className="py-12 md:py-16 lg:py-20">
-        <div className="grid gap-12 lg:grid-cols-[1fr_280px] lg:gap-20">
+      <Section className="pt-0 md:pt-0 lg:pt-0">
+        <Picture
+          photo={caseStudyPhoto(study.slug)}
+          sizes="(min-width: 1200px) 1200px, 100vw"
+          priority
+          className="-mt-8 aspect-[21/9] rounded-3xl shadow-m md:-mt-10"
+        />
+
+        <div className="mt-14 grid gap-12 lg:grid-cols-[1fr_300px] lg:gap-20">
           <div className="flex flex-col gap-12">
             <Block title="Problem" paragraphs={study.problem} />
             <Block title="Solution" paragraphs={study.solution} />
             <Block title="Our role" paragraphs={[study.role]} />
             <Block title="Outcome" paragraphs={study.outcome} />
           </div>
-          <aside aria-label="Project facts" className="lg:sticky lg:top-24 lg:self-start">
-            <dl className="flex flex-col gap-5 rounded-lg border border-border bg-surface p-6">
+          <aside aria-label="Project facts" className="lg:sticky lg:top-28 lg:self-start">
+            <dl className="flex flex-col gap-5 rounded-2xl border border-border bg-white p-6 shadow-s">
               {facts.map((fact) => (
                 <div key={fact.label} className="flex flex-col gap-1">
-                  <dt className="text-xs font-medium tracking-[0.08em] text-fg-subtle uppercase">{fact.label}</dt>
-                  <dd className="text-sm">{fact.value}</dd>
+                  <dt className="text-xs font-bold tracking-wide text-fg-subtle uppercase">{fact.label}</dt>
+                  <dd className="text-sm text-fg">{fact.value}</dd>
                 </div>
               ))}
             </dl>
-            <Link href="/work" className="mt-6 inline-flex items-center gap-2 text-sm text-fg-muted hover:text-fg">
+            <Link
+              href="/work"
+              className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-brand hover:underline"
+            >
               <ArrowLeft aria-hidden="true" className="size-4" /> All work
             </Link>
           </aside>
@@ -78,9 +89,9 @@ export default async function CaseStudyPage({ params }: PageProps<"/work/[slug]"
 function Block({ title, paragraphs }: { title: string; paragraphs: readonly string[] }) {
   return (
     <section className="flex flex-col gap-4">
-      <h2 className="text-2xl font-semibold tracking-[-0.02em]">{title}</h2>
+      <h2 className="text-2xl font-bold tracking-[-0.02em] text-fg">{title}</h2>
       {paragraphs.map((p) => (
-        <p key={p} className="max-w-[720px] leading-relaxed text-fg-muted">
+        <p key={p} className="max-w-[720px] leading-relaxed text-fg-muted md:text-lg">
           {p}
         </p>
       ))}

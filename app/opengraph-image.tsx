@@ -23,14 +23,16 @@ export default function OpenGraphImage() {
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 16, fontSize: 28, fontWeight: 600 }}>
-        <div style={{ width: 16, height: 16, borderRadius: 4, background: "#4f6ee0" }} />
+        <div
+          style={{ width: 20, height: 20, borderRadius: 5, background: "linear-gradient(150deg, #2b8cff, #1236d8)" }}
+        />
         {site.name}
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
         <div style={{ fontSize: 68, fontWeight: 600, letterSpacing: -2, lineHeight: 1.05, maxWidth: 980 }}>
           {site.tagline}
         </div>
-        <div style={{ fontSize: 28, color: "#a9adb8" }}>Websites · Web applications · Backend systems · Automation</div>
+        <div style={{ fontSize: 28, color: "#5b6380" }}>Websites · Web applications · Backend systems · Automation</div>
       </div>
     </div>,
     size,

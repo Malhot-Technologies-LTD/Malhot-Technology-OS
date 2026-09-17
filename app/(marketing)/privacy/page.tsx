@@ -20,8 +20,8 @@ export default function PrivacyPage() {
   return (
     <>
       <PageHero eyebrow="Legal" title="Privacy notice" lede={`Last updated ${UPDATED}.`} />
-      <Section tone="light" className="py-12 md:py-16">
-        <div className="flex max-w-[720px] flex-col gap-8 leading-relaxed text-fg-muted">
+      <Section className="py-12 md:py-16">
+        <div className="mx-auto flex max-w-[720px] flex-col gap-8 leading-relaxed text-fg-muted">
           <p className="flex items-center gap-2 text-sm">
             <PlaceholderMark /> Pending legal review and a named data controller contact.
           </p>
@@ -74,7 +74,7 @@ export default function PrivacyPage() {
 function Clause({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="text-xl font-semibold tracking-[-0.01em] text-fg">{title}</h2>
+      <h2 className="text-xl font-bold tracking-[-0.01em] text-fg">{title}</h2>
       {typeof children === "string" ? <p>{children}</p> : children}
     </section>
   );

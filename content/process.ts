@@ -1,4 +1,4 @@
-/** Public view of docs/product/project-lifecycle.md: what a client experiences and receives at each stage. */
+/** Public view of the delivery lifecycle: what a client experiences and receives at each stage. */
 export type Stage = { key: string; name: string; summary: string; weDo: readonly string[]; youGet: readonly string[] };
 
 export const stages: readonly Stage[] = [

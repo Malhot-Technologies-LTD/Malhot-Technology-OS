@@ -21,19 +21,19 @@ export type CaseStudy = {
 
 export const caseStudies: readonly CaseStudy[] = [
   {
-    slug: "operations-platform",
-    title: "An operations platform replacing spreadsheets and chat",
+    slug: "delivery-tracking-tool",
+    title: "A delivery tracking tool for a distribution business",
     client: "Confidential client",
     year: "2026",
     services: ["software-systems", "backend-apis", "ui-ux-design"],
     summary:
-      "A small services business ran projects across spreadsheets, chat threads and a shared drive. We built one system of record for projects, tasks, testing and documents.",
+      "A distributor tracked deliveries across three depots in spreadsheets and phone calls. We built one internal tool for orders, drivers and proof of delivery.",
     problem: [
-      "Work lived in five tools with no shared source of truth. Status was reconstructed in meetings, deadlines slipped silently and client documents were rewritten from scratch each time.",
+      "Dispatchers re-typed orders into three spreadsheets, drivers reported by phone, and nobody could answer a customer's 'where is it?' without a round of calls.",
     ],
     solution: [
-      "We modelled the delivery lifecycle first: projects, goals, MVP scope, tasks, test runs, documents. It is enforced in the database with row-level security so every role sees exactly what it should.",
-      "A desktop-first web application gives each person an actionable view of their day, with client documents generated from real project data.",
+      "We modelled orders, routes and depots first, then built a web application dispatchers use on desktop and drivers use on their phones, with photo proof of delivery and a live status per order.",
+      "Roles and permissions are enforced in the database, so depot staff see only their depot and customers get a read-only tracking link.",
     ],
     role: "Product design, architecture, full-stack engineering, deployment.",
     technology: ["Next.js", "TypeScript", "Postgres", "Supabase", "Vercel"],

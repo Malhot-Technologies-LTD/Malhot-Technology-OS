@@ -4,7 +4,7 @@ import { Menu } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
+import { SiteButton } from "@/components/marketing/site-button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { primaryNav, site } from "@/content/site";
 
@@ -15,11 +15,11 @@ export function MobileNav() {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="md:hidden" aria-label="Open menu">
+        <SiteButton variant="secondary" size="sm" className="size-10 px-0 md:hidden" aria-label="Open menu">
           <Menu aria-hidden="true" />
-        </Button>
+        </SiteButton>
       </SheetTrigger>
-      <SheetContent side="right" data-theme="dark" className="w-80 bg-bg text-fg">
+      <SheetContent side="right" data-theme="light" data-surface="site" className="w-80 bg-white text-fg">
         <SheetHeader>
           <SheetTitle>{site.name}</SheetTitle>
           <SheetDescription className="sr-only">Site navigation</SheetDescription>
@@ -30,19 +30,19 @@ export function MobileNav() {
               key={item.href}
               href={item.href}
               onClick={() => setOpen(false)}
-              className="rounded-md px-3 py-3 text-lg font-medium transition-colors duration-[120ms] hover:bg-surface"
+              className="rounded-lg px-3 py-3 text-lg font-semibold transition-colors duration-[120ms] hover:bg-bg-subtle"
             >
               {item.label}
             </Link>
           ))}
         </nav>
         <div className="mt-auto flex flex-col gap-2 p-4">
-          <Button asChild size="lg" onClick={() => setOpen(false)}>
+          <SiteButton asChild size="lg" onClick={() => setOpen(false)}>
             <Link href="/contact">Start a project</Link>
-          </Button>
-          <Button asChild variant="outline" size="lg" onClick={() => setOpen(false)}>
-            <Link href="/login">Log in</Link>
-          </Button>
+          </SiteButton>
+          <SiteButton asChild variant="secondary" size="lg" onClick={() => setOpen(false)}>
+            <Link href="/login">Team login</Link>
+          </SiteButton>
         </div>
       </SheetContent>
     </Sheet>

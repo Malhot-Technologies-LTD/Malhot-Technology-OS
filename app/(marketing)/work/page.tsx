@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { CaseStudyCard, CtaBand, PageHero } from "@/components/marketing/blocks";
-import { Section } from "@/components/marketing/section";
+import { Accent, Section } from "@/components/marketing/section";
 import { getService, services } from "@/content/services";
 import { caseStudies } from "@/content/work";
 import { cn } from "@/lib/utils";
@@ -17,7 +17,7 @@ function first(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
 
-/** Filter by service area via ?service=<slug>; a plain link list keeps this static and crawlable. */
+/** Filter by service area via ?service=<slug>; plain links keep this crawlable. */
 export default async function WorkPage({ searchParams }: PageProps<"/work">) {
   const params = await searchParams;
   const active = first(params.service);
@@ -28,13 +28,17 @@ export default async function WorkPage({ searchParams }: PageProps<"/work">) {
   return (
     <>
       <PageHero
-        eyebrow="Selected work"
-        title="Problems we have solved"
+        eyebrow="Our projects"
+        title={
+          <>
+            Problems we have <Accent>solved</Accent>
+          </>
+        }
         lede="Each study covers the problem, the solution, our role, the technology and the outcome. Client names appear only with permission."
       />
 
-      <Section tone="light" className="pt-0 md:pt-0 lg:pt-0">
-        <nav aria-label="Filter by service" className="flex flex-wrap gap-2 border-t border-border pt-8">
+      <Section className="pt-10 md:pt-12 lg:pt-14">
+        <nav aria-label="Filter by service" className="flex flex-wrap justify-center gap-2">
           <FilterLink href="/work" active={!activeService}>
             All
           </FilterLink>
@@ -60,9 +64,9 @@ export default async function WorkPage({ searchParams }: PageProps<"/work">) {
             ))}
           </div>
         ) : (
-          <p className="mt-10 text-fg-muted">
+          <p className="mt-10 text-center text-fg-muted">
             No case studies for that service yet.{" "}
-            <Link href="/work" className="text-fg underline-offset-4 hover:underline">
+            <Link href="/work" className="font-semibold text-brand hover:underline">
               Show all work
             </Link>
           </p>
@@ -80,8 +84,10 @@ function FilterLink({ href, active, children }: { href: string; active: boolean;
       href={href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "rounded-md border px-3 py-1.5 text-sm transition-colors duration-[120ms]",
-        active ? "border-fg bg-fg text-bg" : "border-border text-fg-muted hover:border-border-strong hover:text-fg",
+        "rounded-full border px-4 py-2 text-sm font-medium transition-colors duration-[120ms]",
+        active
+          ? "border-transparent bg-brand text-white"
+          : "border-border bg-white text-fg-muted hover:border-border-strong hover:text-fg",
       )}
     >
       {children}

@@ -5,7 +5,7 @@
 export const site = {
   name: "Malhot Technologies",
   shortName: "Malhot",
-  tagline: "We design, build and ship software systems.",
+  tagline: "Software that ships. Systems that last.",
   description:
     "Malhot Technologies is a software company that designs, builds and ships websites, web applications, backend systems and automation for clients who need software that works.",
   location: "Kigali, Rwanda",
