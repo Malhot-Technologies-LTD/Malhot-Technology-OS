@@ -49,3 +49,19 @@ export const updateProfileSchema = z.object({
 });
 export type UpdateProfileInput = z.input<typeof updateProfileSchema>;
 export type UpdateProfileOutput = z.output<typeof updateProfileSchema>;
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Enter your current password").max(256),
+    password: z.string().min(PASSWORD_MIN_LENGTH, `Use at least ${PASSWORD_MIN_LENGTH} characters`).max(256),
+    confirmPassword: z.string(),
+  })
+  .refine((v) => v.password === v.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "Passwords do not match",
+  })
+  .refine((v) => v.password !== v.currentPassword, {
+    path: ["password"],
+    message: "The new password must be different from the current one",
+  });
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;

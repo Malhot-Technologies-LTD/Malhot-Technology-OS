@@ -79,9 +79,15 @@ Security notes: raw tokens are never stored; tokens are single-use; email must m
 
 `/forgot-password` → `resetPasswordForEmail(email, { redirectTo: /auth/callback?next=/reset-password })` → `/reset-password` → `updateUser({ password })`. Always show the same success message regardless of whether the email exists.
 
+## Changing a password
+
+`Settings → Password` (`/os/settings/password`) calls `changePassword`, which re-authenticates the caller before `updateUser({ password })`. Re-authentication runs `signInWithPassword` on a throwaway publishable-key client (`lib/supabase/password-check.ts`) that never persists a session, so proving the current password cannot disturb the caller's own cookies. A wrong current password comes back as a field error, and Supabase Auth rate-limits the attempts. This is the in-app path; `/reset-password` remains the path for people who cannot sign in at all.
+
 ## Bootstrap (first organisation)
 
 A one-time CLI script `scripts/bootstrap-org.ts` (run locally with the secret key against the target environment) creates the first owner user via Auth Admin, the organisation, and the owner membership. It refuses to run if any organisation exists. No UI for this: it is a one-off operational step and having a public "create organisation" screen would be an attack surface.
+
+`scripts/reset-owner.ts` is its recovery twin: when the owner password is lost and no reset email can be received, it deletes the owner's auth user and creates a fresh one with the same email. It parks the old address, creates and promotes the replacement, re-points `invitations.invited_by` / `clients.created_by` / `inquiries.handled_by`, and only then deletes the old user — so the "an organisation always keeps at least one owner" invariant holds at every step.
 
 ## Auth callback and open-redirect protection
 

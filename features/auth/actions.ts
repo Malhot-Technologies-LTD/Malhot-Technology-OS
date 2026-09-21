@@ -10,10 +10,12 @@ import { requireViewer } from "@/lib/auth/context";
 import { safeNext } from "@/lib/auth/redirects";
 import { siteUrl } from "@/lib/env";
 import { logger } from "@/lib/logger";
+import { verifyPassword } from "@/lib/supabase/password-check";
 import { createClient } from "@/lib/supabase/server";
 
 import { authErrorMessage } from "./lib/auth-errors";
 import {
+  changePasswordSchema,
   forgotPasswordSchema,
   magicLinkSchema,
   resetPasswordSchema,
@@ -121,5 +123,41 @@ export const updateProfile = withAction("auth.updateProfile", async (input: unkn
   if (error) return fail("unexpected", "Your profile could not be saved. Try again.");
 
   revalidatePath("/os", "layout");
+  return ok(undefined);
+});
+
+/**
+ * Settings → Password. Unlike updatePassword (which trusts a one-time recovery
+ * link) this proves the caller knows the current password before changing it,
+ * so a borrowed, still-signed-in browser cannot lock the owner out.
+ */
+export const changePassword = withAction("auth.changePassword", async (input: unknown): Promise<ActionResult> => {
+  const parsed = changePasswordSchema.safeParse(input);
+  if (!parsed.success) return validationFail(parsed.error);
+  const viewer = await requireViewer();
+  if (!viewer.email) return fail("forbidden", "This account has no email address, so it has no password to change.");
+
+  const check = await verifyPassword(viewer.email, parsed.data.currentPassword);
+  if (!check.ok) {
+    logger.info("auth.password.reauth_failed", { code: check.code });
+    const message =
+      check.code === "invalid_credentials"
+        ? "That is not your current password."
+        : authErrorMessage({ code: check.code });
+    return fail("validation", message, { fieldErrors: { currentPassword: [message] } });
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
+  if (error) {
+    const message = authErrorMessage(error);
+    if (error.code === "weak_password" || error.code === "same_password") {
+      return fail("validation", message, { fieldErrors: { password: [message] } });
+    }
+    logger.warn("auth.password.change_failed", { code: error.code });
+    return fail("external", message);
+  }
+
+  logger.info("auth.password.changed", { userId: viewer.userId });
   return ok(undefined);
 });

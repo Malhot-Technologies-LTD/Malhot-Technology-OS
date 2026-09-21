@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 
 const SECTIONS = [
   { label: "Profile", href: "/os/settings/profile", adminOnly: false },
+  { label: "Password", href: "/os/settings/password", adminOnly: false },
   { label: "Appearance", href: "/os/settings/appearance", adminOnly: false },
   { label: "Enquiries", href: "/os/settings/inquiries", adminOnly: true },
 ] as const;
