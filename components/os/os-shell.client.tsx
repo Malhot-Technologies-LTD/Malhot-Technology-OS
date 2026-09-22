@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState, type ReactNode } from "react";
 
 import { AppSidebar, type SidebarUser } from "@/components/os/app-sidebar.client";
+import { Breadcrumbs } from "@/components/os/breadcrumbs.client";
 import { CommandPalette } from "@/components/os/command-palette.client";
 import { Button } from "@/components/ui/button";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -37,13 +38,16 @@ export function OsShell({ user, defaultCollapsed, children }: Props) {
       <div className="flex h-dvh overflow-hidden">
         <AppSidebar collapsed={collapsed} onToggle={toggle} user={user} />
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b border-border bg-surface px-4">
-            <CommandPalette />
-            <Button asChild variant="ghost" size="icon-sm" aria-label="Notifications">
-              <Link href="/os/notifications">
-                <Bell aria-hidden="true" />
-              </Link>
-            </Button>
+          <header className="flex h-14 shrink-0 items-center gap-4 border-b border-border bg-surface px-6">
+            <Breadcrumbs />
+            <div className="ml-auto flex items-center gap-2">
+              <CommandPalette />
+              <Button asChild variant="ghost" size="icon-sm" aria-label="Notifications">
+                <Link href="/os/notifications">
+                  <Bell aria-hidden="true" />
+                </Link>
+              </Button>
+            </div>
           </header>
           <main id="os-main" className="flex-1 overflow-y-auto">
             {children}

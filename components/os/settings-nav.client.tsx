@@ -9,6 +9,7 @@ const SECTIONS = [
   { label: "Profile", href: "/os/settings/profile", adminOnly: false },
   { label: "Password", href: "/os/settings/password", adminOnly: false },
   { label: "Appearance", href: "/os/settings/appearance", adminOnly: false },
+  { label: "Members", href: "/os/settings/members", adminOnly: true },
   { label: "Enquiries", href: "/os/settings/inquiries", adminOnly: true },
 ] as const;
 
@@ -25,7 +26,7 @@ export function SettingsNav({ isAdmin }: { isAdmin: boolean }) {
             aria-current={active ? "page" : undefined}
             className={cn(
               "rounded-md px-2.5 py-1.5 text-sm text-fg-muted transition-colors duration-[120ms] hover:bg-bg-subtle hover:text-fg",
-              active && "bg-bg-subtle font-medium text-fg",
+              active && "bg-brand-subtle font-medium text-brand",
             )}
           >
             {section.label}

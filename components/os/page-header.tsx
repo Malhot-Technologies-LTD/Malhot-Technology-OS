@@ -22,7 +22,7 @@ export function PageHeader({ title, description, actions, className }: Props) {
   );
 }
 
-/** Standard content frame: 24px padding per docs/design/design-system.md#os. */
+/** Standard content frame: 32px padding, capped width so wide screens do not stretch rows. */
 export function PageBody({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn("flex flex-col gap-6 p-6", className)}>{children}</div>;
+  return <div className={cn("mx-auto flex w-full max-w-7xl flex-col gap-8 p-8", className)}>{children}</div>;
 }

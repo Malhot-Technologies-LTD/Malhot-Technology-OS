@@ -18,7 +18,8 @@ export function NoAccess({ email }: { email: string | null }) {
             ) : (
               "Your account is not a member of Malhot."
             )}{" "}
-            Ask an admin for an invitation, then open the link they send you.
+            Your account exists and is waiting for an admin to approve it. You will get a role — usually Member — and
+            the projects you belong to will appear here. Nothing to do but wait; check back shortly.
           </p>
         </div>
         <SignOutButton variant="outline" className="w-full" />

@@ -42,6 +42,7 @@ export default async function OsLayout({ children }: LayoutProps<"/">) {
           email: viewer.email,
           avatarUrl: viewer.profile.avatarUrl,
           organizationName: viewer.organization.name,
+          orgRole: viewer.orgRole,
         }}
       >
         {children}

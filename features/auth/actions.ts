@@ -20,6 +20,7 @@ import {
   magicLinkSchema,
   resetPasswordSchema,
   signInSchema,
+  signUpSchema,
   updateProfileSchema,
 } from "./schemas";
 
@@ -159,5 +160,47 @@ export const changePassword = withAction("auth.changePassword", async (input: un
   }
 
   logger.info("auth.password.changed", { userId: viewer.userId });
+  return ok(undefined);
+});
+
+/**
+ * Self-service sign-up.
+ *
+ * Creating an account does NOT grant access to anything: the new user has no
+ * `organization_members` row, so `getAuthState()` returns `no_access` and they
+ * see the "no organisation access" screen until an admin adds them. That is
+ * deliberate — RLS is keyed on membership, never on merely having an account.
+ *
+ * Always reports success, even when the address already exists, so the form
+ * cannot be used to discover who has an account.
+ */
+export const signUp = withAction("auth.signUp", async (input: unknown): Promise<ActionResult> => {
+  const parsed = signUpSchema.safeParse(input);
+  if (!parsed.success) return validationFail(parsed.error);
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signUp({
+    email: parsed.data.email,
+    password: parsed.data.password,
+    options: {
+      data: { full_name: parsed.data.fullName },
+      emailRedirectTo: `${siteUrl}/auth/callback?next=%2Fos`,
+    },
+  });
+
+  if (error) {
+    if (error.code === "user_already_exists" || error.code === "email_exists") {
+      logger.info("auth.signup.existing_email");
+      return ok(undefined);
+    }
+    if (error.code === "signup_disabled") {
+      return fail("forbidden", "New accounts are not being accepted right now. Ask an admin for an invitation.");
+    }
+    const code = error.code === "weak_password" ? "validation" : "external";
+    logger.warn("auth.signup.failed", { code: error.code });
+    return fail(code, authErrorMessage(error), { fieldErrors: { password: [authErrorMessage(error)] } });
+  }
+
+  logger.info("auth.signup.created");
   return ok(undefined);
 });

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { LoginForm } from "@/features/auth/components/login-form.client";
 import { callbackErrorMessage } from "@/features/auth/lib/auth-errors";
@@ -27,9 +28,15 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
         <h1 className="text-xl font-semibold tracking-tight">Sign in to Malhot OS</h1>
-        <p className="text-sm text-fg-muted">Access is by invitation only.</p>
+        <p className="text-sm text-fg-muted">Sign in to continue.</p>
       </div>
       <LoginForm next={next} initialError={initialError} />
+      <p className="text-sm text-fg-muted">
+        No account yet?{" "}
+        <Link href="/signup" className="font-medium text-brand hover:underline">
+          Create one
+        </Link>
+      </p>
     </div>
   );
 }

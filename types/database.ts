@@ -2,7 +2,9 @@
  * GENERATED — do not edit by hand.
  * Regenerate after every migration with `npm run db:types`
  * (requires SUPABASE_ACCESS_TOKEN; see docs/engineering/environment-variables.md).
- * Source: supabase gen types typescript, project moqmqosagtwlpxeqpknn, 2026-09-16 (migration 0005).
+ * Source: PostgREST schema of project moqmqosagtwlpxeqpknn, 2026-09-21 (migration 0006).
+ * Hand-written for migration 0006 because the CLI could not be authenticated;
+ * `npm run db:types` regenerates and CI's drift check confirms it.
  */
 
 export type Json =
@@ -71,6 +73,70 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      goals: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          owner_id: string | null
+          position: number
+          project_id: string
+          status: Database["public"]["Enums"]["goal_status"]
+          success_criteria: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          owner_id?: string | null
+          position: number
+          project_id: string
+          status?: Database["public"]["Enums"]["goal_status"]
+          success_criteria?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          owner_id?: string | null
+          position?: number
+          project_id?: string
+          status?: Database["public"]["Enums"]["goal_status"]
+          success_criteria?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goals_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goals_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goals_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -216,6 +282,127 @@ export type Database = {
           },
         ]
       }
+      milestones: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          due_date: string
+          id: string
+          overdue_notified_at: string | null
+          position: number
+          project_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          due_date: string
+          id?: string
+          overdue_notified_at?: string | null
+          position: number
+          project_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          due_date?: string
+          id?: string
+          overdue_notified_at?: string | null
+          position?: number
+          project_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "milestones_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "milestones_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mvp_items: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          goal_id: string | null
+          id: string
+          position: number
+          priority: Database["public"]["Enums"]["priority"]
+          project_id: string
+          status: Database["public"]["Enums"]["mvp_item_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          goal_id?: string | null
+          id?: string
+          position: number
+          priority?: Database["public"]["Enums"]["priority"]
+          project_id: string
+          status?: Database["public"]["Enums"]["mvp_item_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          goal_id?: string | null
+          id?: string
+          position?: number
+          priority?: Database["public"]["Enums"]["priority"]
+          project_id?: string
+          status?: Database["public"]["Enums"]["mvp_item_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mvp_items_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mvp_items_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mvp_items_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_members: {
         Row: {
           created_at: string
@@ -324,15 +511,202 @@ export type Database = {
         }
         Relationships: []
       }
+      project_members: {
+        Row: {
+          added_by: string | null
+          created_at: string
+          id: string
+          project_id: string
+          role: Database["public"]["Enums"]["project_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          added_by?: string | null
+          created_at?: string
+          id?: string
+          project_id: string
+          role?: Database["public"]["Enums"]["project_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          added_by?: string | null
+          created_at?: string
+          id?: string
+          project_id?: string
+          role?: Database["public"]["Enums"]["project_role"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_members_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_members_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_sequences: {
+        Row: {
+          bug_seq: number
+          project_id: string
+          task_seq: number
+        }
+        Insert: {
+          bug_seq?: number
+          project_id: string
+          task_seq?: number
+        }
+        Update: {
+          bug_seq?: number
+          project_id?: string
+          task_seq?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_sequences_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: true
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          actual_end_date: string | null
+          archived_at: string | null
+          client_id: string | null
+          created_at: string
+          created_by: string
+          deleted_at: string | null
+          description: string | null
+          health_override: Database["public"]["Enums"]["project_health"] | null
+          health_override_at: string | null
+          id: string
+          key: string
+          manager_id: string | null
+          name: string
+          organization_id: string
+          priority: Database["public"]["Enums"]["priority"]
+          qa_required: boolean
+          start_date: string | null
+          status: Database["public"]["Enums"]["project_status"]
+          target_end_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          actual_end_date?: string | null
+          archived_at?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by: string
+          deleted_at?: string | null
+          description?: string | null
+          health_override?: Database["public"]["Enums"]["project_health"] | null
+          health_override_at?: string | null
+          id?: string
+          key: string
+          manager_id?: string | null
+          name: string
+          organization_id: string
+          priority?: Database["public"]["Enums"]["priority"]
+          qa_required?: boolean
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["project_status"]
+          target_end_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          actual_end_date?: string | null
+          archived_at?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string
+          deleted_at?: string | null
+          description?: string | null
+          health_override?: Database["public"]["Enums"]["project_health"] | null
+          health_override_at?: string | null
+          id?: string
+          key?: string
+          manager_id?: string | null
+          name?: string
+          organization_id?: string
+          priority?: Database["public"]["Enums"]["priority"]
+          qa_required?: boolean
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["project_status"]
+          target_end_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
       auth_uid: { Args: never; Returns: string }
+      can_contribute: { Args: { project: string }; Returns: boolean }
+      can_manage_project: { Args: { project: string }; Returns: boolean }
       is_org_admin: { Args: { org: string }; Returns: boolean }
       is_org_member: { Args: { org: string }; Returns: boolean }
       is_org_owner: { Args: { org: string }; Returns: boolean }
+      is_project_member: { Args: { project: string }; Returns: boolean }
+      next_project_sequence: { Args: { kind: string; project: string }; Returns: number }
+      project_group_of: { Args: { project: string }; Returns: string }
+      project_is_writable: { Args: { project: string }; Returns: boolean }
+      project_org: { Args: { project: string }; Returns: string }
+      project_role_of: {
+        Args: { project: string }
+        Returns: Database["public"]["Enums"]["project_role"]
+      }
       raise_malhot: {
         Args: { code: string; detail: string }
         Returns: undefined

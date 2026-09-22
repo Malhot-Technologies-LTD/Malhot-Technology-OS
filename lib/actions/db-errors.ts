@@ -8,6 +8,8 @@ const UNIQUE_MESSAGES: Record<string, string> = {
   organization_members_organization_id_user_id_key: "That person is already a member.",
   invitations_pending_email_idx: "An invitation for that email is already pending.",
   clients_organization_id_name_key: "A client with that name already exists.",
+  projects_organization_id_key_key: "That project key is already used by another project.",
+  project_members_project_id_user_id_key: "That person is already on this project.",
 };
 
 const MALHOT_PREFIX = "MALHOT:";

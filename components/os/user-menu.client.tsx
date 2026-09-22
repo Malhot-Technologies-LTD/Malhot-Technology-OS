@@ -6,6 +6,7 @@ import { useTransition } from "react";
 import { toast } from "sonner";
 
 import type { SidebarUser } from "@/components/os/app-sidebar.client";
+import { ORG_ROLE_META, RoleBadge } from "@/components/os/role-badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -50,7 +51,13 @@ export function UserMenu({ user, collapsed }: { user: SidebarUser; collapsed: bo
         ) : null}
       </DropdownMenuTrigger>
       <DropdownMenuContent side="top" align="start" className="w-56">
-        <DropdownMenuLabel className="truncate">{displayName}</DropdownMenuLabel>
+        <DropdownMenuLabel className="flex flex-col gap-1.5">
+          <span className="truncate">{displayName}</span>
+          <span className="flex items-center gap-2 font-normal">
+            <RoleBadge role={user.orgRole} />
+            <span className="truncate text-xs text-fg-muted">{ORG_ROLE_META[user.orgRole].summary}</span>
+          </span>
+        </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link href="/os/settings/profile">

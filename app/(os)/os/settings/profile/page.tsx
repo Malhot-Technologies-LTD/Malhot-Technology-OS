@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { ORG_ROLE_META, RoleBadge } from "@/components/os/role-badge";
 import { ProfileForm } from "@/features/auth/components/profile-form.client";
 import { requireViewer } from "@/lib/auth/context";
 
@@ -21,6 +22,31 @@ export default async function ProfileSettingsPage() {
         timezone={viewer.profile.timezone}
         email={viewer.email}
       />
+
+      <div className="flex max-w-xl flex-col gap-3 rounded-lg border border-border bg-surface p-5">
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-medium">Your access</h3>
+          <RoleBadge role={viewer.orgRole} />
+        </div>
+        <p className="text-sm text-fg-muted">
+          {ORG_ROLE_META[viewer.orgRole].summary} in {viewer.organization.name}.
+        </p>
+        <ul className="flex flex-col gap-1.5 text-sm text-fg-muted">
+          {ORG_ROLE_META[viewer.orgRole].detail.map((line) => (
+            <li key={line} className="flex gap-2">
+              <span aria-hidden="true" className="text-fg-subtle">
+                ·
+              </span>
+              {line}
+            </li>
+          ))}
+        </ul>
+        <p className="text-sm text-fg-subtle">
+          {viewer.orgRole === "member"
+            ? "Only an organisation admin can change this."
+            : "Roles are managed under Settings → Members."}
+        </p>
+      </div>
     </section>
   );
 }

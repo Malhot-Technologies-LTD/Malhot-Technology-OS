@@ -5,16 +5,19 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { PRIMARY_NAV, isActive } from "@/components/os/nav";
+import { RoleBadge } from "@/components/os/role-badge";
 import { UserMenu } from "@/components/os/user-menu.client";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import type { OrgRole } from "@/types/domain";
 
 export type SidebarUser = {
   fullName: string;
   email: string | null;
   avatarUrl: string | null;
   organizationName: string;
+  orgRole: OrgRole;
 };
 
 type Props = { collapsed: boolean; onToggle: () => void; user: SidebarUser };
@@ -39,9 +42,12 @@ export function AppSidebar({ collapsed, onToggle, user }: Props) {
         )}
       >
         {!collapsed ? (
-          <Link href="/os" className="truncate text-sm font-semibold tracking-tight" title={user.organizationName}>
-            {user.organizationName}
-          </Link>
+          <div className="flex min-w-0 items-center gap-2">
+            <Link href="/os" className="truncate text-sm font-semibold tracking-tight" title={user.organizationName}>
+              {user.organizationName}
+            </Link>
+            <RoleBadge role={user.orgRole} />
+          </div>
         ) : null}
         <Button
           type="button"
@@ -55,7 +61,7 @@ export function AppSidebar({ collapsed, onToggle, user }: Props) {
         </Button>
       </div>
 
-      <nav aria-label="Sections" className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
+      <nav aria-label="Sections" className="flex flex-1 flex-col gap-1 overflow-y-auto p-4">
         {PRIMARY_NAV.map((item) => (
           <NavLink
             key={item.href}
@@ -68,7 +74,7 @@ export function AppSidebar({ collapsed, onToggle, user }: Props) {
         ))}
       </nav>
 
-      <div className="flex flex-col gap-1 border-t border-border p-3">
+      <div className="flex flex-col gap-1 border-t border-border p-4">
         <NavLink
           href="/os/notifications"
           label="Notifications"
@@ -107,8 +113,11 @@ function NavLink({
       href={href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "flex h-10 items-center gap-3 rounded-md px-3 text-[15px] text-fg-muted transition-colors duration-[120ms] hover:bg-surface hover:text-fg",
-        active && "bg-surface font-medium text-fg shadow-s",
+        "relative flex h-10 items-center gap-3 rounded-md px-3 text-sm text-fg-muted transition-colors duration-[120ms] hover:bg-surface hover:text-fg",
+        // Selected section carries the brand accent: colour here means "you are
+        // here", which is the one thing navigation has to communicate.
+        active &&
+          "bg-brand-subtle font-medium text-brand before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:rounded-full before:bg-brand before:content-['']",
         collapsed && "justify-center px-0",
       )}
     >

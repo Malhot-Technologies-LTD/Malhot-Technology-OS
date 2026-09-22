@@ -20,7 +20,7 @@ export const dynamic = "force-dynamic";
  * Supabase failures arrive as `?error=…&error_code=…&error_description=…`.
  */
 
-const otpType = z.enum(["invite", "recovery", "magiclink", "email", "email_change"]);
+const otpType = z.enum(["signup", "invite", "recovery", "magiclink", "email", "email_change"]);
 
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;

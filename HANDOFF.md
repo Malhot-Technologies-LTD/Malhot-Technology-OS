@@ -1,12 +1,23 @@
 # HANDOFF
 
 ## Current Task
-Phase 2 — Public website (`docs/product/public-website.md`, `docs/planning/implementation-phases.md`). Goal: all pages, contact form → enquiries in the OS, SEO artefacts, analytics, Lighthouse and axe budgets; launch gated on real content (OD-7).
+Phase 3 — Organisation, projects, goals, MVP (`docs/features/projects.md`, `docs/planning/implementation-phases.md`). A thin vertical slice is live; the rest of Phase 3 is listed under Progress.
 
 ## Status
-Built and verified. **UI redesigned again on 2026-09-17** after owner feedback that the site did not look professional. Register is now a conventional business site: white reading surface, light-grey alternating sections, navy for the closing CTA and footer, one blue accent. Earlier attempts (photography/card style, then a dark-hero style with animated brand geometry) were both rejected — the owner asked for "simple but good". Launch is blocked on content (`content/README.md`), not engineering.
+Migration 0006 applied to the hosted project (2026-09-21) and the first slice of Phase 3 is working end to end: create a project, see it listed, open its overview, add goals and MVP items, activate it. Verified against the live database as the signed-in owner, so the RLS policies — not just the service role — are known good.
 
 ## Progress
+### Phase 3 (in progress)
+- [x] Migration 0006: `projects`, `project_sequences`, `project_members`, `goals`, `mvp_items`, `milestones`; helpers `project_org/_role_of/_group_of`, `is_project_member`, `can_manage_project`, `can_contribute`, `project_is_writable`, `next_project_sequence`; triggers `setup_new_project`, `member_must_be_in_org`, `mvp_item_goal_same_project`, `enforce_goal_achieve`, `enforce_project_status_transition`; RLS on all six tables
+- [x] `lib/permissions.ts` — the full matrix from `docs/product/user-roles.md` (all 50 actions, not just Phase 3), 245 table-driven tests
+- [x] Project list `/os/projects`, basics-only create `/os/projects/new`, overview `/os/projects/[key]` with readiness checklist, goals/MVP quick-add and status transitions
+- [x] `projects` removed from `PLANNED_SECTIONS`; `db:types` no longer hardcodes a project ref (`scripts/gen-types.mjs`)
+- [ ] `types/database.ts` for 0006 was **hand-written** (the CLI could not be authenticated). Regenerate with `npm run db:types` once a token or `SUPABASE_DB_PASSWORD` exists; CI's drift check will confirm it
+- [ ] Full 8-step wizard, project settings, members/invitations UI, org settings, permissions page, team page
+- [ ] Goals & MVP page (reordering, linking, traceability); milestones UI (Phase 5)
+- [ ] `project_progress()` / `project_health()` — deferred to migration 0007, they count tasks and bugs
+- [ ] RLS matrix integration tests for the new tables; e2e journeys 3 to 4
+
 - [x] Migration 0005 `inquiries` + `inquiry_rate_limits` + `submit_inquiry()` (service-role only, atomic per-IP hourly limit); types regenerated; advisor clean
 - [x] Typed content (`content/*.ts`) with `placeholder: true` flags and a visible marker; `content/README.md` lists the content gaps
 - [x] Pages: `/`, `/about`, `/services`, `/work`, `/work/[slug]`, `/process`, `/contact`, `/privacy`; website register in `[data-surface="site"]` tokens, composed from the `components/marketing/section.tsx` primitives; header/footer carry the mark as SVG; login styled to match
@@ -21,6 +32,20 @@ Built and verified. **UI redesigned again on 2026-09-17** after owner feedback t
 - [ ] Deferred to Phase 4: `inquiry_received` notification to admins (needs `notifications` + `emit_event`); daily prune of `inquiry_rate_limits` (W9 cron)
 
 ## Working Notes
+- **OS visual register decided 2026-09-22: the Vercel dashboard direction**, chosen by the owner from a
+  side-by-side of Linear / Vercel / Notion. Airy and high contrast: near-black text (`--fg` oklch 0.145),
+  page recedes to light grey so white cards read as raised, borders separate rather than shadows, 32px page
+  padding, 20px card padding, content capped at `max-w-7xl`, radius 6/8/12. Primary buttons are **neutral
+  ink, not brand** (`--ink`), which keeps the cobalt accent meaningful where it does appear: active nav,
+  links, focus rings, progress fill. Projects render as a **card grid, not a table** — the owner picked
+  "cards not rows" explicitly.
+- **`/preview` is a dev-only component gallery** (`app/(dev)/preview`). It renders the real components,
+  fonts and tokens with fixture data and needs no session, which is the only practical way to review OS
+  design without signing in. It calls `notFound()` when `NODE_ENV === "production"`.
+- The website register is insulated from all of the above: `[data-surface="site"]` overrides radius (3/5/8)
+  and colour, so OS changes never touch the approved marketing pages.
+- `--accent` is the shadcn alias for `--brand-subtle` (a pale tint), **not** the cobalt. Use `bg-brand` for
+  anything that should read as the accent; `bg-accent` renders nearly invisible.
 - **Design register (current, 2026-09-17).** Primitives live in `components/marketing/section.tsx` (Container, Section with tone light/subtle/ink, Eyebrow, Display, Title, Accent, SectionHead, ChevronList) — the type scale and section rhythm are decided there, not per page. Do not re-decide them inline.
   - White header (`site-header.tsx`), hero is **type only and centred** (no graphic, no logo — the owner removed it explicitly), promise strip under it, then alternating white / `bg-subtle` sections, navy `CtaBand`, navy footer.
   - Rejected and not to be reintroduced without asking: dark hero band, animated/drifting geometry, texture overlays, gradient glows, hover lifts, oversized display type, mono/tabular index numerals everywhere. The decorative CSS layer that carried these was deleted from `app/globals.css`.

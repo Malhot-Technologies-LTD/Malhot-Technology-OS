@@ -65,3 +65,16 @@ export const changePasswordSchema = z
     message: "The new password must be different from the current one",
   });
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+
+export const signUpSchema = z
+  .object({
+    fullName: z.string().trim().min(1, "Enter your name").max(120),
+    email,
+    password: z.string().min(PASSWORD_MIN_LENGTH, `Use at least ${PASSWORD_MIN_LENGTH} characters`).max(256),
+    confirmPassword: z.string(),
+  })
+  .refine((v) => v.password === v.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "Passwords do not match",
+  });
+export type SignUpInput = z.infer<typeof signUpSchema>;

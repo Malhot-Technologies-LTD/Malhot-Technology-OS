@@ -28,7 +28,6 @@ export const PRIMARY_NAV: readonly NavItem[] = [
 
 /** Sections whose pages are delivered in later phases; the placeholder route renders for these only. */
 export const PLANNED_SECTIONS: Readonly<Record<string, { label: string; phase: number }>> = {
-  projects: { label: "Projects", phase: 3 },
   "my-tasks": { label: "My Tasks", phase: 4 },
   timeline: { label: "Timeline", phase: 5 },
   documents: { label: "Documents", phase: 7 },

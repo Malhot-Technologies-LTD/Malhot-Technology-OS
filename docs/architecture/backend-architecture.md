@@ -19,6 +19,8 @@ Rule: **a Server Action never uses the service-role client.** If a user flow nee
 | `processWebhookEvent(delivery)` | GitHub, not a user |
 | `runDailyJobs()` | Cron, not a user |
 | `bootstrapOrganisation(ownerUserId)` | First-run only, guarded by "no organisation exists" |
+| `listAccessRequests(requesterUserId, orgId)` | People who signed up have no membership, so the `profiles` policy hides them and their email lives in `auth.users`; re-checks the requester is an org admin |
+| `rejectAccessRequest(requesterUserId, orgId, targetUserId)` | Deleting an auth user needs the Admin API; re-checks org admin and refuses anyone who is already a member |
 
 ## Server Action contract
 
