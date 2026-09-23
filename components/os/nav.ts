@@ -11,6 +11,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import { canSeeSection, type NavAudience } from "@/components/os/nav-audience";
 import type { OrgRole } from "@/types/domain";
 
 /** Primary navigation (docs/product/malhot-os.md#navigation). Order matters. */
@@ -53,6 +54,24 @@ export const SETTINGS_CHILDREN: readonly NavChild[] = [
   { label: "Members", href: "/os/settings/members", adminOnly: true },
   { label: "Enquiries", href: "/os/settings/inquiries", adminOnly: true },
 ];
+
+/**
+ * The groups this person should actually see, with empty groups dropped.
+ *
+ * Filtering here rather than in the sidebar keeps one answer for the sidebar,
+ * the command palette and anything else that offers a destination — an item
+ * hidden from the nav but reachable from the palette is the same bug twice.
+ */
+export function visibleGroups(audience: NavAudience): NavGroup[] {
+  return NAV_GROUPS.map((group) => ({
+    label: group.label,
+    items: group.items.filter((item) => canSeeSection(item.href, audience)),
+  })).filter((group) => group.items.length > 0);
+}
+
+export function visibleNavItems(audience: NavAudience): NavItem[] {
+  return PRIMARY_NAV.filter((item) => canSeeSection(item.href, audience));
+}
 
 export function visibleChildren(children: readonly NavChild[] | undefined, role: OrgRole): readonly NavChild[] {
   if (!children) return [];

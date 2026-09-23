@@ -288,3 +288,19 @@ export async function listOrganizationMemberships(organizationId: string) {
     .is("project.deleted_at", null)
     .returns<(MembershipRow & { project: { organization_id: string; deleted_at: string | null } | null })[]>();
 }
+
+/**
+ * Every project role this person holds, for deciding what belongs in their
+ * sidebar. One narrow query per OS request, and RLS already scopes
+ * `project_members` to projects they belong to, so no organisation filter is
+ * needed — asking for "my rows" is the whole question.
+ *
+ * Failure returns an empty list rather than throwing: a sidebar missing two
+ * optional sections is a far better outcome than an OS that will not render.
+ */
+export async function listViewerProjectRoles(userId: string): Promise<ProjectRole[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("project_members").select("role").eq("user_id", userId);
+  if (error) return [];
+  return (data ?? []).map((row) => row.role as ProjectRole);
+}

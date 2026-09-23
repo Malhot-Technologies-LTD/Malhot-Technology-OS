@@ -6,6 +6,7 @@ import { NoAccess } from "@/components/os/no-access";
 import { OsShell, SIDEBAR_COOKIE } from "@/components/os/os-shell.client";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { listViewerProjectRoles } from "@/features/projects/queries";
 import { getAuthState } from "@/lib/auth/context";
 
 export const metadata: Metadata = {
@@ -30,13 +31,15 @@ export default async function OsLayout({ children }: LayoutProps<"/">) {
   }
 
   const { viewer } = state;
-  const cookieStore = await cookies();
+  // Decides which sections belong in this person's sidebar; see components/os/nav-audience.ts.
+  const [projectRoles, cookieStore] = await Promise.all([listViewerProjectRoles(viewer.userId), cookies()]);
   const defaultCollapsed = cookieStore.get(SIDEBAR_COOKIE)?.value === "collapsed";
 
   return (
     <ThemeProvider>
       <OsShell
         defaultCollapsed={defaultCollapsed}
+        audience={{ orgRole: viewer.orgRole, projectRoles }}
         user={{
           fullName: viewer.profile.fullName,
           email: viewer.email,

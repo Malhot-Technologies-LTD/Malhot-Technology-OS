@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState, type ReactNode } from "react";
 
 import { AppSidebar, type SidebarUser } from "@/components/os/app-sidebar.client";
+import type { NavAudience } from "@/components/os/nav-audience";
 import { Breadcrumbs } from "@/components/os/breadcrumbs.client";
 import { CommandPalette } from "@/components/os/command-palette.client";
 import { ThemeSwitch } from "@/components/os/theme-toggle.client";
@@ -13,7 +14,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 
 export const SIDEBAR_COOKIE = "os_sidebar";
 
-type Props = { user: SidebarUser; defaultCollapsed: boolean; children: ReactNode };
+type Props = { user: SidebarUser; defaultCollapsed: boolean; audience: NavAudience; children: ReactNode };
 
 /**
  * OS chrome: sidebar + topbar around the routed page. Sidebar state persists in
@@ -24,7 +25,7 @@ type Props = { user: SidebarUser; defaultCollapsed: boolean; children: ReactNode
  * it lands in the same place on every page and at every sidebar width — the
  * thing people reach for most stops moving.
  */
-export function OsShell({ user, defaultCollapsed, children }: Props) {
+export function OsShell({ user, defaultCollapsed, audience, children }: Props) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
 
   function toggle() {
@@ -42,13 +43,13 @@ export function OsShell({ user, defaultCollapsed, children }: Props) {
         Skip to content
       </a>
       <div className="flex h-dvh overflow-hidden bg-bg">
-        <AppSidebar collapsed={collapsed} onToggle={toggle} user={user} />
+        <AppSidebar collapsed={collapsed} onToggle={toggle} user={user} audience={audience} />
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="grid h-16 shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-4 border-b border-border bg-bg/85 px-5 backdrop-blur-sm sm:px-7">
             <div className="min-w-0">
               <Breadcrumbs />
             </div>
-            <CommandPalette />
+            <CommandPalette audience={audience} />
             <div className="flex items-center justify-end gap-1.5">
               <ThemeSwitch />
               <Button asChild variant="ghost" size="icon-sm" aria-label="Notifications">

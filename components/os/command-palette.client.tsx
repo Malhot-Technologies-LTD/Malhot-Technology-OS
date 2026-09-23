@@ -4,7 +4,8 @@ import { FolderKanban, Plus, Search, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { PRIMARY_NAV } from "@/components/os/nav";
+import type { NavAudience } from "@/components/os/nav-audience";
+import { visibleNavItems } from "@/components/os/nav";
 import { PROJECT_STATUS, StatusPill } from "@/components/os/status-badge";
 import {
   CommandDialog,
@@ -24,7 +25,7 @@ import { searchableProjects, type PaletteProject } from "@/features/projects/act
  * action, then a section. Projects load once on first open and filter locally,
  * so typing never waits on the network.
  */
-export function CommandPalette() {
+export function CommandPalette({ audience }: { audience: NavAudience }) {
   const [open, setOpen] = useState(false);
   const [projects, setProjects] = useState<PaletteProject[] | null>(null);
   const router = useRouter();
@@ -117,7 +118,7 @@ export function CommandPalette() {
           <CommandSeparator />
 
           <CommandGroup heading="Go to">
-            {PRIMARY_NAV.map((item) => (
+            {visibleNavItems(audience).map((item) => (
               <CommandItem key={item.href} value={item.label} onSelect={() => go(item.href)}>
                 <item.icon aria-hidden="true" />
                 {item.label}

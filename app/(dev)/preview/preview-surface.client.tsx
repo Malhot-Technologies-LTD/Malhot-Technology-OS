@@ -125,6 +125,7 @@ export function PreviewSurface() {
               organizationName: "Malhot Technologies",
               orgRole: "owner",
             }}
+            audience={{ orgRole: "owner", projectRoles: ["manager"] }}
           />
 
           <main className="min-w-0 flex-1">

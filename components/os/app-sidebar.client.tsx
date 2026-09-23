@@ -5,11 +5,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
+import type { NavAudience } from "@/components/os/nav-audience";
 import {
-  NAV_GROUPS,
   SETTINGS_CHILDREN,
   isActive,
   visibleChildren,
+  visibleGroups,
   type NavChild,
   type NavItem,
 } from "@/components/os/nav";
@@ -27,7 +28,7 @@ export type SidebarUser = {
   orgRole: OrgRole;
 };
 
-type Props = { collapsed: boolean; onToggle: () => void; user: SidebarUser };
+type Props = { collapsed: boolean; onToggle: () => void; user: SidebarUser; audience: NavAudience };
 
 const RAIL = "w-16";
 const PANEL = "w-72";
@@ -42,8 +43,10 @@ const PANEL = "w-72";
  * hover state deliberately does not, because a pointer crossing the rail is not
  * a decision about how you want the OS laid out.
  */
-export function AppSidebar({ collapsed, onToggle, user }: Props) {
+export function AppSidebar({ collapsed, onToggle, user, audience }: Props) {
   const pathname = usePathname();
+  // Sections this person has something to read; see nav-audience.ts.
+  const groups = visibleGroups(audience);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
 
@@ -137,7 +140,7 @@ export function AppSidebar({ collapsed, onToggle, user }: Props) {
         </div>
 
         <nav aria-label="Sections" className="flex flex-1 flex-col gap-5 overflow-x-hidden overflow-y-auto px-3 pb-5">
-          {NAV_GROUPS.map((group, index) => (
+          {groups.map((group, index) => (
             <div key={group.label} className="flex flex-col gap-0.5">
               {open ? (
                 <h2 className="truncate px-3 pb-1 text-[11px] font-medium tracking-[0.08em] whitespace-nowrap text-fg-subtle uppercase">

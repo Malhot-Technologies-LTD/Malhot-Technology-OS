@@ -17,6 +17,7 @@ import {
   listProjectMembers,
 } from "@/features/projects/queries";
 import { readinessItems } from "@/features/projects/readiness";
+import { describeQueryFailure } from "@/lib/actions/db-errors";
 import { requireViewer } from "@/lib/auth/context";
 import { can } from "@/lib/permissions";
 import type { GoalStatus, MvpItemStatus } from "@/types/domain";
@@ -45,10 +46,9 @@ export default async function ProjectOverviewPage({ params }: PageProps<"/os/pro
     return (
       <PageBody>
         <PageHeader title={key.toUpperCase()} />
-        <ErrorState
-          title="This project could not be loaded"
-          description="The database did not answer. Try again in a moment."
-        />
+        {/* Not always a timeout: a missing column reads as a refused query,
+            and "try again in a moment" would be advice that cannot work. */}
+        <ErrorState {...describeQueryFailure(error)} />
       </PageBody>
     );
   }
