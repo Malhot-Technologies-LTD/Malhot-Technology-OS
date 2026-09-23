@@ -1,6 +1,8 @@
 import "server-only";
 
 import { groupFor, type ProjectContext } from "@/lib/permissions";
+
+import { readinessBlockers } from "./readiness";
 import { createClient } from "@/lib/supabase/server";
 import type { OrgRole, Priority, ProjectRole, ProjectStatus } from "@/types/domain";
 
@@ -170,11 +172,13 @@ export async function getDashboardProjects(organizationId: string): Promise<Dash
   return (projects.data ?? []).map((project) => {
     const goalCount = goalCounts.get(project.id) ?? 0;
     const mvpCount = mvpCounts.get(project.id) ?? 0;
-    const blockers =
-      (goalCount === 0 ? 1 : 0) +
-      (mvpCount === 0 ? 1 : 0) +
-      (project.manager_id ? 0 : 1) +
-      (project.start_date ? 0 : 1);
+    // Same rule the overview checklist and the Activate action use.
+    const blockers = readinessBlockers({
+      goalCount,
+      mvpCount,
+      managerId: project.manager_id,
+      startDate: project.start_date,
+    }).length;
     return { ...project, goalCount, mvpCount, blockers };
   });
 }

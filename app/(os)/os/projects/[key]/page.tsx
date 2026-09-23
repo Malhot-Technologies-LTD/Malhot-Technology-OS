@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { QuickAdd } from "@/features/projects/components/quick-add.client";
 import { StatusActions } from "@/features/projects/components/status-actions.client";
 import { getProjectByKey, getProjectContext, getProjectPlanning } from "@/features/projects/queries";
+import { readinessItems } from "@/features/projects/readiness";
 import { requireViewer } from "@/lib/auth/context";
 import { can } from "@/lib/permissions";
 import type { GoalStatus, MvpItemStatus } from "@/types/domain";
@@ -64,13 +65,15 @@ export default async function ProjectOverviewPage({ params }: PageProps<"/os/pro
   const canContribute = can(viewer, "goal.create", ctx);
   const writable = project.status !== "archived" || viewer.orgRole !== "member";
 
-  const readiness = [
-    { label: "At least one goal", done: planning.goals.length > 0 },
-    { label: "At least one MVP item", done: planning.mvpItems.length > 0 },
-    { label: "A manager", done: Boolean(project.manager) },
-    { label: "A start date", done: Boolean(project.start_date) },
-    { label: "A milestone", done: planning.milestones.length > 0, optional: true },
-  ];
+  // Same rule the Activate action enforces, from one definition, so the
+  // checklist on screen and the server can never disagree.
+  const readiness = readinessItems({
+    goalCount: planning.goals.length,
+    mvpCount: planning.mvpItems.length,
+    managerId: project.manager?.id ?? null,
+    milestoneCount: planning.milestones.length,
+    startDate: project.start_date,
+  });
   const blocking = readiness.filter((item) => !item.optional && !item.done).length;
 
   const mvpDone = planning.mvpItems.filter((item) => item.status === "done").length;

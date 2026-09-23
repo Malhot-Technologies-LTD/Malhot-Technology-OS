@@ -38,8 +38,9 @@ export function StatusActions({ projectId, status, canChange }: Props) {
     startTransition(async () => {
       const result = await changeProjectStatus({ projectId, status: next });
       if (result.ok) toast.success(`Project moved to ${label.toLowerCase()}`);
-      // Readiness failures come back here as a plain message — the checklist
-      // above already shows which item is missing.
+      // A readiness failure names the items still outstanding, so the toast is
+      // actionable on its own — you should not have to scroll back up the page
+      // and read the checklist to work out what the refusal meant.
       else toast.error(result.error.message);
     });
   }

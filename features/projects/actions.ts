@@ -14,6 +14,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { ProjectStatus } from "@/types/domain";
 
 import { getProjectByKey, getProjectContext } from "./queries";
+import { readinessBlockers, readinessMessage } from "./readiness";
 import { createProjectSchema, updateProjectSchema } from "./schemas";
 
 /**
@@ -109,8 +110,6 @@ export const updateProject = withAction("projects.update", async (input: unknown
   return ok(undefined);
 });
 
-const READINESS = "A project needs at least one goal, one MVP item, a manager and a start date before it can start.";
-
 /**
  * Status transitions (docs/product/project-lifecycle.md#status-state-machine).
  * `planning → active` additionally requires the readiness checklist to pass —
@@ -139,13 +138,29 @@ export const changeProjectStatus = withAction(
       return fail("forbidden", "Only the project manager can change the status.");
 
     if (status === "active" && existing.data.status === "planning") {
+      /*
+       * One row each, not a count.
+       *
+       * `{ count: "exact", head: true }` sends a HEAD request and reads the
+       * total out of the Content-Range header. When that header does not
+       * survive the hop, supabase-js reports `count: null`, `?? 0` turns it
+       * into zero, and the project is refused for missing the very goals it
+       * has — the failure is silent and looks exactly like a rule violation.
+       * Asking for one id is header-independent and no more expensive.
+       */
       const [goals, mvpItems] = await Promise.all([
-        supabase.from("goals").select("id", { count: "exact", head: true }).eq("project_id", projectId),
-        supabase.from("mvp_items").select("id", { count: "exact", head: true }).eq("project_id", projectId),
+        supabase.from("goals").select("id").eq("project_id", projectId).limit(1),
+        supabase.from("mvp_items").select("id").eq("project_id", projectId).limit(1),
       ]);
-      const ready =
-        (goals.count ?? 0) > 0 && (mvpItems.count ?? 0) > 0 && existing.data.manager_id && existing.data.start_date;
-      if (!ready) return fail("invariant", READINESS);
+      if (goals.error || mvpItems.error) return fail("unexpected", "Could not check whether the project is ready.");
+
+      const blockers = readinessBlockers({
+        goalCount: goals.data.length,
+        mvpCount: mvpItems.data.length,
+        managerId: existing.data.manager_id,
+        startDate: existing.data.start_date,
+      });
+      if (blockers.length > 0) return fail("invariant", readinessMessage(blockers));
     }
 
     const { error } = await supabase
