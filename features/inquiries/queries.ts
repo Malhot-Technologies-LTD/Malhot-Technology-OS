@@ -21,7 +21,7 @@ export async function listInquiries(organizationId: string, limit = 50) {
   return supabase
     .from("inquiries")
     .select(
-      "id, name, email, company, message, budget_range, source_path, handled_at, created_at, handled_by:profiles(full_name)",
+      "id, name, email, company, message, budget_range, source_path, handled_at, created_at, handled_by:profiles!inquiries_handled_by_fkey(full_name)",
     )
     .eq("organization_id", organizationId)
     .order("handled_at", { ascending: true, nullsFirst: true })

@@ -137,17 +137,21 @@ export default async function ProjectOverviewPage({ params }: PageProps<"/os/pro
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <TaskBoard
-                projectKey={project.key}
-                tasks={tasks.data ?? []}
-                team={(team.data ?? []).map((member) => ({
-                  userId: member.user_id,
-                  fullName: member.profile?.full_name ?? "Unnamed",
-                  avatarUrl: member.profile?.avatar_url ?? null,
-                }))}
-                canWrite={can(viewer, "task.create", ctx) && writable}
-                canDelete={can(viewer, "task.delete", ctx)}
-              />
+              {tasks.error ? (
+                <ErrorState {...describeQueryFailure(tasks.error)} />
+              ) : (
+                <TaskBoard
+                  projectKey={project.key}
+                  tasks={tasks.data ?? []}
+                  team={(team.data ?? []).map((member) => ({
+                    userId: member.user_id,
+                    fullName: member.profile?.full_name ?? "Unnamed",
+                    avatarUrl: member.profile?.avatar_url ?? null,
+                  }))}
+                  canWrite={can(viewer, "task.create", ctx) && writable}
+                  canDelete={can(viewer, "task.delete", ctx)}
+                />
+              )}
             </CardContent>
           </Card>
 
@@ -249,13 +253,22 @@ export default async function ProjectOverviewPage({ params }: PageProps<"/os/pro
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ProjectTeam
-                projectId={project.id}
-                members={team.data ?? []}
-                assignable={assignable}
-                canManage={canManageTeam}
-                viewerUserId={viewer.userId}
-              />
+              {/*
+               * A failed read is shown as one. "Nobody is on this project" is a
+               * confident claim about the team, and making it on the strength
+               * of an error is how a broken embed looked like an empty project.
+               */}
+              {team.error ? (
+                <ErrorState {...describeQueryFailure(team.error)} />
+              ) : (
+                <ProjectTeam
+                  projectId={project.id}
+                  members={team.data ?? []}
+                  assignable={assignable}
+                  canManage={canManageTeam}
+                  viewerUserId={viewer.userId}
+                />
+              )}
             </CardContent>
           </Card>
 

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { logger } from "@/lib/logger";
 import { groupFor, type ProjectContext } from "@/lib/permissions";
 
 import { readinessBlockers } from "./readiness";
@@ -32,7 +33,7 @@ export async function listProjects(organizationId: string, limit = 50) {
   return supabase
     .from("projects")
     .select(
-      "id, key, name, kind, status, priority, target_end_date, updated_at, manager:profiles!projects_manager_id_fkey(id, full_name), client:clients(id, name)",
+      "id, key, name, kind, status, priority, target_end_date, updated_at, manager:profiles!projects_manager_id_fkey(id, full_name), client:clients!projects_client_id_fkey(id, name)",
     )
     .eq("organization_id", organizationId)
     .is("deleted_at", null)
@@ -56,7 +57,7 @@ export async function getProjectByKey(organizationId: string, key: string) {
   return supabase
     .from("projects")
     .select(
-      "id, key, name, kind, status, priority, target_end_date, updated_at, description, qa_required, start_date, health_override, archived_at, created_at, manager:profiles!projects_manager_id_fkey(id, full_name), client:clients(id, name)",
+      "id, key, name, kind, status, priority, target_end_date, updated_at, description, qa_required, start_date, health_override, archived_at, created_at, manager:profiles!projects_manager_id_fkey(id, full_name), client:clients!projects_client_id_fkey(id, name)",
     )
     .eq("organization_id", organizationId)
     .eq("key", key.toUpperCase())
@@ -187,18 +188,28 @@ export async function getDashboardProjects(organizationId: string): Promise<Dash
 export type ProjectMemberRow = {
   user_id: string;
   role: ProjectRole;
-  added_at: string;
+  created_at: string;
   profile: { id: string; full_name: string; title: string | null; avatar_url: string | null } | null;
 };
 
-/** Everyone on a project. RLS shows the list only to people already on it. */
+/**
+ * Everyone on a project. RLS shows the list only to people already on it.
+ *
+ * The embed names its foreign key. `project_members` reaches `profiles` twice —
+ * once through `user_id` and once through `added_by` — so a bare
+ * `profiles(...)` is ambiguous and PostgREST refuses the whole query rather
+ * than guessing. That failure used to arrive as an empty list, which reads as
+ * "nobody is on this project" and is the most misleading possible answer.
+ */
 export async function listProjectMembers(projectId: string) {
   const supabase = await createClient();
   return supabase
     .from("project_members")
-    .select("user_id, role, added_at, profile:profiles(id, full_name, title, avatar_url)")
+    .select(
+      "user_id, role, created_at, profile:profiles!project_members_user_id_fkey(id, full_name, title, avatar_url)",
+    )
     .eq("project_id", projectId)
-    .order("added_at")
+    .order("created_at")
     .returns<ProjectMemberRow[]>();
 }
 
@@ -216,7 +227,7 @@ export async function listAssignableMembers(organizationId: string, projectId: s
   const [org, onProject] = await Promise.all([
     supabase
       .from("organization_members")
-      .select("user_id, profile:profiles(full_name, title)")
+      .select("user_id, profile:profiles!organization_members_user_id_fkey(full_name, title)")
       .eq("organization_id", organizationId)
       .returns<{ user_id: string; profile: { full_name: string; title: string | null } | null }[]>(),
     supabase.from("project_members").select("user_id").eq("project_id", projectId),
@@ -328,7 +339,9 @@ export async function listTeamsByProject(organizationId: string): Promise<Map<st
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("project_members")
-    .select("project_id, role, profile:profiles(id, full_name, avatar_url), project:projects!inner(organization_id)")
+    .select(
+      "project_id, role, profile:profiles!project_members_user_id_fkey(id, full_name, avatar_url), project:projects!inner(organization_id)",
+    )
     .eq("project.organization_id", organizationId)
     .returns<
       {
@@ -337,7 +350,12 @@ export async function listTeamsByProject(organizationId: string): Promise<Map<st
         profile: { id: string; full_name: string; avatar_url: string | null } | null;
       }[]
     >();
-  if (error) return teams;
+  if (error) {
+    // Never silently: an empty map renders as "nobody assigned", which is a
+    // statement about the team rather than about the query that failed.
+    logger.error("projects.teams_failed", { code: error.code, message: error.message });
+    return teams;
+  }
 
   const ranked = [...(data ?? [])].sort((a, b) => {
     if (a.role !== b.role) return a.role === "manager" ? -1 : b.role === "manager" ? 1 : 0;

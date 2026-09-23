@@ -13,10 +13,17 @@ export type MemberRow = {
 /** Everyone in the organisation. RLS shows members only to other members. */
 export async function listMembers(organizationId: string) {
   const supabase = await createClient();
-  return supabase
-    .from("organization_members")
-    .select("user_id, role, joined_at, profile:profiles(full_name, title, avatar_url)")
-    .eq("organization_id", organizationId)
-    .order("joined_at")
-    .returns<MemberRow[]>();
+  return (
+    supabase
+      .from("organization_members")
+      // The foreign key is named even though organization_members reaches
+      // profiles only once today. Naming it costs nothing and survives the day
+      // someone adds an invited_by; an ambiguous embed fails the whole query.
+      .select(
+        "user_id, role, joined_at, profile:profiles!organization_members_user_id_fkey(full_name, title, avatar_url)",
+      )
+      .eq("organization_id", organizationId)
+      .order("joined_at")
+      .returns<MemberRow[]>()
+  );
 }
