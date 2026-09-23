@@ -7,9 +7,9 @@ import { ErrorState } from "@/components/os/error-state";
 import { PageBody, PageHeader } from "@/components/os/page-header";
 import { TeamDirectory, type TeamPerson } from "@/features/organization/components/team-directory.client";
 import { listMembers } from "@/features/organization/queries";
-import { listOrganizationMemberships, listProjectOptions, listViewerProjectRoles } from "@/features/projects/queries";
+import { listOrganizationMemberships, listProjectOptions } from "@/features/projects/queries";
 import { describeQueryFailure } from "@/lib/actions/db-errors";
-import { contributesSomewhere } from "@/components/os/nav-audience";
+import { oversees } from "@/components/os/nav-audience";
 import { requireViewer } from "@/lib/auth/context";
 import { logger } from "@/lib/logger";
 import type { ProjectRole } from "@/types/domain";
@@ -36,8 +36,7 @@ export default async function TeamPage() {
    * matrix gives Viewer a dash on the team page, and a hidden link is still a
    * URL someone can type or a stale bookmark can hold.
    */
-  const projectRoles = await listViewerProjectRoles(viewer.userId);
-  if (!contributesSomewhere({ orgRole: viewer.orgRole, projectRoles })) notFound();
+  if (!oversees({ orgRole: viewer.orgRole, projectRoles: viewer.projectRoles })) notFound();
 
   const [members, memberships, projects] = await Promise.all([
     listMembers(viewer.organizationId),

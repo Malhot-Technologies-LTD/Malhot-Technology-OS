@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import { PRIMARY_NAV, visibleGroups, visibleNavItems } from "./nav";
-import { canSeeSection, contributesSomewhere, hasAnyProject, ownsTesting, type NavAudience } from "./nav-audience";
+import {
+  canSeeSection,
+  contributesSomewhere,
+  hasAnyProject,
+  oversees,
+  ownsTesting,
+  type NavAudience,
+} from "./nav-audience";
 
 const audience = (orgRole: NavAudience["orgRole"], ...projectRoles: NavAudience["projectRoles"]): NavAudience => ({
   orgRole,
@@ -24,6 +31,7 @@ describe("who counts as what", () => {
     for (const person of [OWNER, ADMIN]) {
       expect(hasAnyProject(person)).toBe(true);
       expect(contributesSomewhere(person)).toBe(true);
+      expect(oversees(person)).toBe(true);
       expect(ownsTesting(person)).toBe(true);
     }
   });
@@ -34,13 +42,20 @@ describe("who counts as what", () => {
   });
 
   it("treats a viewer-only member as not contributing", () => {
-    // docs/product/user-roles.md gives Viewer a dash on team and activity.
     expect(contributesSomewhere(WATCHER)).toBe(false);
     expect(contributesSomewhere(DESIGNER)).toBe(true);
   });
 
   it("counts someone who is a viewer somewhere and a designer elsewhere", () => {
     expect(contributesSomewhere(audience("member", "viewer", "designer"))).toBe(true);
+  });
+
+  it("separates doing your own work from overseeing other people's", () => {
+    // The line the sidebar now turns on.
+    expect(oversees(MANAGER)).toBe(true);
+    expect(oversees(DEVELOPER)).toBe(false);
+    expect(oversees(DESIGNER)).toBe(false);
+    expect(oversees(QA)).toBe(false);
   });
 
   it("gives testing to QA and managers only", () => {
@@ -57,19 +72,34 @@ describe("what each person sees in the sidebar", () => {
   });
 
   it("shows a newly approved member only what is not empty", () => {
-    // The point of the change: six of nine sections have nothing behind them
-    // for someone on no project, and showing them teaches that the product is
-    // mostly empty.
     expect(hrefs(visibleNavItems(NEWCOMER))).toEqual(["/os", "/os/projects", "/os/my-tasks"]);
   });
 
-  it("opens the scoped read views once a member is on a project", () => {
+  it("opens the work views once a member is on a project", () => {
     const seen = hrefs(visibleNavItems(DESIGNER));
     expect(seen).toContain("/os/timeline");
     expect(seen).toContain("/os/documents");
-    expect(seen).toContain("/os/reports");
-    expect(seen).toContain("/os/team");
-    expect(seen).toContain("/os/activity");
+  });
+
+  it("keeps the oversight pages out of a contributor's sidebar", () => {
+    // Team, Reports and Activity exist to watch people. A designer needs the
+    // work they were given, not a directory of who else is on what.
+    for (const person of [DESIGNER, DEVELOPER, QA]) {
+      const seen = hrefs(visibleNavItems(person));
+      const who = person.projectRoles.join("+");
+      expect(seen, who).not.toContain("/os/team");
+      expect(seen, who).not.toContain("/os/reports");
+      expect(seen, who).not.toContain("/os/activity");
+    }
+  });
+
+  it("gives the oversight pages to managers and org admins", () => {
+    for (const person of [MANAGER, ADMIN, OWNER]) {
+      const seen = hrefs(visibleNavItems(person));
+      expect(seen).toContain("/os/team");
+      expect(seen).toContain("/os/reports");
+      expect(seen).toContain("/os/activity");
+    }
   });
 
   it("keeps testing out of a designer's sidebar but not a QA's", () => {
@@ -77,12 +107,12 @@ describe("what each person sees in the sidebar", () => {
     expect(hrefs(visibleNavItems(QA))).toContain("/os/testing");
   });
 
-  it("gives a viewer-only member no team, activity or testing", () => {
+  it("leaves a viewer-only member with just the work they were invited to watch", () => {
     const seen = hrefs(visibleNavItems(WATCHER));
     expect(seen).not.toContain("/os/team");
     expect(seen).not.toContain("/os/activity");
+    expect(seen).not.toContain("/os/reports");
     expect(seen).not.toContain("/os/testing");
-    // They still read the work they were invited to watch.
     expect(seen).toContain("/os/projects");
     expect(seen).toContain("/os/timeline");
   });
@@ -90,7 +120,7 @@ describe("what each person sees in the sidebar", () => {
   it("never hides home, projects or my tasks from anyone", () => {
     for (const person of [OWNER, ADMIN, NEWCOMER, DEVELOPER, DESIGNER, QA, MANAGER, WATCHER]) {
       for (const href of ["/os", "/os/projects", "/os/my-tasks"]) {
-        expect(canSeeSection(href, person), `${person.orgRole}/${person.projectRoles} ${href}`).toBe(true);
+        expect(canSeeSection(href, person), `${person.orgRole} ${href}`).toBe(true);
       }
     }
   });
@@ -98,12 +128,13 @@ describe("what each person sees in the sidebar", () => {
   it("drops a group entirely when nothing in it survives", () => {
     const groups = visibleGroups(NEWCOMER);
     expect(groups.every((group) => group.items.length > 0)).toBe(true);
-    // Quality is Documents + Testing; a newcomer has neither.
+    // Quality is Documents + Testing; a newcomer has neither. Company is Team,
+    // Reports and Activity; a newcomer oversees nothing.
     expect(groups.map((group) => group.label)).not.toContain("Quality");
+    expect(groups.map((group) => group.label)).not.toContain("Company");
   });
 
   it("leaves an unknown href visible rather than silently hiding it", () => {
-    // A new section must be opted into hiding, not accidentally disappear.
     expect(canSeeSection("/os/brand-new-thing", WATCHER)).toBe(true);
   });
 });

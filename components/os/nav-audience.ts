@@ -34,6 +34,20 @@ export function contributesSomewhere(audience: NavAudience): boolean {
   return isOrgAdmin(audience) || audience.projectRoles.some((role) => role !== "viewer");
 }
 
+/**
+ * Oversees other people's work rather than only doing their own.
+ *
+ * The line every sidebar rule now turns on: is this page here to run the
+ * company, or to get your job done? A developer needs the projects they are on
+ * and the work inside them; the team directory, the reports and the
+ * organisation activity feed all exist to watch people, and watching is a
+ * manager's job. Org admins qualify everywhere, managers qualify because they
+ * answer for a project's delivery.
+ */
+export function oversees(audience: NavAudience): boolean {
+  return isOrgAdmin(audience) || audience.projectRoles.includes("manager");
+}
+
 /** Signs off or oversees testing: QA authority, or a manager watching the queue. */
 export function ownsTesting(audience: NavAudience): boolean {
   return isOrgAdmin(audience) || audience.projectRoles.some((role) => role === "qa" || role === "manager");
@@ -48,17 +62,17 @@ export const NAV_VISIBILITY: Record<string, { test: (audience: NavAudience) => b
   // Everyone has a home, a project list and their own work — even on day one
   // with nothing assigned, because that is where "nothing yet" is explained.
   "/os": { test: () => true, because: "Everyone" },
-  "/os/projects": { test: () => true, because: "Any member may create a project" },
+  "/os/projects": { test: () => true, because: "Everyone can see the projects they are on" },
   "/os/my-tasks": { test: () => true, because: "Everyone has their own queue" },
 
-  // Scoped read views: meaningless with no project behind them.
-  "/os/timeline": { test: hasAnyProject, because: "Reads from projects you are on" },
-  "/os/documents": { test: hasAnyProject, because: "Reads from projects you are on" },
-  "/os/reports": { test: hasAnyProject, because: "Reports for their projects (user-roles.md)" },
+  // Doing your own work: needs a project behind it, nothing more.
+  "/os/timeline": { test: hasAnyProject, because: "The schedule of projects you are on" },
+  "/os/documents": { test: hasAnyProject, because: "The documents of projects you are on" },
 
-  // "View team page" / "View organisation activity": Viewer is a dash.
-  "/os/team": { test: contributesSomewhere, because: "Viewer has no team page (user-roles.md)" },
-  "/os/activity": { test: contributesSomewhere, because: "Viewer has no activity feed (user-roles.md)" },
+  // Overseeing other people's: a manager's job, not a contributor's.
+  "/os/team": { test: oversees, because: "A directory of people you manage" },
+  "/os/reports": { test: oversees, because: "How the company is doing, not how you are" },
+  "/os/activity": { test: oversees, because: "Watching what everyone did" },
 
   // Testing authority sits with QA, and with managers who chase the queue.
   "/os/testing": { test: ownsTesting, because: "QA signs off; managers oversee" },
