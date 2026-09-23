@@ -72,3 +72,21 @@ Notifications: `task_assigned` (assignee), `review_requested` (reviewer), `testi
 
 ## Out of scope (v1)
 Recurring tasks, task templates, time tracking timers, labels/tags, custom statuses per project, sprint boards, story points.
+
+## Built so far (Phase 4 slice)
+
+The board, dependencies and subtasks above are still the target. What exists is the part the rest hangs off: a task with an owner and a deadline.
+
+`tasks` carries a title, description, assignee, status, priority and `due_at`. Numbers come from `next_project_sequence()`, the counter the projects migration already installed, so `MAL-42` keeps meaning what it means and two people adding a task at once get different numbers rather than colliding on `(project_id, seq)`.
+
+**`due_at` is a `timestamptz`, not a date.** "Finish by the end of today" and "finish by 2pm" are different promises and a date column can only hold the first — which would make the countdown a lie. The form uses `datetime-local` for the same reason.
+
+**The countdown is client-only, by necessity.** The server and the browser sit at different instants, so a server-rendered "3h 12m left" is already wrong on arrival and React would flag the mismatch. Only the arithmetic is local; the deadline itself is an ISO instant from the server. It ticks once a minute — the text is never finer than minutes, so a faster timer would redraw identical characters — and sharpens to every ten seconds inside the final minute, the one stretch where somebody is watching. Never more than two units: `2d 4h` tells you what to do, `2d 4h 17m 3s` only moves.
+
+For the same reason there is no server-computed "overdue" count anywhere. A stale number beside a live countdown would contradict it.
+
+Two triggers hold what the interface cannot. `task_assignee_must_be_member` refuses an assignee who is not on the project — RLS would hide the task from them and nobody would find out until the deadline passed. `stamp_task_progress` derives `completed_at` and `started_at` from the status rather than trusting a caller to set them.
+
+Two places to work with tasks: the **Tasks** card on a project, and **My Tasks**, which spans every project a person is on, soonest deadline first, with an **Assign a task** dialog for managers and org admins. Choosing a project there narrows the people to that project's members, because the trigger would refuse anyone else.
+
+Still to come: the board view, status columns, dependencies, subtasks, time logging and the testing hand-off.

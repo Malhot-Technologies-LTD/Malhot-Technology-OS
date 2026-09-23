@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { PRIMARY_NAV, visibleGroups, visibleNavItems } from "./nav";
 import {
+  NAV_VISIBILITY,
   canSeeSection,
   contributesSomewhere,
   hasAnyProject,
@@ -136,5 +137,19 @@ describe("what each person sees in the sidebar", () => {
 
   it("leaves an unknown href visible rather than silently hiding it", () => {
     expect(canSeeSection("/os/brand-new-thing", WATCHER)).toBe(true);
+  });
+
+  it("has an explicit, reasoned rule for every section that ships", () => {
+    /*
+     * The default for an unknown href is "visible", which is the right default
+     * for a section nobody has thought about yet — but not for one already in
+     * the sidebar. Adding a section should mean deciding who it is for, and
+     * writing down why, rather than defaulting into everyone's nav.
+     */
+    for (const item of PRIMARY_NAV) {
+      const rule = NAV_VISIBILITY[item.href];
+      expect(rule, item.href).toBeDefined();
+      expect(rule.because.length, item.href).toBeGreaterThan(0);
+    }
   });
 });

@@ -21,9 +21,26 @@ Project role       — what you may do inside a given project
 |---|---|
 | `owner` | Founder/director. Everything `admin` can do, plus: transfer ownership, delete the organisation, manage billing (future). At least one owner always exists. |
 | `admin` | Runs the company operationally. Full access to every project, members, invitations, integrations, organisation settings. |
-| `member` | Regular team member. Sees only projects they belong to, plus organisation-wide read views scoped to those projects (team page, reports for their projects). |
+| `member` | Regular team member. Sees only projects they belong to, and only the sections of the OS that serve their own work — see [Navigation visibility](#navigation-visibility). |
 
 There is intentionally no organisation-level `viewer`: a read-only person is given `viewer` on specific projects.
+
+**Creating a project is an organisation-admin act.** It was open to any member until the creator-becomes-manager rule made that awkward: a project is a commitment the company makes, and starting one silently appointed its manager. Enforced in three places that must agree — the `projects_insert` policy, `can()` in `lib/permissions.ts`, and the sidebar (`components/os/nav-audience.ts`).
+
+### Navigation visibility
+
+A sidebar of nine sections shown to everyone taught a new member that most of the product is empty, and put "New project" above the work a developer was actually assigned. What a person sees now turns on one question: **is this page here to run the company, or to get your own job done?**
+
+| Section | Shown to | Because |
+|---|---|---|
+| Home, Projects, My Tasks | everyone | Their own work, and where "nothing yet" is explained |
+| Timeline, Documents | anyone on a project | Reads from projects you are on |
+| Testing | QA, managers, org admins | QA signs off; managers chase the queue |
+| Team, Reports, Activity | managers, org admins | These exist to watch people |
+
+Two facts decide it: organisation role, and every project role the person holds anywhere. A `member` on no project and a `member` running two are not the same person. The roles ride along in `getAuthState`'s existing query batch, so this costs no extra round trip.
+
+**Hiding is a courtesy, not a control.** Every page still checks its own permissions and RLS still decides what any query returns; a hidden link is still a URL someone can type. `components/os/nav-audience.test.ts` pins the table above.
 
 ### Project roles (`project_role`)
 
@@ -75,7 +92,7 @@ Legend: ✓ allowed · ✓* allowed with restriction noted · — not allowed
 
 | Capability | Org Admin | Manager | Contributor | QA | Viewer |
 |---|---|---|---|---|---|
-| Create project | ✓ | ✓ — any org `member` may create; the creator becomes `manager` | same | same | same |
+| Create project | ✓ — **org admins only** | — | — | — | — |
 | View project | ✓ all | ✓ | ✓ | ✓ | ✓ |
 | Edit project details, dates, priority | ✓ | ✓ | — | — | — |
 | Change project status | ✓ | ✓ | — | — | — |
