@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { AccessRequests } from "@/features/organization/components/access-requests.client";
 import { MemberList } from "@/features/organization/components/member-list.client";
 import { listMembers } from "@/features/organization/queries";
+import { listProjects } from "@/features/projects/queries";
 import { requireViewer } from "@/lib/auth/context";
 import { can } from "@/lib/permissions";
 import { listAccessRequests } from "@/lib/supabase/elevated/access-requests";
@@ -20,9 +21,10 @@ export default async function MembersSettingsPage() {
   const viewer = await requireViewer();
   if (!can(viewer, "org.invite")) notFound();
 
-  const [members, requests] = await Promise.all([
+  const [members, requests, projects] = await Promise.all([
     listMembers(viewer.organizationId),
     listAccessRequests(viewer.userId, viewer.organizationId),
+    listProjects(viewer.organizationId),
   ]);
   if (members.error) throw new Error(`Could not load members: ${members.error.message}`);
 
@@ -39,7 +41,17 @@ export default async function MembersSettingsPage() {
               : `${requests.length} ${requests.length === 1 ? "person has" : "people have"} signed up and cannot see anything yet.`}
           </p>
         </div>
-        <AccessRequests requests={requests} />
+        <AccessRequests
+          requests={requests}
+          /*
+           * Archived projects are filtered out rather than shown and refused:
+           * project_members_insert requires project_is_writable, and an option
+           * that always fails is worse than no option.
+           */
+          projects={(projects.data ?? [])
+            .filter((project) => project.status !== "archived")
+            .map((project) => ({ id: project.id, key: project.key, name: project.name, status: project.status }))}
+        />
       </section>
 
       <section aria-labelledby="members-heading" className="flex flex-col gap-4">

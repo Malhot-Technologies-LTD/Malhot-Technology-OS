@@ -9,41 +9,71 @@ import { StatusPill } from "@/components/os/status-badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { approveAccessRequest, rejectAccess } from "@/features/organization/actions";
+import {
+  AssignFirstProject,
+  type ApprovedPerson,
+  type AssignableProject,
+} from "@/features/organization/components/assign-first-project.client";
 import type { AccessRequest } from "@/lib/supabase/elevated/access-requests";
 
 /**
  * People who signed up and are waiting to be let in.
  *
  * Approving is the moment someone gains access to company data, so the role is
- * chosen deliberately at that point rather than defaulted silently.
+ * chosen deliberately at that point rather than defaulted silently. Approval
+ * alone only grants an account, so it hands straight over to putting them on a
+ * project — otherwise they sign in to an empty workspace and reasonably
+ * conclude they were never let in.
  */
-export function AccessRequests({ requests }: { requests: readonly AccessRequest[] }) {
-  if (requests.length === 0) {
-    return (
-      <p className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-sm text-fg-muted">
-        Nobody is waiting for access. New sign-ups appear here.
-      </p>
-    );
-  }
+export function AccessRequests({
+  requests,
+  projects,
+}: {
+  requests: readonly AccessRequest[];
+  projects: readonly AssignableProject[];
+}) {
+  /*
+   * The dialog is owned here, not by the row that triggered it. Approving
+   * revalidates this page, so the row is already gone from `requests` by the
+   * time the prompt should appear; state living inside it would unmount
+   * mid-flow and the prompt would never be seen.
+   */
+  const [approved, setApproved] = useState<ApprovedPerson | null>(null);
 
   return (
-    <ul className="flex flex-col divide-y divide-border rounded-lg border border-border bg-surface">
-      {requests.map((request) => (
-        <RequestRow key={request.userId} request={request} />
-      ))}
-    </ul>
+    <>
+      {requests.length === 0 ? (
+        <p className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-sm text-fg-muted">
+          Nobody is waiting for access. New sign-ups appear here.
+        </p>
+      ) : (
+        <ul className="flex flex-col divide-y divide-border rounded-lg border border-border bg-surface">
+          {requests.map((request) => (
+            <RequestRow key={request.userId} request={request} onApproved={setApproved} />
+          ))}
+        </ul>
+      )}
+
+      <AssignFirstProject person={approved} projects={projects} onClose={() => setApproved(null)} />
+    </>
   );
 }
 
-function RequestRow({ request }: { request: AccessRequest }) {
+function RequestRow({ request, onApproved }: { request: AccessRequest; onApproved: (person: ApprovedPerson) => void }) {
   const [role, setRole] = useState<"admin" | "member">("member");
   const [pending, startTransition] = useTransition();
 
   function approve() {
     startTransition(async () => {
       const result = await approveAccessRequest({ userId: request.userId, role });
-      if (result.ok) toast.success(`${request.fullName || request.email} can now sign in`);
-      else toast.error(result.error.message);
+      if (!result.ok) {
+        toast.error(result.error.message);
+        return;
+      }
+      const name = request.fullName || request.email;
+      toast.success(`${name} can now sign in`);
+      // Straight on to the thing that actually gives them something to see.
+      onApproved({ userId: request.userId, name });
     });
   }
 
