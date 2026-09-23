@@ -112,3 +112,33 @@ export async function rejectAccessRequest(
   logger.info("access_request.rejected", { targetUserId });
   return { ok: true };
 }
+
+/**
+ * How many people are waiting, for the topbar bell.
+ *
+ * Separate from `listAccessRequests` because it is called on every OS page and
+ * that one is not cheap — it pages through `auth.users` and joins two tables to
+ * build display rows nobody is looking at yet. This asks the same question and
+ * throws the answer away except for its size.
+ *
+ * Still an admin API call per request, which is why it is fetched outside the
+ * render path and never blocks the page: the bell arrives when it arrives.
+ * If this ever gets expensive, the honest fix is a counter maintained on
+ * sign-up rather than a cheaper way to count users.
+ */
+export async function countAccessRequests(requesterUserId: string, organizationId: string): Promise<number> {
+  if (!(await isOrgAdmin(requesterUserId, organizationId))) return 0;
+
+  const admin = createAdminClient();
+  const [users, members] = await Promise.all([
+    admin.auth.admin.listUsers({ perPage: 1000 }),
+    admin.from("organization_members").select("user_id"),
+  ]);
+  if (users.error || members.error) {
+    logger.warn("access_request.count_failed", { error: users.error?.message ?? members.error?.message });
+    return 0;
+  }
+
+  const onboarded = new Set((members.data ?? []).map((row) => row.user_id));
+  return users.data.users.filter((user) => !onboarded.has(user.id) && user.email).length;
+}

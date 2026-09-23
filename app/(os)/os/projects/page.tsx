@@ -5,7 +5,7 @@ import { ErrorState } from "@/components/os/error-state";
 import { PageBody, PageHeader } from "@/components/os/page-header";
 import { Button } from "@/components/ui/button";
 import { ProjectList } from "@/features/projects/components/project-list";
-import { listProjects } from "@/features/projects/queries";
+import { listProjects, listTeamsByProject } from "@/features/projects/queries";
 import { describeQueryFailure } from "@/lib/actions/db-errors";
 import { requireViewer } from "@/lib/auth/context";
 import { logger } from "@/lib/logger";
@@ -31,6 +31,9 @@ export default async function ProjectsPage() {
     );
   }
 
+  // One query for every card, after the list is known.
+  const teams = await listTeamsByProject(data.map((project) => project.id));
+
   return (
     <PageBody>
       <PageHeader
@@ -44,7 +47,7 @@ export default async function ProjectsPage() {
           ) : undefined
         }
       />
-      <ProjectList projects={data} canCreate={canCreate} />
+      <ProjectList projects={data} canCreate={canCreate} teams={teams} />
     </PageBody>
   );
 }

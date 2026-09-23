@@ -1,7 +1,5 @@
 "use client";
 
-import { Bell } from "lucide-react";
-import Link from "next/link";
 import { useState, type ReactNode } from "react";
 
 import { AppSidebar, type SidebarUser } from "@/components/os/app-sidebar.client";
@@ -9,12 +7,22 @@ import type { NavAudience } from "@/components/os/nav-audience";
 import { Breadcrumbs } from "@/components/os/breadcrumbs.client";
 import { CommandPalette } from "@/components/os/command-palette.client";
 import { ThemeSwitch } from "@/components/os/theme-toggle.client";
-import { Button } from "@/components/ui/button";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 export const SIDEBAR_COOKIE = "os_sidebar";
 
-type Props = { user: SidebarUser; defaultCollapsed: boolean; audience: NavAudience; children: ReactNode };
+type Props = {
+  user: SidebarUser;
+  defaultCollapsed: boolean;
+  audience: NavAudience;
+  /*
+   * Rendered on the server so it can count people waiting without shipping an
+   * admin call to the browser. Passed in rather than imported, because this
+   * component is a client boundary and cannot await anything itself.
+   */
+  bell: ReactNode;
+  children: ReactNode;
+};
 
 /**
  * OS chrome: sidebar + topbar around the routed page. Sidebar state persists in
@@ -25,7 +33,7 @@ type Props = { user: SidebarUser; defaultCollapsed: boolean; audience: NavAudien
  * it lands in the same place on every page and at every sidebar width — the
  * thing people reach for most stops moving.
  */
-export function OsShell({ user, defaultCollapsed, audience, children }: Props) {
+export function OsShell({ user, defaultCollapsed, audience, bell, children }: Props) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
 
   function toggle() {
@@ -52,11 +60,7 @@ export function OsShell({ user, defaultCollapsed, audience, children }: Props) {
             <CommandPalette audience={audience} />
             <div className="flex items-center justify-end gap-1.5">
               <ThemeSwitch />
-              <Button asChild variant="ghost" size="icon-sm" aria-label="Notifications">
-                <Link href="/os/notifications">
-                  <Bell aria-hidden="true" />
-                </Link>
-              </Button>
+              {bell}
             </div>
           </header>
           <main id="os-main" className="flex-1 overflow-y-auto">

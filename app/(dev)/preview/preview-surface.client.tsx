@@ -24,6 +24,7 @@ import { SetupChecklist } from "@/components/os/setup-checklist";
 import { GoalStatusBadge, MvpStatusBadge, PriorityBadge, ProjectStatusBadge } from "@/components/os/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AvatarGroup } from "@/components/os/avatar-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { Priority, ProjectStatus } from "@/types/domain";
@@ -350,6 +351,26 @@ export function PreviewSurface() {
                           </li>
                         ))}
                       </ul>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Avatar group</CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex flex-col gap-4">
+                      <AvatarGroup people={[{ userId: "u1", fullName: "Alpha N.", avatarUrl: null }]} />
+                      <AvatarGroup
+                        people={[
+                          { userId: "u1", fullName: "Alpha N.", avatarUrl: null },
+                          { userId: "u2", fullName: "Levi M.", avatarUrl: null },
+                          { userId: "u3", fullName: "Malvyn K.", avatarUrl: null },
+                          { userId: "u4", fullName: "Brian K.", avatarUrl: null },
+                          { userId: "u5", fullName: "Kenny R.", avatarUrl: null },
+                          { userId: "u6", fullName: "Sarah N.", avatarUrl: null },
+                        ]}
+                      />
+                      <AvatarGroup people={[]} />
                     </CardContent>
                   </Card>
 

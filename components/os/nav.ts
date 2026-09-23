@@ -121,7 +121,6 @@ export const PLANNED_SECTIONS: Readonly<Record<string, { label: string; phase: n
   testing: { label: "Testing", phase: 6 },
   reports: { label: "Reports", phase: 9 },
   activity: { label: "Activity", phase: 4 },
-  notifications: { label: "Notifications", phase: 4 },
 };
 
 export function isActive(pathname: string, item: Pick<NavItem, "href" | "exact">): boolean {

@@ -304,3 +304,48 @@ export async function listViewerProjectRoles(userId: string): Promise<ProjectRol
   if (error) return [];
   return (data ?? []).map((row) => row.role as ProjectRole);
 }
+
+export type ProjectTeamPreview = { userId: string; fullName: string; avatarUrl: string | null };
+
+/**
+ * Who is on each project, keyed by project id, for the list cards.
+ *
+ * One query for the whole list rather than one per card. RLS narrows it without
+ * help: project_members is selectable where is_project_member(project_id), and
+ * an org admin resolves to a member of every project, so this returns the teams
+ * of exactly the projects the viewer can already see.
+ *
+ * Managers first, then by name, so the person answerable for the work is the
+ * first face on the card and the order never shifts between renders.
+ */
+export async function listTeamsByProject(projectIds: readonly string[]): Promise<Map<string, ProjectTeamPreview[]>> {
+  const teams = new Map<string, ProjectTeamPreview[]>();
+  if (projectIds.length === 0) return teams;
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("project_members")
+    .select("project_id, role, profile:profiles(id, full_name, avatar_url)")
+    .in("project_id", [...projectIds])
+    .returns<
+      {
+        project_id: string;
+        role: ProjectRole;
+        profile: { id: string; full_name: string; avatar_url: string | null } | null;
+      }[]
+    >();
+  if (error) return teams;
+
+  const ranked = [...(data ?? [])].sort((a, b) => {
+    if (a.role !== b.role) return a.role === "manager" ? -1 : b.role === "manager" ? 1 : 0;
+    return (a.profile?.full_name ?? "").localeCompare(b.profile?.full_name ?? "");
+  });
+
+  for (const row of ranked) {
+    if (!row.profile) continue;
+    const list = teams.get(row.project_id) ?? [];
+    list.push({ userId: row.profile.id, fullName: row.profile.full_name, avatarUrl: row.profile.avatar_url });
+    teams.set(row.project_id, list);
+  }
+  return teams;
+}
