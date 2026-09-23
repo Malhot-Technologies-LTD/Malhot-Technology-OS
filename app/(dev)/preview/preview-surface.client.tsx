@@ -1,13 +1,26 @@
 "use client";
 
-import { CheckCircle2, Circle, Flag, ListChecks, Target } from "lucide-react";
-import { useState } from "react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Circle,
+  CircleDashed,
+  Flag,
+  FolderKanban,
+  ListChecks,
+  Rocket,
+  Target,
+} from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { AppSidebar } from "@/components/os/app-sidebar.client";
 import { DueDate, KeyValueList, ProgressBar, ProjectKey } from "@/components/os/data-display";
 import { EmptyState } from "@/components/os/empty-state";
 import { ErrorState } from "@/components/os/error-state";
+import { FocusCard } from "@/components/os/focus-card";
+import { ProgressRing, StatRow, StatTile } from "@/components/os/metrics";
 import { PageBody, PageHeader } from "@/components/os/page-header";
+import { SetupChecklist } from "@/components/os/setup-checklist";
 import { GoalStatusBadge, MvpStatusBadge, PriorityBadge, ProjectStatusBadge } from "@/components/os/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -66,9 +79,27 @@ export function PreviewSurface() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [collapsed, setCollapsed] = useState(false);
 
+  /*
+   * The attribute goes on <html>, exactly where next-themes puts it in the real
+   * OS — not on a wrapper. Custom properties resolve where they are declared,
+   * so `--card: var(--surface)` declared on :root keeps the light --surface
+   * even inside a nested [data-theme="dark"]. A wrapper would therefore show
+   * every shadcn-aliased component (Card, Skeleton, muted text) in light
+   * colours on a dark page, and the gallery would be lying about the design.
+   */
+  useEffect(() => {
+    const root = document.documentElement;
+    const previous = root.dataset.theme;
+    root.dataset.theme = theme;
+    return () => {
+      if (previous === undefined) delete root.dataset.theme;
+      else root.dataset.theme = previous;
+    };
+  }, [theme]);
+
   return (
     <TooltipProvider>
-      <div data-theme={theme} className="min-h-dvh bg-bg text-fg">
+      <div className="min-h-dvh bg-bg text-fg">
         <div className="flex items-center justify-between gap-4 border-b border-border bg-surface px-6 py-3">
           <div className="flex flex-col">
             <span className="text-sm font-semibold">Malhot OS — component gallery</span>
@@ -103,25 +134,93 @@ export function PreviewSurface() {
                 actions={<Button>New project</Button>}
               />
 
-              <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <FocusCard
+                eyebrow="Past target"
+                title="Kivu Logistics portal"
+                description="This project is past the date it was meant to finish. Move the date or move the work &#8212; leaving it is the one option that costs you twice."
+                figure={{ value: "18", unit: "days late", caption: "Overdue by" }}
+                action={{ label: "Open KVU", href: "#" }}
+              />
+
+              <SetupChecklist
+                steps={[
+                  {
+                    title: "Complete your profile",
+                    description: "A name, a photo and a job title, so teammates know who is on a task.",
+                    done: true,
+                    href: "#",
+                  },
+                  {
+                    title: "Create a project",
+                    description: "Everything else in the OS hangs off one: goals, tasks, tests and documents.",
+                    done: true,
+                    href: "#",
+                  },
+                  {
+                    title: "Set goals",
+                    description: "What the project is for, in outcomes. Without them the MVP has nothing to answer to.",
+                    done: false,
+                    href: "#",
+                  },
+                  {
+                    title: "Define the MVP",
+                    description: "The smallest version worth shipping. This is what tasks get built against.",
+                    done: false,
+                    href: "#",
+                  },
+                  {
+                    title: "Assign a manager",
+                    description: "Every project needs one person answerable for it.",
+                    done: false,
+                    href: "#",
+                    optional: true,
+                  },
+                ]}
+              />
+
+              <StatRow>
+                <StatTile label="Active" value={1} hint="In flight now" icon={Rocket} tone="brand" href="#" />
+                <StatTile label="In planning" value={1} hint="1 cannot start yet" icon={CircleDashed} href="#" />
+                <StatTile
+                  label="Past target"
+                  value={1}
+                  hint="Needs a new date or a push"
+                  icon={AlertTriangle}
+                  tone="danger"
+                  href="#"
+                />
+                <StatTile label="Total projects" value={4} hint="2 fully set up" icon={FolderKanban} href="#" />
+              </StatRow>
+
+              <div className="grid items-center gap-6 rounded-lg border border-border bg-surface p-5 sm:grid-cols-[auto_1fr]">
+                <ProgressRing done={2} total={4} label="Projects fully set up" />
+                <div className="flex flex-col gap-1">
+                  <h2 className="text-base font-medium">Ready to start</h2>
+                  <p className="text-sm text-fg-muted">
+                    A project counts once it has a manager, a start date, goals and an MVP.
+                  </p>
+                </div>
+              </div>
+
+              <ul className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                 {PROJECTS.map((p) => (
                   <li key={p.key}>
-                    <div className="group flex h-full flex-col gap-4 rounded-lg border border-border bg-surface p-5 transition-colors duration-[120ms] hover:border-border-strong">
+                    <div className="group flex h-full flex-col gap-5 rounded-lg border border-border bg-surface p-6 transition-[colors,transform] duration-[160ms] ease-standard hover:-translate-y-0.5 hover:border-border-strong">
                       <div className="flex items-start justify-between gap-3">
                         <ProjectKey value={p.key} />
                         <ProjectStatusBadge status={p.status} />
                       </div>
                       <div className="flex min-w-0 flex-col gap-1">
-                        <h3 className="truncate text-[15px] font-medium">{p.name}</h3>
-                        <p className="truncate text-sm text-fg-muted">{p.client ?? "Internal"}</p>
+                        <h3 className="truncate text-lg font-medium">{p.name}</h3>
+                        <p className="truncate text-[15px] text-fg-muted">{p.client ?? "Internal"}</p>
                       </div>
-                      <dl className="mt-auto flex items-end justify-between gap-3 border-t border-border pt-4 text-sm">
+                      <dl className="mt-auto flex items-end justify-between gap-3 border-t border-border pt-5 text-[15px]">
                         <div className="flex min-w-0 flex-col gap-0.5">
-                          <dt className="text-xs text-fg-subtle">Manager</dt>
+                          <dt className="text-[13px] text-fg-subtle">Manager</dt>
                           <dd className="truncate text-fg-muted">{p.manager}</dd>
                         </div>
                         <div className="flex shrink-0 flex-col items-end gap-0.5">
-                          <dt className="text-xs text-fg-subtle">Target end</dt>
+                          <dt className="text-[13px] text-fg-subtle">Target end</dt>
                           <dd>
                             <DueDate value={p.target} open={p.status !== "completed" && p.status !== "archived"} />
                           </dd>
@@ -133,11 +232,11 @@ export function PreviewSurface() {
                 ))}
               </ul>
 
-              <div className="grid gap-6 lg:grid-cols-3">
-                <div className="flex flex-col gap-6 lg:col-span-2">
+              <div className="grid gap-7 lg:grid-cols-3">
+                <div className="flex flex-col gap-7 lg:col-span-2">
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-base">2 things left</CardTitle>
+                      <CardTitle>2 things left</CardTitle>
                     </CardHeader>
                     <CardContent className="flex flex-col gap-3">
                       <p className="text-sm text-fg-muted">
@@ -211,10 +310,10 @@ export function PreviewSurface() {
                   </Card>
                 </div>
 
-                <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-7">
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-base">Details</CardTitle>
+                      <CardTitle>Details</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <KeyValueList
@@ -254,7 +353,7 @@ export function PreviewSurface() {
 
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-base">Buttons</CardTitle>
+                      <CardTitle>Buttons</CardTitle>
                     </CardHeader>
                     <CardContent className="flex flex-wrap gap-2">
                       <Button>Activate</Button>

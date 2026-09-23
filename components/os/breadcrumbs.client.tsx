@@ -39,12 +39,12 @@ export function Breadcrumbs() {
   const segments = pathname.split("/").filter(Boolean).slice(1); // drop "os"
 
   if (segments.length === 0) {
-    return <span className="text-sm font-medium">Home</span>;
+    return <span className="text-[15px] font-medium">Home</span>;
   }
 
   return (
     <nav aria-label="Breadcrumb" className="min-w-0">
-      <ol className="flex min-w-0 items-center gap-1.5 text-sm">
+      <ol className="flex min-w-0 items-center gap-2 text-[15px]">
         <li className="shrink-0">
           <Link href="/os" className="text-fg-muted hover:text-fg hover:underline">
             Home

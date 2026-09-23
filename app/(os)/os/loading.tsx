@@ -1,6 +1,6 @@
-import { PageSkeleton } from "@/components/os/skeletons";
+import { DashboardSkeleton } from "@/components/os/skeletons";
 
-/** Fallback for any OS route without its own loading boundary. */
+/** Home's own loading boundary; it is the densest page in the OS. */
 export default function OsLoading() {
-  return <PageSkeleton />;
+  return <DashboardSkeleton />;
 }

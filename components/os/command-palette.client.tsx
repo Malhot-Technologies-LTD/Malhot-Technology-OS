@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 
 import { PRIMARY_NAV } from "@/components/os/nav";
 import { PROJECT_STATUS, StatusPill } from "@/components/os/status-badge";
-import { Button } from "@/components/ui/button";
 import {
   CommandDialog,
   CommandEmpty,
@@ -61,20 +60,18 @@ export function CommandPalette() {
 
   return (
     <>
-      <Button
+      <button
         type="button"
-        variant="outline"
-        size="sm"
-        className="w-64 justify-start gap-2 text-fg-muted"
         onClick={() => setOpen(true)}
         aria-keyshortcuts="Control+K Meta+K"
+        className="flex h-11 w-full items-center gap-2.5 rounded-xl border border-border bg-bg-subtle px-4 text-[15px] text-fg-subtle transition-colors duration-[120ms] hover:border-border-strong hover:text-fg-muted sm:w-[26rem] md:w-[32rem]"
       >
-        <Search aria-hidden="true" />
-        <span className="flex-1 text-left">Search or jump to…</span>
-        <kbd className="rounded-sm border border-border bg-bg-subtle px-1 font-mono text-[10px] text-fg-subtle">
+        <Search className="size-5 shrink-0" aria-hidden="true" />
+        <span className="flex-1 truncate text-left">Search projects, or jump to&#8230;</span>
+        <kbd className="hidden shrink-0 rounded-md border border-border bg-surface px-2 py-1 font-mono text-[11px] text-fg-subtle sm:block">
           Ctrl K
         </kbd>
-      </Button>
+      </button>
 
       <CommandDialog
         open={open}

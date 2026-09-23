@@ -34,7 +34,7 @@ export function UserMenu({ user, collapsed }: { user: SidebarUser; collapsed: bo
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn(
-          "flex h-10 w-full items-center gap-2.5 rounded-md px-2 text-left text-sm transition-colors duration-[120ms] hover:bg-surface",
+          "flex h-12 w-full items-center gap-3 rounded-lg px-2.5 text-left text-[15px] transition-colors duration-[120ms] hover:bg-surface",
           collapsed && "justify-center px-0",
         )}
         aria-label={`Account menu for ${displayName}`}
@@ -44,18 +44,18 @@ export function UserMenu({ user, collapsed }: { user: SidebarUser; collapsed: bo
           <>
             <span className="flex min-w-0 flex-1 flex-col leading-tight">
               <span className="truncate font-medium">{displayName}</span>
-              {user.email ? <span className="truncate text-xs text-fg-muted">{user.email}</span> : null}
+              {user.email ? <span className="truncate text-[13px] text-fg-muted">{user.email}</span> : null}
             </span>
-            <ChevronsUpDown className="size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
+            <ChevronsUpDown className="size-4.5 shrink-0 text-fg-subtle" aria-hidden="true" />
           </>
         ) : null}
       </DropdownMenuTrigger>
-      <DropdownMenuContent side="top" align="start" className="w-56">
+      <DropdownMenuContent side="top" align="start" className="w-64">
         <DropdownMenuLabel className="flex flex-col gap-1.5">
           <span className="truncate">{displayName}</span>
           <span className="flex items-center gap-2 font-normal">
             <RoleBadge role={user.orgRole} />
-            <span className="truncate text-xs text-fg-muted">{ORG_ROLE_META[user.orgRole].summary}</span>
+            <span className="truncate text-[13px] text-fg-muted">{ORG_ROLE_META[user.orgRole].summary}</span>
           </span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
@@ -88,9 +88,9 @@ export function UserAvatar({
   className?: string;
 }) {
   return (
-    <Avatar className={cn("size-8", className)}>
+    <Avatar className={cn("size-9", className)}>
       {avatarUrl ? <AvatarImage src={avatarUrl} alt="" /> : null}
-      <AvatarFallback className="text-xs">{initials(name)}</AvatarFallback>
+      <AvatarFallback className="text-[13px]">{initials(name)}</AvatarFallback>
     </Avatar>
   );
 }

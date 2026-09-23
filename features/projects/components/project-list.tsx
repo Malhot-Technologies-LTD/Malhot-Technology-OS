@@ -34,14 +34,14 @@ export function ProjectList({ projects, canCreate }: { projects: readonly Projec
   }
 
   return (
-    <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    <ul className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
       {projects.map((project) => {
         const open = project.status !== "completed" && project.status !== "archived";
         return (
           <li key={project.id}>
             <Link
               href={`/os/projects/${project.key}`}
-              className="group focus-visible:outline-focus flex h-full flex-col gap-4 rounded-lg border border-border bg-surface p-5 transition-colors duration-[120ms] hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-2"
+              className="group focus-visible:outline-focus flex h-full flex-col gap-5 rounded-lg border border-border bg-surface p-6 transition-[colors,transform] duration-[160ms] ease-standard hover:-translate-y-0.5 hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-2"
             >
               <div className="flex items-start justify-between gap-3">
                 <ProjectKey value={project.key} />
@@ -49,19 +49,19 @@ export function ProjectList({ projects, canCreate }: { projects: readonly Projec
               </div>
 
               <div className="flex min-w-0 flex-col gap-1">
-                <h3 className="truncate text-[15px] font-medium group-hover:underline" title={project.name}>
+                <h3 className="truncate text-lg font-medium group-hover:underline" title={project.name}>
                   {project.name}
                 </h3>
-                <p className="truncate text-sm text-fg-muted">{project.client?.name ?? "Internal"}</p>
+                <p className="truncate text-[15px] text-fg-muted">{project.client?.name ?? "Internal"}</p>
               </div>
 
-              <dl className="mt-auto flex items-end justify-between gap-3 border-t border-border pt-4 text-sm">
+              <dl className="mt-auto flex items-end justify-between gap-3 border-t border-border pt-5 text-[15px]">
                 <div className="flex min-w-0 flex-col gap-0.5">
-                  <dt className="text-xs text-fg-subtle">Manager</dt>
+                  <dt className="text-[13px] text-fg-subtle">Manager</dt>
                   <dd className="truncate text-fg-muted">{project.manager?.full_name ?? EMPTY}</dd>
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-0.5">
-                  <dt className="text-xs text-fg-subtle">Target end</dt>
+                  <dt className="text-[13px] text-fg-subtle">Target end</dt>
                   <dd>
                     <DueDate value={project.target_end_date} open={open} />
                   </dd>

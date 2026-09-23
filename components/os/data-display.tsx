@@ -82,7 +82,7 @@ export function DueDate({ value, open = true, relative = false, className }: Due
       )}
     >
       {formatDate(value)}
-      {relative ? <span className="ml-1.5 text-xs text-fg-muted">{relativeDays(days)}</span> : null}
+      {relative ? <span className="ml-2 text-sm text-fg-muted">{relativeDays(days)}</span> : null}
       {overdue && !relative ? <span className="sr-only"> — {relativeDays(days)}</span> : null}
     </span>
   );
@@ -93,7 +93,7 @@ export function ProjectKey({ value, className }: { value: string; className?: st
   return (
     <span
       className={cn(
-        "inline-flex h-5 shrink-0 items-center rounded-sm border border-border bg-bg-subtle px-1.5 font-mono text-xs text-fg-muted",
+        "inline-flex h-7 shrink-0 items-center rounded-md border border-border bg-bg-subtle px-2 font-mono text-[13px] text-fg-muted",
         className,
       )}
     >

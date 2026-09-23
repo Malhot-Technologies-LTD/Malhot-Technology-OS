@@ -28,14 +28,14 @@ export function ErrorState({
     <div
       role="alert"
       className={cn(
-        "flex flex-col items-center justify-center gap-3 rounded-md border border-status-danger-border bg-status-danger-bg px-6 py-12 text-center",
+        "flex flex-col items-center justify-center gap-3 rounded-md border border-status-danger-border bg-status-danger-bg px-8 py-16 text-center",
         className,
       )}
     >
-      <AlertTriangle className="size-6 text-status-danger-fg" aria-hidden="true" />
+      <AlertTriangle className="size-8 text-status-danger-fg" aria-hidden="true" />
       <div className="flex flex-col gap-1">
-        <p className="text-sm font-medium">{title}</p>
-        {description ? <p className="max-w-md text-sm text-fg-muted">{description}</p> : null}
+        <p className="text-xl font-medium">{title}</p>
+        {description ? <p className="max-w-lg text-base text-fg-muted">{description}</p> : null}
       </div>
       {action}
       {reference ? <p className="font-mono text-xs text-fg-subtle">Reference {reference}</p> : null}

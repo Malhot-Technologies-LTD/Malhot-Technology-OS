@@ -44,6 +44,7 @@
   /* Malhot tokens exposed as utilities: bg-surface, text-fg-muted, border-border-strong, bg-brand … */
   --color-bg: var(--bg);
   --color-bg-subtle: var(--bg-subtle);
+  --color-rail: var(--rail);
   --color-surface: var(--surface);
   --color-surface-raised: var(--surface-raised);
   --color-border-strong: var(--border-strong);
@@ -53,6 +54,10 @@
   --color-brand: var(--brand);
   --color-brand-fg: var(--brand-fg);
   --color-brand-subtle: var(--brand-subtle);
+  --color-brand-solid: var(--brand-solid);
+  --color-brand-solid-hover: var(--brand-solid-hover);
+  --color-brand-solid-fg: var(--brand-solid-fg);
+  --color-brand-solid-muted: var(--brand-solid-muted);
   --color-site-ink: var(--site-ink);
   --color-site-ink-raised: var(--site-ink-raised);
   --color-site-ink-line: var(--site-ink-line);
@@ -146,5 +151,87 @@
       transition-duration: 0.01ms !important;
       scroll-behavior: auto !important;
     }
+  }
+}
+
+/*
+ * OS motion.
+ *
+ * Three jobs only: tell you something arrived, tell you something opened, tell
+ * you where your pointer is. Durations come from the design system — 120ms for
+ * hover and press, 180ms for open and close, 240ms for a layout shift — and
+ * everything eases with --ease-standard so the whole OS decelerates the same
+ * way. The reduced-motion block in @layer base neutralises all of it.
+ */
+@layer utilities {
+  /* Content arriving: a short rise, never a slide across the page. */
+  @keyframes os-rise {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .animate-rise {
+    animation: os-rise 240ms var(--ease-standard) both;
+  }
+
+  /*
+   * Stagger for a list or a row of tiles. Each child starts 40ms after the one
+   * before it, which is enough to read as a sequence without making the last
+   * item feel late. Capped at eight: past that the delay is longer than the
+   * animation and the page just looks slow to load.
+   */
+  .animate-rise-stagger > * {
+    animation: os-rise 240ms var(--ease-standard) both;
+  }
+  .animate-rise-stagger > *:nth-child(1) {
+    animation-delay: 0ms;
+  }
+  .animate-rise-stagger > *:nth-child(2) {
+    animation-delay: 40ms;
+  }
+  .animate-rise-stagger > *:nth-child(3) {
+    animation-delay: 80ms;
+  }
+  .animate-rise-stagger > *:nth-child(4) {
+    animation-delay: 120ms;
+  }
+  .animate-rise-stagger > *:nth-child(5) {
+    animation-delay: 160ms;
+  }
+  .animate-rise-stagger > *:nth-child(6) {
+    animation-delay: 200ms;
+  }
+  .animate-rise-stagger > *:nth-child(7) {
+    animation-delay: 240ms;
+  }
+  .animate-rise-stagger > *:nth-child(n + 8) {
+    animation-delay: 280ms;
+  }
+
+  /*
+   * Submenu open/close. grid-template-rows 0fr -> 1fr animates to the content's
+   * own height, so nothing has to measure the list or hard-code a max-height
+   * that breaks the moment an item wraps to two lines.
+   */
+  .collapse-grid {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition:
+      grid-template-rows 180ms var(--ease-standard),
+      opacity 180ms var(--ease-standard);
+    opacity: 0;
+  }
+  .collapse-grid[data-open="true"] {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+  .collapse-grid > * {
+    overflow: hidden;
   }
 }

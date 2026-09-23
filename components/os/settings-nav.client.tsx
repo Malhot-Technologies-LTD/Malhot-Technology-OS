@@ -16,7 +16,7 @@ const SECTIONS = [
 export function SettingsNav({ isAdmin }: { isAdmin: boolean }) {
   const pathname = usePathname();
   return (
-    <nav aria-label="Settings sections" className="flex gap-1 md:w-48 md:flex-col">
+    <nav aria-label="Settings sections" className="flex gap-1 md:w-56 md:flex-col">
       {SECTIONS.filter((section) => isAdmin || !section.adminOnly).map((section) => {
         const active = pathname === section.href;
         return (
@@ -25,7 +25,7 @@ export function SettingsNav({ isAdmin }: { isAdmin: boolean }) {
             href={section.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "rounded-md px-2.5 py-1.5 text-sm text-fg-muted transition-colors duration-[120ms] hover:bg-bg-subtle hover:text-fg",
+              "rounded-lg px-3 py-2.5 text-[15px] text-fg-muted transition-colors duration-[120ms] hover:bg-bg-subtle hover:text-fg",
               active && "bg-brand-subtle font-medium text-brand",
             )}
           >

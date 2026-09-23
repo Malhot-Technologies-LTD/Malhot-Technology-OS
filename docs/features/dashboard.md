@@ -35,3 +35,17 @@ None beyond role scoping in v1. Org admins see org-wide numbers; members see the
 
 ## Out of scope
 Custom widgets, saved views, charts on the dashboard (reports own charts), team announcements.
+
+## Built so far (Phase 3 slice)
+
+The layout above is the target. Task data does not exist yet, so Home cannot answer "what needs *me* now"; what it can answer honestly is "what is stuck, and what is late". `app/(os)/os/page.tsx` ships that, in the same order of loudness the target uses:
+
+1. **Greeting and date**, in the viewer's own timezone (`profile.timezone`, falling back to UTC) — a dashboard that says "Good morning" at 9pm has admitted the whole page is guessing. Beside it, an org card: where you are and how many projects it holds.
+2. **Focus panel** — one `FocusCard`, picked in order of how much it hurts: the most overdue project, else the most blocked one, else the next target date. Never more than one, per `design/design-system.md#the-one-coloured-surface`.
+3. **Setup checklist** — profile, first project, goals, MVP, manager. Every step is read off data that already exists, so it cannot claim something is done when it is not, and it removes itself once the required steps pass.
+4. **Stat tiles** — active, in planning, past target, total. Each links to the list that explains it.
+5. **Needs attention / Projects** (two thirds) beside **Ready to start** and **Upcoming targets** (one third). "Ready" means a project has a manager, a start date, goals and an MVP — the same four checks `getDashboardProjects` counts as blockers.
+
+Data is still the single wave of three flat selects in `getDashboardProjects`; nothing here added a query. Loading is `DashboardSkeleton`, which copies the real measurements rather than approximating them.
+
+Still to come with the phases that own them: My Work (4), recent activity and notifications (4), project health and progress bars (5), per-widget error boundaries.
