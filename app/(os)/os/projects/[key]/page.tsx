@@ -1,4 +1,4 @@
-import { CheckCircle2, Circle, Flag, ListChecks, Target, Users } from "lucide-react";
+import { CheckCircle2, Circle, Flag, ListChecks, ListTodo, Target, Users } from "lucide-react";
 import type { Metadata } from "next";
 
 import { DueDate, KeyValueList, ProgressBar, ProjectKey } from "@/components/os/data-display";
@@ -9,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { QuickAdd } from "@/features/projects/components/quick-add.client";
 import { StatusActions } from "@/features/projects/components/status-actions.client";
 import { ProjectTeam } from "@/features/projects/components/project-team.client";
+import { TaskBoard } from "@/features/tasks/components/task-board.client";
+import { listProjectTasks } from "@/features/tasks/queries";
 import {
   getProjectByKey,
   getProjectContext,
@@ -67,10 +69,11 @@ export default async function ProjectOverviewPage({ params }: PageProps<"/os/pro
     );
   }
 
-  const [ctx, planning, team] = await Promise.all([
+  const [ctx, planning, team, tasks] = await Promise.all([
     getProjectContext(project, viewer),
     getProjectPlanning(project.id),
     listProjectMembers(project.id),
+    listProjectTasks(project.id),
   ]);
   const canManageTeam = can(viewer, "project.manage_members", ctx);
   // Only a manager sees the picker, so only a manager pays for the query.
@@ -126,6 +129,28 @@ export default async function ProjectOverviewPage({ params }: PageProps<"/os/pro
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="flex flex-col gap-6 lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <ListTodo className="size-4 text-fg-muted" aria-hidden="true" />
+                Tasks
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <TaskBoard
+                projectKey={project.key}
+                tasks={tasks.data ?? []}
+                team={(team.data ?? []).map((member) => ({
+                  userId: member.user_id,
+                  fullName: member.profile?.full_name ?? "Unnamed",
+                  avatarUrl: member.profile?.avatar_url ?? null,
+                }))}
+                canWrite={can(viewer, "task.create", ctx) && writable}
+                canDelete={can(viewer, "task.delete", ctx)}
+              />
+            </CardContent>
+          </Card>
+
           {project.status === "planning" ? (
             <Card>
               <CardHeader>

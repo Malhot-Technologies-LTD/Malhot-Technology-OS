@@ -266,8 +266,17 @@ export function can(
 function canOrgAction(viewer: PermissionViewer, action: Action): boolean {
   switch (action) {
     case "project.create":
-      // Any organisation member may start a project; the creator becomes manager.
-      return true;
+      /*
+       * Organisation admins only. It used to be open to any member, which put
+       * "New project" in a developer's sidebar beside the work they were
+       * actually assigned. A project is a commitment the company makes, and the
+       * creator becomes its manager — not a decision that belongs to whoever
+       * happens to be looking at the screen.
+       *
+       * Matched by the projects_insert policy in
+       * 20260923140000_tasks_and_create_policy.sql; the two must agree.
+       */
+      return viewer.orgRole === "owner" || viewer.orgRole === "admin";
     case "org.manage":
     case "org.invite":
     case "org.integrations":

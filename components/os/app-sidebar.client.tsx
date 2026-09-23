@@ -47,6 +47,7 @@ export function AppSidebar({ collapsed, onToggle, user, audience }: Props) {
   const pathname = usePathname();
   // Sections this person has something to read; see nav-audience.ts.
   const groups = visibleGroups(audience);
+  const canStartProjects = user.orgRole === "owner" || user.orgRole === "admin";
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
 
@@ -117,8 +118,12 @@ export function AppSidebar({ collapsed, onToggle, user, audience }: Props) {
          * The one action worth a coloured button in the chrome. Everything in
          * the OS hangs off a project, so starting one is the only true entry
          * point; a second accent would cancel this one out.
+         *
+         * Organisation admins only. A developer seeing "New project" above the
+         * work they were assigned is being invited to start something that is
+         * not theirs to start.
          */}
-        <div className="shrink-0 px-2.5 pb-3">
+        <div className={cn("shrink-0 px-2.5 pb-3", !canStartProjects && "hidden")}>
           <Link
             href="/os/projects/new"
             aria-label="New project"

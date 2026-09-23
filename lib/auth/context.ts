@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { cache } from "react";
 
 import { createClient } from "@/lib/supabase/server";
-import type { OrgRole } from "@/types/domain";
+import type { OrgRole, ProjectRole } from "@/types/domain";
 
 /**
  * Viewer context, resolved once per request (docs/architecture/authorization.md#viewer-context).
@@ -18,6 +18,13 @@ export type Viewer = {
   orgRole: OrgRole;
   organization: { id: string; name: string; slug: string };
   profile: { fullName: string; avatarUrl: string | null; title: string | null; timezone: string };
+  /**
+   * Every project role this person holds. Read here rather than in a second
+   * query because `claims.sub` is known before any of these run, so it costs a
+   * slot in an existing parallel batch instead of a whole round trip on every
+   * page in the OS. The sidebar uses it to decide which sections to show.
+   */
+  projectRoles: readonly ProjectRole[];
 };
 
 export type AuthState =
@@ -36,7 +43,7 @@ export const getAuthState = cache(async (): Promise<AuthState> => {
   const userId = claims.sub;
   const email = typeof claims.email === "string" ? claims.email : null;
 
-  const [profileResult, membershipResult] = await Promise.all([
+  const [profileResult, membershipResult, projectRolesResult] = await Promise.all([
     supabase.from("profiles").select("full_name, avatar_url, title, timezone").eq("id", userId).maybeSingle(),
     supabase
       .from("organization_members")
@@ -45,6 +52,7 @@ export const getAuthState = cache(async (): Promise<AuthState> => {
       .order("joined_at", { ascending: true })
       .limit(1)
       .maybeSingle(),
+    supabase.from("project_members").select("role").eq("user_id", userId),
   ]);
 
   const membership = membershipResult.data;
@@ -65,6 +73,8 @@ export const getAuthState = cache(async (): Promise<AuthState> => {
         title: profile.title,
         timezone: profile.timezone,
       },
+      // A failed read costs two optional sidebar sections, never the page.
+      projectRoles: (projectRolesResult.data ?? []).map((row) => row.role as ProjectRole),
     },
   };
 });

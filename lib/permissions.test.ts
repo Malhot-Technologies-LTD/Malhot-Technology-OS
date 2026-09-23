@@ -129,9 +129,15 @@ describe("permission matrix", () => {
 });
 
 describe("organisation actions", () => {
-  it("lets any member create a project", () => {
-    expect(can(viewerFor("contributor"), "project.create")).toBe(true);
-    expect(can(viewerFor("admin"), "project.create")).toBe(true);
+  it("lets only organisation admins create a project", () => {
+    // Changed deliberately: a project is a company commitment whose creator
+    // becomes its manager, so it is not a decision for whoever is looking at
+    // the screen. Matched by the projects_insert policy in
+    // 20260923140000_tasks_and_create_policy.sql.
+    expect(can({ userId: ME, organizationId: "org-1", orgRole: "owner" }, "project.create")).toBe(true);
+    expect(can({ userId: ME, organizationId: "org-1", orgRole: "admin" }, "project.create")).toBe(true);
+    expect(can({ userId: ME, organizationId: "org-1", orgRole: "member" }, "project.create")).toBe(false);
+    expect(can(viewerFor("contributor"), "project.create")).toBe(false);
   });
 
   for (const action of ["org.manage", "org.invite", "org.integrations", "org.reports", "org.inquiries"] as const) {

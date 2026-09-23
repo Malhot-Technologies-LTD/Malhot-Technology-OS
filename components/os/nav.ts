@@ -34,7 +34,8 @@ export const PRIMARY_NAV: readonly NavItem[] = [
     icon: FolderKanban,
     children: [
       { label: "All projects", href: "/os/projects" },
-      { label: "New project", href: "/os/projects/new" },
+      // Starting a project is an organisation-admin act; see lib/permissions.ts.
+      { label: "New project", href: "/os/projects/new", adminOnly: true },
     ],
   },
   { label: "My Tasks", href: "/os/my-tasks", icon: CheckSquare },

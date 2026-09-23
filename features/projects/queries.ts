@@ -310,23 +310,26 @@ export type ProjectTeamPreview = { userId: string; fullName: string; avatarUrl: 
 /**
  * Who is on each project, keyed by project id, for the list cards.
  *
- * One query for the whole list rather than one per card. RLS narrows it without
- * help: project_members is selectable where is_project_member(project_id), and
- * an org admin resolves to a member of every project, so this returns the teams
- * of exactly the projects the viewer can already see.
+ * One query for the whole list rather than one per card, and keyed on the
+ * organisation rather than a list of ids so it can run *beside* the project
+ * query instead of after it — waiting for ids it does not need cost a full
+ * round trip on every visit to this page.
+ *
+ * RLS narrows it without help: project_members is selectable where
+ * is_project_member(project_id), and an org admin resolves to a member of every
+ * project, so this returns the teams of exactly the projects the viewer sees.
  *
  * Managers first, then by name, so the person answerable for the work is the
  * first face on the card and the order never shifts between renders.
  */
-export async function listTeamsByProject(projectIds: readonly string[]): Promise<Map<string, ProjectTeamPreview[]>> {
+export async function listTeamsByProject(organizationId: string): Promise<Map<string, ProjectTeamPreview[]>> {
   const teams = new Map<string, ProjectTeamPreview[]>();
-  if (projectIds.length === 0) return teams;
 
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("project_members")
-    .select("project_id, role, profile:profiles(id, full_name, avatar_url)")
-    .in("project_id", [...projectIds])
+    .select("project_id, role, profile:profiles(id, full_name, avatar_url), project:projects!inner(organization_id)")
+    .eq("project.organization_id", organizationId)
     .returns<
       {
         project_id: string;

@@ -18,7 +18,11 @@ export default async function ProjectsPage() {
   const viewer = await requireViewer();
   const canCreate = can(viewer, "project.create");
 
-  const { data, error } = await listProjects(viewer.organizationId);
+  // Both at once: the team query no longer depends on the project ids.
+  const [{ data, error }, teams] = await Promise.all([
+    listProjects(viewer.organizationId),
+    listTeamsByProject(viewer.organizationId),
+  ]);
   if (error) {
     // Rendering the reason beats throwing: the boundary only has a digest, and
     // in production Next strips the message, so the one useful fact is lost.
@@ -30,9 +34,6 @@ export default async function ProjectsPage() {
       </PageBody>
     );
   }
-
-  // One query for every card, after the list is known.
-  const teams = await listTeamsByProject(data.map((project) => project.id));
 
   return (
     <PageBody>

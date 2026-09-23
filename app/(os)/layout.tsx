@@ -7,7 +7,6 @@ import { NotificationBell } from "@/components/os/notification-bell";
 import { OsShell, SIDEBAR_COOKIE } from "@/components/os/os-shell.client";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
-import { listViewerProjectRoles } from "@/features/projects/queries";
 import { getAuthState } from "@/lib/auth/context";
 
 export const metadata: Metadata = {
@@ -32,15 +31,16 @@ export default async function OsLayout({ children }: LayoutProps<"/">) {
   }
 
   const { viewer } = state;
-  // Decides which sections belong in this person's sidebar; see components/os/nav-audience.ts.
-  const [projectRoles, cookieStore] = await Promise.all([listViewerProjectRoles(viewer.userId), cookies()]);
+  // Project roles already rode along in getAuthState's batch, so nothing here
+  // waits on the network — this is a cookie read, not a round trip.
+  const cookieStore = await cookies();
   const defaultCollapsed = cookieStore.get(SIDEBAR_COOKIE)?.value === "collapsed";
 
   return (
     <ThemeProvider>
       <OsShell
         defaultCollapsed={defaultCollapsed}
-        audience={{ orgRole: viewer.orgRole, projectRoles }}
+        audience={{ orgRole: viewer.orgRole, projectRoles: viewer.projectRoles }}
         bell={<NotificationBell userId={viewer.userId} organizationId={viewer.organizationId} />}
         user={{
           fullName: viewer.profile.fullName,
