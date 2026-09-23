@@ -30,23 +30,33 @@ export const createProject = withAction("projects.create", async (input: unknown
   if (!can(viewer, "project.create")) return fail("forbidden", "You cannot create projects.");
 
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("projects")
-    .insert({
-      organization_id: viewer.organizationId,
-      key: parsed.data.key,
-      name: parsed.data.name,
-      description: parsed.data.description,
-      client_id: parsed.data.clientId,
-      priority: parsed.data.priority,
-      start_date: parsed.data.startDate,
-      target_end_date: parsed.data.targetEndDate,
-      // W2: the creator manages the project unless they hand it over later.
-      created_by: viewer.userId,
-      manager_id: viewer.userId,
-    })
-    .select("key")
-    .single();
+  /*
+   * No `.select()` on the insert, deliberately.
+   *
+   * Reading the row back adds a RETURNING clause, and Postgres applies the
+   * SELECT policy to returned rows. `projects_select` requires
+   * `is_project_member(id) or is_org_admin(organization_id)`, and the creator's
+   * membership row is written by the AFTER INSERT trigger `setup_new_project`,
+   * which fires at the end of the statement — after RETURNING is projected. An
+   * org admin passes on the second branch, but a plain member passes on
+   * neither, so the read-back fails for exactly the people the feature is for.
+   *
+   * There is nothing to read back anyway: the key is the one we just sent, and
+   * the schema has already upper-cased it.
+   */
+  const { error } = await supabase.from("projects").insert({
+    organization_id: viewer.organizationId,
+    key: parsed.data.key,
+    name: parsed.data.name,
+    description: parsed.data.description,
+    client_id: parsed.data.clientId,
+    priority: parsed.data.priority,
+    start_date: parsed.data.startDate,
+    target_end_date: parsed.data.targetEndDate,
+    // W2: the creator manages the project unless they hand it over later.
+    created_by: viewer.userId,
+    manager_id: viewer.userId,
+  });
 
   if (error) {
     const mapped = mapDbError(error);
@@ -55,9 +65,9 @@ export const createProject = withAction("projects.create", async (input: unknown
     return fail(mapped.code, mapped.message, fieldErrors ? { fieldErrors } : undefined);
   }
 
-  logger.info("project.created", { key: data.key });
+  logger.info("project.created", { key: parsed.data.key });
   revalidatePath("/os/projects");
-  redirect(`/os/projects/${data.key}`);
+  redirect(`/os/projects/${parsed.data.key}`);
 });
 
 export const updateProject = withAction("projects.update", async (input: unknown): Promise<ActionResult> => {

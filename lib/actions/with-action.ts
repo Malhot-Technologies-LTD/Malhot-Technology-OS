@@ -1,6 +1,6 @@
 import "server-only";
 
-import { isRedirectError } from "next/dist/client/components/redirect-error";
+import { unstable_rethrow } from "next/navigation";
 
 import { type ActionResult, defaultMessage } from "@/lib/actions/result";
 import { logger } from "@/lib/logger";
@@ -12,7 +12,15 @@ function shortRef(): string {
 
 /**
  * Wraps a Server Action so unexpected throws become `fail('unexpected')` with a
- * reference id, while Next.js redirect() signals propagate untouched.
+ * reference id, while Next.js control-flow signals propagate untouched.
+ *
+ * `unstable_rethrow` is the documented way to do that (and the only supported
+ * one). It covers every framework signal — `redirect()`, `permanentRedirect()`
+ * and `notFound()` — not just redirects, so an action that calls `notFound()`
+ * renders the not-found page instead of being reported to the user as an
+ * unexpected server error. It also replaces a deep import of
+ * `next/dist/client/components/redirect-error`, a private path that carries no
+ * compatibility promise across Next versions.
  */
 export function withAction<Args extends unknown[], T>(
   name: string,
@@ -22,7 +30,7 @@ export function withAction<Args extends unknown[], T>(
     try {
       return await fn(...args);
     } catch (error) {
-      if (isRedirectError(error)) throw error;
+      unstable_rethrow(error);
       const ref = shortRef();
       logger.error("action.unexpected", { action: name, ref, error: serialiseError(error) });
       return { ok: false, error: { code: "unexpected", message: `${defaultMessage("unexpected")} (ref ${ref})`, ref } };
