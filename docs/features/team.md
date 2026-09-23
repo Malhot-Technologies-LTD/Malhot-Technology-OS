@@ -44,3 +44,17 @@ Only settings people need. Left navigation → form pages.
 
 ## Out of scope (v1)
 Custom roles, groups/departments, per-user API tokens, audit log export UI (activity page covers reading; export is a script), billing.
+
+## Built so far: project membership
+
+`/os/team` is still a placeholder, but the part that gates access now exists on the project overview.
+
+Approval into the organisation gets someone an account, not the work. `projects_select` shows a plain member only the projects they belong to, so an approved person signs in to an empty OS until they appear on a project. **Assignment is the moment access begins** — that is why the control lives on the project rather than in Settings, next to the thing it grants.
+
+The Team card (`features/projects/components/project-team.client.tsx`) lists who is on the project, what role each holds, and — for a manager or an org admin — lets them add, re-role and remove people. The picker offers only organisation members who are not already on the project, because the `member_must_be_in_org` trigger and the `(project_id, user_id)` unique constraint would refuse anyone else, and an option that always fails is worse than no option.
+
+Roles come from `features/projects/roles.ts`, which is the vocabulary; `lib/permissions.ts` is the enforcement. `roles.test.ts` is the seam between them: it asserts that what a summary claims a role can do is what `can()` actually allows, so the words on screen cannot drift from the matrix.
+
+Removing the last manager is refused. A project whose only manager has been removed cannot be administered by anyone in the product, and the person doing it may well be removing themselves — recovering from that needs a database edit, so it is stopped at the action.
+
+Still to come with the phases that own them: the organisation-wide team page, workload columns, discipline filters, and per-project chips on a member's profile.

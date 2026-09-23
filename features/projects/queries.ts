@@ -183,3 +183,54 @@ export async function getDashboardProjects(organizationId: string): Promise<Dash
     return { ...project, goalCount, mvpCount, blockers };
   });
 }
+
+export type ProjectMemberRow = {
+  user_id: string;
+  role: ProjectRole;
+  added_at: string;
+  profile: { id: string; full_name: string; title: string | null; avatar_url: string | null } | null;
+};
+
+/** Everyone on a project. RLS shows the list only to people already on it. */
+export async function listProjectMembers(projectId: string) {
+  const supabase = await createClient();
+  return supabase
+    .from("project_members")
+    .select("user_id, role, added_at, profile:profiles(id, full_name, title, avatar_url)")
+    .eq("project_id", projectId)
+    .order("added_at")
+    .returns<ProjectMemberRow[]>();
+}
+
+export type AssignableMember = { userId: string; fullName: string; title: string | null };
+
+/**
+ * Organisation members who are not on this project yet.
+ *
+ * Filtered here rather than in the picker so the control cannot offer someone
+ * the `member_must_be_in_org` trigger or the unique constraint would refuse —
+ * an option that always fails is worse than no option.
+ */
+export async function listAssignableMembers(organizationId: string, projectId: string): Promise<AssignableMember[]> {
+  const supabase = await createClient();
+  const [org, onProject] = await Promise.all([
+    supabase
+      .from("organization_members")
+      .select("user_id, profile:profiles(full_name, title)")
+      .eq("organization_id", organizationId)
+      .returns<{ user_id: string; profile: { full_name: string; title: string | null } | null }[]>(),
+    supabase.from("project_members").select("user_id").eq("project_id", projectId),
+  ]);
+
+  if (org.error || onProject.error) return [];
+
+  const taken = new Set((onProject.data ?? []).map((row) => row.user_id));
+  return (org.data ?? [])
+    .filter((row) => !taken.has(row.user_id))
+    .map((row) => ({
+      userId: row.user_id,
+      fullName: row.profile?.full_name ?? "Unnamed",
+      title: row.profile?.title ?? null,
+    }))
+    .sort((a, b) => a.fullName.localeCompare(b.fullName));
+}

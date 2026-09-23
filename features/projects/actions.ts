@@ -11,7 +11,7 @@ import { requireViewer } from "@/lib/auth/context";
 import { logger } from "@/lib/logger";
 import { can } from "@/lib/permissions";
 import { createClient } from "@/lib/supabase/server";
-import type { ProjectStatus } from "@/types/domain";
+import type { ProjectRole, ProjectStatus } from "@/types/domain";
 
 import { getProjectByKey, getProjectContext } from "./queries";
 import { resolveClientByName } from "./clients";
@@ -276,5 +276,139 @@ export const searchableProjects = withAction(
       .limit(200);
     if (error) return fail("unexpected", "Projects could not be loaded.");
     return ok(data as PaletteProject[]);
+  },
+);
+
+/**
+ * Project team (docs/product/user-roles.md#project-roles).
+ *
+ * Being an organisation member gets you an account; being a *project* member
+ * gets you the project. `projects_select` shows a plain member only the
+ * projects they are on, so until someone is assigned here they sign in to an
+ * empty OS. Assignment is the moment access actually begins.
+ *
+ * Every one of these re-reads the project and checks `can()` against the
+ * viewer's standing in it. RLS and the `member_must_be_in_org` trigger are the
+ * backstop, not the gate.
+ */
+async function loadManageableProject(projectId: string) {
+  const viewer = await requireViewer();
+  const supabase = await createClient();
+  const existing = await supabase
+    .from("projects")
+    .select("id, key, status, qa_required, organization_id")
+    .eq("id", projectId)
+    .maybeSingle();
+  if (existing.error || !existing.data)
+    return { ok: false as const, result: fail("not_found", "That project does not exist.") };
+
+  const ctx = await getProjectContext(existing.data, viewer);
+  if (!can(viewer, "project.manage_members", ctx))
+    return { ok: false as const, result: fail("forbidden", "Only the project manager can change the team.") };
+
+  return { ok: true as const, viewer, supabase, project: existing.data };
+}
+
+const PROJECT_ROLES: readonly ProjectRole[] = ["manager", "developer", "designer", "qa", "marketer", "viewer"];
+
+function readMemberInput(input: unknown): { projectId: string; userId: string; role: ProjectRole } | null {
+  const payload = input as { projectId?: unknown; userId?: unknown; role?: unknown };
+  const projectId = typeof payload?.projectId === "string" ? payload.projectId : null;
+  const userId = typeof payload?.userId === "string" ? payload.userId : null;
+  const role = typeof payload?.role === "string" ? payload.role : null;
+  if (!projectId || !userId || !role) return null;
+  if (!PROJECT_ROLES.includes(role as ProjectRole)) return null;
+  return { projectId, userId, role: role as ProjectRole };
+}
+
+export const assignProjectMember = withAction(
+  "projects.assignMember",
+  async (input: unknown): Promise<ActionResult> => {
+    const parsed = readMemberInput(input);
+    if (!parsed) return fail("validation", "Choose a person and a role.");
+
+    const loaded = await loadManageableProject(parsed.projectId);
+    if (!loaded.ok) return loaded.result;
+
+    const { error } = await loaded.supabase.from("project_members").insert({
+      project_id: parsed.projectId,
+      user_id: parsed.userId,
+      role: parsed.role,
+      added_by: loaded.viewer.userId,
+    });
+    if (error) {
+      const mapped = mapDbError(error);
+      logger.warn("project.assign_member_failed", { code: error.code, mapped: mapped.code });
+      return fail(mapped.code, mapped.message);
+    }
+
+    logger.info("project.member_assigned", { key: loaded.project.key, role: parsed.role });
+    revalidatePath(`/os/projects/${loaded.project.key}`);
+    return ok(undefined);
+  },
+);
+
+export const changeProjectMemberRole = withAction(
+  "projects.changeMemberRole",
+  async (input: unknown): Promise<ActionResult> => {
+    const parsed = readMemberInput(input);
+    if (!parsed) return fail("validation", "Choose a person and a role.");
+
+    const loaded = await loadManageableProject(parsed.projectId);
+    if (!loaded.ok) return loaded.result;
+
+    const { error } = await loaded.supabase
+      .from("project_members")
+      .update({ role: parsed.role })
+      .eq("project_id", parsed.projectId)
+      .eq("user_id", parsed.userId);
+    if (error) {
+      const mapped = mapDbError(error);
+      return fail(mapped.code, mapped.message);
+    }
+
+    revalidatePath(`/os/projects/${loaded.project.key}`);
+    return ok(undefined);
+  },
+);
+
+export const removeProjectMember = withAction(
+  "projects.removeMember",
+  async (input: unknown): Promise<ActionResult> => {
+    const payload = input as { projectId?: unknown; userId?: unknown };
+    const projectId = typeof payload?.projectId === "string" ? payload.projectId : null;
+    const userId = typeof payload?.userId === "string" ? payload.userId : null;
+    if (!projectId || !userId) return fail("validation", "Unknown person.");
+
+    const loaded = await loadManageableProject(projectId);
+    if (!loaded.ok) return loaded.result;
+
+    /*
+     * Removing the last manager would leave a project nobody can administer —
+     * and the person doing it could be removing themselves. Refuse here rather
+     * than let it happen and require a database fix.
+     */
+    const managers = await loaded.supabase
+      .from("project_members")
+      .select("user_id")
+      .eq("project_id", projectId)
+      .eq("role", "manager");
+    const managerIds = (managers.data ?? []).map((row) => row.user_id);
+    if (managerIds.length === 1 && managerIds[0] === userId)
+      return fail("invariant", "This is the project's only manager. Make someone else a manager first.");
+
+    const { error } = await loaded.supabase
+      .from("project_members")
+      .delete()
+      .eq("project_id", projectId)
+      .eq("user_id", userId);
+    if (error) {
+      const mapped = mapDbError(error);
+      return fail(mapped.code, mapped.message);
+    }
+
+    logger.info("project.member_removed", { key: loaded.project.key });
+    revalidatePath(`/os/projects/${loaded.project.key}`);
+    return ok(undefined);
   },
 );
