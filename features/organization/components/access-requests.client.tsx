@@ -10,10 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { approveAccessRequest, rejectAccess } from "@/features/organization/actions";
 import {
-  AssignFirstProject,
-  type ApprovedPerson,
+  AssignToProjectDialog,
   type AssignableProject,
-} from "@/features/organization/components/assign-first-project.client";
+  type AssignTarget,
+} from "@/features/organization/components/assign-to-project-dialog.client";
 import type { AccessRequest } from "@/lib/supabase/elevated/access-requests";
 
 /**
@@ -28,9 +28,11 @@ import type { AccessRequest } from "@/lib/supabase/elevated/access-requests";
 export function AccessRequests({
   requests,
   projects,
+  projectsFailed,
 }: {
   requests: readonly AccessRequest[];
   projects: readonly AssignableProject[];
+  projectsFailed?: boolean;
 }) {
   /*
    * The dialog is owned here, not by the row that triggered it. Approving
@@ -38,7 +40,7 @@ export function AccessRequests({
    * time the prompt should appear; state living inside it would unmount
    * mid-flow and the prompt would never be seen.
    */
-  const [approved, setApproved] = useState<ApprovedPerson | null>(null);
+  const [approved, setApproved] = useState<AssignTarget | null>(null);
 
   return (
     <>
@@ -54,12 +56,18 @@ export function AccessRequests({
         </ul>
       )}
 
-      <AssignFirstProject person={approved} projects={projects} onClose={() => setApproved(null)} />
+      <AssignToProjectDialog
+        person={approved}
+        projects={projects}
+        projectsFailed={projectsFailed}
+        description="They can sign in now, but will see an empty workspace until they are on a project. You can also do this later from the members list or any project&rsquo;s Team panel."
+        onClose={() => setApproved(null)}
+      />
     </>
   );
 }
 
-function RequestRow({ request, onApproved }: { request: AccessRequest; onApproved: (person: ApprovedPerson) => void }) {
+function RequestRow({ request, onApproved }: { request: AccessRequest; onApproved: (person: AssignTarget) => void }) {
   const [role, setRole] = useState<"admin" | "member">("member");
   const [pending, startTransition] = useTransition();
 

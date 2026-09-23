@@ -234,3 +234,32 @@ export async function listAssignableMembers(organizationId: string, projectId: s
     }))
     .sort((a, b) => a.fullName.localeCompare(b.fullName));
 }
+
+export type ProjectOption = { id: string; key: string; name: string; status: ProjectStatus };
+
+/**
+ * Projects for an "add someone to a project" picker.
+ *
+ * Deliberately narrow and separate from `listProjects`. That query carries the
+ * full list row — manager, client, priority, `kind` — and a picker needs four
+ * columns. Sharing it coupled the picker to every column the list happens to
+ * want: when `kind` was added ahead of its migration, the select failed, the
+ * caller's `?? []` turned the failure into an empty array, and the assign
+ * dialog told people there were no projects to add anyone to. Selecting only
+ * what is needed keeps this working through a schema change either way.
+ *
+ * Archived projects are excluded rather than offered and refused:
+ * `project_members_insert` requires `project_is_writable`.
+ */
+export async function listProjectOptions(organizationId: string) {
+  const supabase = await createClient();
+  return supabase
+    .from("projects")
+    .select("id, key, name, status")
+    .eq("organization_id", organizationId)
+    .is("deleted_at", null)
+    .neq("status", "archived")
+    .order("updated_at", { ascending: false })
+    .limit(200)
+    .returns<ProjectOption[]>();
+}

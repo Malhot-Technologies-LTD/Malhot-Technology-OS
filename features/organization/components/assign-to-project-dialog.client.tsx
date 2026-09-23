@@ -19,33 +19,34 @@ import { assignProjectMember } from "@/features/projects/actions";
 import { ASSIGNABLE_PROJECT_ROLES, PROJECT_ROLE_META } from "@/features/projects/roles";
 import type { ProjectRole } from "@/types/domain";
 
-export type ApprovedPerson = { userId: string; name: string };
+export type AssignTarget = { userId: string; name: string };
 export type AssignableProject = { id: string; key: string; name: string; status: string };
 
 type Props = {
-  person: ApprovedPerson | null;
+  /** null closes the dialog; a person opens it. */
+  person: AssignTarget | null;
   projects: readonly AssignableProject[];
+  /** True when the projects query failed, which is not the same as having none. */
+  projectsFailed?: boolean;
+  /** Extra line shown under the title — used right after approval. */
+  description?: string;
   onClose: () => void;
 };
 
 /**
- * The step straight after approval: put the new person on something.
+ * Put a person on a project.
  *
- * Approving grants an account, not work. `projects_select` shows a plain member
- * only the projects they belong to, so someone approved and left unassigned
- * signs in to an empty OS and reasonably concludes they were not let in at all.
- * Asking here closes that gap at the one moment the admin is already thinking
- * about this person.
+ * Used in two places and deliberately not tied to either: straight after
+ * approving someone, and from any row in the members list. Access to work is
+ * what project membership grants — `projects_select` shows a plain member only
+ * the projects they belong to — so this needs to be reachable at any time, not
+ * only in the seconds after approval.
  *
- * A dialog rather than an inline step, because approving revalidates the
- * members page: the request row is gone from the list by the time this opens,
- * and anything rendered inside it would unmount mid-flow.
- *
- * Skipping is a first-class outcome. Not everyone is approved for project work
- * straight away, and a prompt that cannot be dismissed teaches people to
- * dismiss it carelessly.
+ * No action of its own: `assignProjectMember` already re-reads the project and
+ * checks `can(project.manage_members)` against the caller. An org admin has a
+ * manager's reach, which is exactly who is doing this.
  */
-export function AssignFirstProject({ person, projects, onClose }: Props) {
+export function AssignToProjectDialog({ person, projects, projectsFailed, description, onClose }: Props) {
   const [projectId, setProjectId] = useState("");
   const [role, setRole] = useState<ProjectRole>("developer");
   const [pending, startTransition] = useTransition();
@@ -72,18 +73,27 @@ export function AssignFirstProject({ person, projects, onClose }: Props) {
     });
   }
 
+  const canPick = projects.length > 0;
+
   return (
     <Dialog open={person !== null} onOpenChange={(open) => (open ? undefined : close())}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Put {person?.name ?? "them"} on a project</DialogTitle>
-          <DialogDescription>
-            They can sign in now, but they will see an empty workspace until they are on a project. You can also do this
-            later from any project&rsquo;s Team panel.
-          </DialogDescription>
+          {description ? <DialogDescription>{description}</DialogDescription> : null}
         </DialogHeader>
 
-        {projects.length === 0 ? (
+        {/*
+         * A failed query and an empty organisation are different problems with
+         * different fixes, and telling someone "there are no projects" when the
+         * request errored sends them off to create one they already have.
+         */}
+        {projectsFailed ? (
+          <p className="rounded-lg border border-status-danger-border bg-status-danger-bg px-4 py-3 text-[15px] text-status-danger-fg">
+            The project list could not be loaded, so there is nothing to choose from. Reload the page; if it keeps
+            happening the database may be mid-migration.
+          </p>
+        ) : !canPick ? (
           <p className="text-[15px] text-fg-muted">
             There are no projects to add them to yet. Create one and add them from its Team panel.
           </p>
@@ -127,10 +137,10 @@ export function AssignFirstProject({ person, projects, onClose }: Props) {
         <DialogFooter>
           <DialogClose asChild>
             <Button variant="ghost" disabled={pending}>
-              Skip for now
+              {canPick ? "Cancel" : "Close"}
             </Button>
           </DialogClose>
-          {projects.length > 0 ? (
+          {canPick ? (
             <Button onClick={assign} disabled={pending || !projectId}>
               <UserPlus aria-hidden="true" />
               {pending ? "Adding…" : "Add to project"}
