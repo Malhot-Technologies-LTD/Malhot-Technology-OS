@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { ErrorState } from "@/components/os/error-state";
 import { PageBody, PageHeader } from "@/components/os/page-header";
 import { Button } from "@/components/ui/button";
 import { ProjectList } from "@/features/projects/components/project-list";
 import { listProjects } from "@/features/projects/queries";
+import { describeQueryFailure } from "@/lib/actions/db-errors";
 import { requireViewer } from "@/lib/auth/context";
+import { logger } from "@/lib/logger";
 import { can } from "@/lib/permissions";
 
 export const metadata: Metadata = { title: "Projects" };
@@ -16,7 +19,17 @@ export default async function ProjectsPage() {
   const canCreate = can(viewer, "project.create");
 
   const { data, error } = await listProjects(viewer.organizationId);
-  if (error) throw new Error(`Could not load projects: ${error.message}`);
+  if (error) {
+    // Rendering the reason beats throwing: the boundary only has a digest, and
+    // in production Next strips the message, so the one useful fact is lost.
+    logger.error("projects.list_failed", { code: error.code, message: error.message });
+    return (
+      <PageBody>
+        <PageHeader title="Projects" />
+        <ErrorState {...describeQueryFailure(error)} />
+      </PageBody>
+    );
+  }
 
   return (
     <PageBody>

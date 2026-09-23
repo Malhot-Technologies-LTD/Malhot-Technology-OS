@@ -263,3 +263,28 @@ export async function listProjectOptions(organizationId: string) {
     .limit(200)
     .returns<ProjectOption[]>();
 }
+
+export type MembershipRow = {
+  user_id: string;
+  role: ProjectRole;
+  project: { id: string; key: string; name: string; status: ProjectStatus } | null;
+};
+
+/**
+ * Every project membership in the organisation, for the team page.
+ *
+ * RLS narrows this per viewer without any help from here: `project_members`
+ * is selectable only where `is_project_member(project_id)`, and an org admin
+ * counts as a member of every project through `project_group_of`. So an admin
+ * sees the whole company, and a member sees the projects they share — which is
+ * the right answer for both without a branch in the query.
+ */
+export async function listOrganizationMemberships(organizationId: string) {
+  const supabase = await createClient();
+  return supabase
+    .from("project_members")
+    .select("user_id, role, project:projects!inner(id, key, name, status, organization_id, deleted_at)")
+    .eq("project.organization_id", organizationId)
+    .is("project.deleted_at", null)
+    .returns<(MembershipRow & { project: { organization_id: string; deleted_at: string | null } | null })[]>();
+}

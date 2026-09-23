@@ -100,7 +100,6 @@ export const PLANNED_SECTIONS: Readonly<Record<string, { label: string; phase: n
   timeline: { label: "Timeline", phase: 5 },
   documents: { label: "Documents", phase: 7 },
   testing: { label: "Testing", phase: 6 },
-  team: { label: "Team", phase: 3 },
   reports: { label: "Reports", phase: 9 },
   activity: { label: "Activity", phase: 4 },
   notifications: { label: "Notifications", phase: 4 },

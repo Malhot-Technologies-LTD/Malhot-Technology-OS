@@ -47,3 +47,47 @@ export function mapDbError(error: PostgrestError): ActionError {
       return { code: "unexpected", message: defaultMessage("unexpected") };
   }
 }
+
+/**
+ * Postgres and PostgREST codes for "the app asked for something this database
+ * does not have": an unknown column, an unknown table, or a schema cache that
+ * has not caught up.
+ */
+const SCHEMA_DRIFT = new Set(["42703", "42P01", "PGRST204", "PGRST205"]);
+
+export function isSchemaDrift(error: PostgrestError): boolean {
+  return SCHEMA_DRIFT.has(error.code) || /does not exist/i.test(error.message);
+}
+
+/**
+ * What to show when a *read* fails and the page has nowhere to fall back to.
+ *
+ * Schema drift gets its own wording because it is the one failure here with a
+ * precise, actionable cause: the deploy landed ahead of its migration. Their
+ * release flow applies migrations before promoting the app, so this means that
+ * step was missed — and "something went wrong, try again" sends someone to
+ * retry a page that cannot succeed until a command is run. Naming it turns a
+ * dead end into a fix.
+ */
+export function describeQueryFailure(error: PostgrestError): { title: string; description: string } {
+  if (isSchemaDrift(error)) {
+    return {
+      title: "The database is behind the app",
+      description:
+        "This version expects a column the database does not have yet, so the query was refused. Applying the pending migrations (supabase db push) and reloading will clear it. Retrying on its own will not.",
+    };
+  }
+
+  if (/timed out|fetch failed|network|ECONNRESET|522/i.test(error.message)) {
+    return {
+      title: "The database is not responding",
+      description:
+        "Your data is safe — the connection to Supabase timed out. Try again in a moment; if it persists, check the project's status in the Supabase dashboard.",
+    };
+  }
+
+  return {
+    title: "This could not be loaded",
+    description: "Something went wrong reading from the database. Trying again usually clears it.",
+  };
+}
