@@ -19,6 +19,7 @@ export type Milestone = Tables<"milestones">;
 export type OrgRole = Enums<"org_role">;
 export type ProjectRole = Enums<"project_role">;
 export type ProjectStatus = Enums<"project_status">;
+export type ProjectKind = Enums<"project_kind">;
 export type GoalStatus = Enums<"goal_status">;
 export type MvpItemStatus = Enums<"mvp_item_status">;
 export type ProjectHealth = Enums<"project_health">;

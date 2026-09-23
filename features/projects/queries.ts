@@ -4,7 +4,7 @@ import { groupFor, type ProjectContext } from "@/lib/permissions";
 
 import { readinessBlockers } from "./readiness";
 import { createClient } from "@/lib/supabase/server";
-import type { OrgRole, Priority, ProjectRole, ProjectStatus } from "@/types/domain";
+import type { OrgRole, Priority, ProjectKind, ProjectRole, ProjectStatus } from "@/types/domain";
 
 /**
  * Project reads (docs/features/projects.md). Every query runs on the viewer's
@@ -17,6 +17,7 @@ export type ProjectListRow = {
   id: string;
   key: string;
   name: string;
+  kind: ProjectKind;
   status: ProjectStatus;
   priority: Priority;
   target_end_date: string | null;
@@ -31,7 +32,7 @@ export async function listProjects(organizationId: string, limit = 50) {
   return supabase
     .from("projects")
     .select(
-      "id, key, name, status, priority, target_end_date, updated_at, manager:profiles!projects_manager_id_fkey(id, full_name), client:clients(id, name)",
+      "id, key, name, kind, status, priority, target_end_date, updated_at, manager:profiles!projects_manager_id_fkey(id, full_name), client:clients(id, name)",
     )
     .eq("organization_id", organizationId)
     .is("deleted_at", null)
@@ -55,7 +56,7 @@ export async function getProjectByKey(organizationId: string, key: string) {
   return supabase
     .from("projects")
     .select(
-      "id, key, name, status, priority, target_end_date, updated_at, description, qa_required, start_date, health_override, archived_at, created_at, manager:profiles!projects_manager_id_fkey(id, full_name), client:clients(id, name)",
+      "id, key, name, kind, status, priority, target_end_date, updated_at, description, qa_required, start_date, health_override, archived_at, created_at, manager:profiles!projects_manager_id_fkey(id, full_name), client:clients(id, name)",
     )
     .eq("organization_id", organizationId)
     .eq("key", key.toUpperCase())

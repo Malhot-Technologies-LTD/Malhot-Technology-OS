@@ -24,6 +24,7 @@ import { SetupChecklist } from "@/components/os/setup-checklist";
 import { GoalStatusBadge, MvpStatusBadge, PriorityBadge, ProjectStatusBadge } from "@/components/os/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { Priority, ProjectStatus } from "@/types/domain";
 
@@ -348,6 +349,25 @@ export function PreviewSurface() {
                           </li>
                         ))}
                       </ul>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Select control</CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex flex-col gap-3">
+                      <Select defaultValue="medium">
+                        <SelectTrigger id="gallery-priority" className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="low">Low</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="high">High</SelectItem>
+                          <SelectItem value="urgent">Urgent</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </CardContent>
                   </Card>
 

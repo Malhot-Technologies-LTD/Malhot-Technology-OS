@@ -99,7 +99,7 @@ export default async function ProjectOverviewPage({ params }: PageProps<"/os/pro
         <ProjectStatusBadge status={project.status} />
         <PriorityBadge priority={project.priority} />
         <span className="text-fg-muted">
-          {project.client ? project.client.name : "Internal"} ·{" "}
+          {project.kind === "job" ? (project.client?.name ?? "Job, client not set") : "Internal project"} ·{" "}
           {project.manager ? project.manager.full_name : "No manager"}
         </span>
       </div>

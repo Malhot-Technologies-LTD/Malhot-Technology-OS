@@ -14,6 +14,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { ProjectStatus } from "@/types/domain";
 
 import { getProjectByKey, getProjectContext } from "./queries";
+import { resolveClientByName } from "./clients";
 import { readinessBlockers, readinessMessage } from "./readiness";
 import { createProjectSchema, updateProjectSchema } from "./schemas";
 
@@ -45,12 +46,20 @@ export const createProject = withAction("projects.create", async (input: unknown
    * There is nothing to read back anyway: the key is the one we just sent, and
    * the schema has already upper-cased it.
    */
+  // A job may name a client that does not exist yet; a project never has one.
+  const client =
+    parsed.data.kind === "job"
+      ? await resolveClientByName(supabase, viewer.organizationId, viewer.userId, parsed.data.clientName)
+      : ({ ok: true, clientId: null } as const);
+  if (!client.ok) return fail("unexpected", client.message, { fieldErrors: { clientName: [client.message] } });
+
   const { error } = await supabase.from("projects").insert({
     organization_id: viewer.organizationId,
     key: parsed.data.key,
     name: parsed.data.name,
+    kind: parsed.data.kind,
     description: parsed.data.description,
-    client_id: parsed.data.clientId,
+    client_id: client.clientId,
     priority: parsed.data.priority,
     start_date: parsed.data.startDate,
     target_end_date: parsed.data.targetEndDate,
@@ -87,13 +96,22 @@ export const updateProject = withAction("projects.update", async (input: unknown
   const ctx = await getProjectContext(existing.data, viewer);
   if (!can(viewer, "project.edit", ctx)) return fail("forbidden", "Only the project manager can edit this project.");
 
+  const client =
+    parsed.data.kind === "job"
+      ? await resolveClientByName(supabase, viewer.organizationId, viewer.userId, parsed.data.clientName)
+      : ({ ok: true, clientId: null } as const);
+  if (!client.ok) return fail("unexpected", client.message, { fieldErrors: { clientName: [client.message] } });
+
   const { error } = await supabase
     .from("projects")
     .update({
       name: parsed.data.name,
       key: parsed.data.key,
+      kind: parsed.data.kind,
       description: parsed.data.description,
-      client_id: parsed.data.clientId,
+      // Switching a job back to a project drops the client, which is what the
+      // projects_client_only_on_jobs constraint requires.
+      client_id: client.clientId,
       priority: parsed.data.priority,
       start_date: parsed.data.startDate,
       target_end_date: parsed.data.targetEndDate,

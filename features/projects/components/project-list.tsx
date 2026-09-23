@@ -52,7 +52,9 @@ export function ProjectList({ projects, canCreate }: { projects: readonly Projec
                 <h3 className="truncate text-lg font-medium group-hover:underline" title={project.name}>
                   {project.name}
                 </h3>
-                <p className="truncate text-[15px] text-fg-muted">{project.client?.name ?? "Internal"}</p>
+                <p className="truncate text-[15px] text-fg-muted">
+                  {project.kind === "job" ? (project.client?.name ?? "Job, client not set") : "Internal project"}
+                </p>
               </div>
 
               <dl className="mt-auto flex items-end justify-between gap-3 border-t border-border pt-5 text-[15px]">

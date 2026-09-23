@@ -602,6 +602,7 @@ export type Database = {
           health_override_at: string | null
           id: string
           key: string
+          kind: Database["public"]["Enums"]["project_kind"]
           manager_id: string | null
           name: string
           organization_id: string
@@ -624,6 +625,7 @@ export type Database = {
           health_override_at?: string | null
           id?: string
           key: string
+          kind?: Database["public"]["Enums"]["project_kind"]
           manager_id?: string | null
           name: string
           organization_id: string
@@ -646,6 +648,7 @@ export type Database = {
           health_override_at?: string | null
           id?: string
           key?: string
+          kind?: Database["public"]["Enums"]["project_kind"]
           manager_id?: string | null
           name?: string
           organization_id?: string
@@ -783,6 +786,7 @@ export type Database = {
       pr_state: "open" | "closed" | "merged"
       priority: "low" | "medium" | "high" | "urgent"
       project_health: "on_track" | "at_risk" | "off_track"
+      project_kind: "project" | "job"
       project_role:
         | "manager"
         | "developer"
@@ -990,6 +994,7 @@ export const Constants = {
       pr_state: ["open", "closed", "merged"],
       priority: ["low", "medium", "high", "urgent"],
       project_health: ["on_track", "at_risk", "off_track"],
+      project_kind: ["project", "job"],
       project_role: [
         "manager",
         "developer",

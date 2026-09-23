@@ -5,8 +5,9 @@ import { createProjectSchema, suggestProjectKey } from "./schemas";
 const valid = {
   name: "Umoja Platform",
   key: "UMP",
+  kind: "project" as const,
   description: "",
-  clientId: null,
+  clientName: "",
   priority: "medium" as const,
   startDate: "",
   targetEndDate: "",
@@ -56,5 +57,42 @@ describe("suggestProjectKey", () => {
 
   it("returns nothing when there are no letters", () => {
     expect(suggestProjectKey("2026 ---")).toBe("");
+  });
+});
+
+describe("project kind and client", () => {
+  it("defaults to an internal project with no client", () => {
+    const parsed = createProjectSchema.parse(valid);
+    expect(parsed.kind).toBe("project");
+    expect(parsed.clientName).toBeNull();
+  });
+
+  it("accepts a job with a freely typed client name", () => {
+    // The point of the change: the client need not exist yet.
+    const parsed = createProjectSchema.parse({ ...valid, kind: "job", clientName: "Brand New Client Ltd" });
+    expect(parsed.kind).toBe("job");
+    expect(parsed.clientName).toBe("Brand New Client Ltd");
+  });
+
+  it("accepts a job whose client is not known yet", () => {
+    expect(createProjectSchema.safeParse({ ...valid, kind: "job", clientName: "" }).success).toBe(true);
+  });
+
+  it("refuses a client on an internal project", () => {
+    // Mirrors the projects_client_only_on_jobs check constraint.
+    const result = createProjectSchema.safeParse({ ...valid, kind: "project", clientName: "Kivu Freight" });
+    expect(result.success).toBe(false);
+    if (result.success) return;
+    expect(result.error.issues[0].path).toEqual(["clientName"]);
+  });
+
+  it("rejects a kind outside the enum", () => {
+    expect(createProjectSchema.safeParse({ ...valid, kind: "contract" }).success).toBe(false);
+  });
+
+  it("trims the client name so spacing cannot fork a client in two", () => {
+    expect(createProjectSchema.parse({ ...valid, kind: "job", clientName: "  Kivu Freight  " }).clientName).toBe(
+      "Kivu Freight",
+    );
   });
 });
