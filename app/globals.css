@@ -235,3 +235,53 @@
     overflow: hidden;
   }
 }
+
+@layer base {
+  /*
+   * Scrollbars.
+   *
+   * Left native, they arrive as the platform's own widget — on Windows a wide
+   * grey trough with stepper arrows at each end, which belongs to no part of
+   * this interface and reads as a piece of the operating system that leaked in.
+   *
+   * Thinned, rounded and drawn in --border-strong so it sits in the same family
+   * as every other edge in the OS, and inset with a transparent border so the
+   * thumb floats rather than filling its trough. The stepper buttons go: nobody
+   * clicks them, they are the widest part of the thing, and they are what makes
+   * it look like 2003.
+   *
+   * Not hidden, deliberately. A scrollbar is the only thing on screen that says
+   * how much more there is — removing it leaves people scrolling to find out.
+   */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background-color: var(--border-strong);
+    /* Transparent border + content-box clip is what insets the thumb. */
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--fg-subtle);
+  }
+
+  /* The arrows at either end. */
+  ::-webkit-scrollbar-button {
+    display: none;
+  }
+}
