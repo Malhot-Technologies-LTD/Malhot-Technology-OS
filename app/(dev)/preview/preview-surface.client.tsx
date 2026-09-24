@@ -25,6 +25,7 @@ import { GoalStatusBadge, MvpStatusBadge, PriorityBadge, ProjectStatusBadge } fr
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AvatarGroup } from "@/components/os/avatar-group";
+import { TaskCard, TaskGrid } from "@/features/tasks/components/task-card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { Priority, ProjectStatus } from "@/types/domain";
@@ -204,6 +205,45 @@ export function PreviewSurface() {
                   </p>
                 </div>
               </div>
+
+              <TaskGrid>
+                {[
+                  {
+                    id: "t1",
+                    seq: 3,
+                    title: "Wire up the booking form",
+                    description: "Clinician picks a slot, patient confirms by SMS.",
+                    status: "in_progress",
+                    priority: "high",
+                    dueAt: "2026-10-05T17:00:00Z",
+                    assignee: { id: "u2", fullName: "Levi M.", avatarUrl: null },
+                  },
+                  {
+                    id: "t2",
+                    seq: 4,
+                    title: "Design the intake screen",
+                    description: null,
+                    status: "todo",
+                    priority: "medium",
+                    dueAt: null,
+                    assignee: null,
+                  },
+                  {
+                    id: "t3",
+                    seq: 5,
+                    title: "Ship the clinic pilot",
+                    description: "Two clinics, one week of live use.",
+                    status: "done",
+                    priority: "urgent",
+                    dueAt: "2026-09-20T17:00:00Z",
+                    assignee: { id: "u1", fullName: "Alpha N.", avatarUrl: null },
+                  },
+                ].map((task) => (
+                  <li key={task.id}>
+                    <TaskCard projectKey="UHP" task={task as never} />
+                  </li>
+                ))}
+              </TaskGrid>
 
               <ul className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                 {PROJECTS.map((p) => (

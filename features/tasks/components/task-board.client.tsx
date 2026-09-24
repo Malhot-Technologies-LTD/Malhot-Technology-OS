@@ -4,16 +4,14 @@ import { CalendarClock, Plus, Trash2 } from "lucide-react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
-import { AvatarGroup } from "@/components/os/avatar-group";
-import { formatDate } from "@/components/os/data-display";
 import { EmptyState } from "@/components/os/empty-state";
-import { StatusPill } from "@/components/os/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { createTask, deleteTask, updateTask } from "@/features/tasks/actions";
-import { Countdown } from "@/features/tasks/components/countdown.client";
+import { TaskCard, TaskGrid } from "@/features/tasks/components/task-card";
+import { TaskDoneButton } from "@/features/tasks/components/task-done-button.client";
 import { TASK_STATUSES, TASK_STATUS_META, type TaskStatus } from "@/features/tasks/schemas";
 import type { TaskRow } from "@/features/tasks/queries";
 import type { Priority } from "@/types/domain";
@@ -26,19 +24,21 @@ type Props = {
   team: readonly Assignable[];
   /** May add tasks at all. */
   canWrite: boolean;
-  /** Manages the project: may change and reassign anyone else’s task. */
+  /** Manages the project: may change and reassign anyone else's task. */
   canManage: boolean;
   canDelete: boolean;
   viewerUserId: string;
 };
 
+type Runner = (work: () => Promise<{ ok: boolean; error?: { message: string } }>, success: string) => void;
+
 /**
- * The work inside a project: who owns each task and how long they have.
+ * The work inside a project, as a grid of cards.
  *
- * Assigning and dating happen in the same gesture as creating, because a task
- * with no owner and no deadline is a note, and notes do not get done. The
- * pickers stay on every row afterwards so reassigning is one click rather than
- * a trip through an edit screen.
+ * Open work first, finished work after it, in the same grid. Completed tasks
+ * are kept rather than hidden — a board that forgets what was done gives no
+ * sense of progress — but drawn back so they never compete with what is still
+ * outstanding.
  */
 export function TaskBoard({ projectKey, tasks, team, canWrite, canManage, canDelete, viewerUserId }: Props) {
   const [pending, startTransition] = useTransition();
@@ -47,13 +47,13 @@ export function TaskBoard({ projectKey, tasks, team, canWrite, canManage, canDel
   const open = tasks.filter((task) => task.status !== "done");
   const done = tasks.filter((task) => task.status === "done");
 
-  function run(work: () => Promise<{ ok: boolean; error?: { message: string } }>, success: string) {
+  const run: Runner = (work, success) => {
     startTransition(async () => {
       const result = await work();
       if (result.ok) toast.success(success);
       else toast.error(result.error?.message ?? "That did not work.");
     });
-  }
+  };
 
   return (
     <div className="flex flex-col gap-5">
@@ -67,27 +67,52 @@ export function TaskBoard({ projectKey, tasks, team, canWrite, canManage, canDel
           }
         />
       ) : (
-        <ul className="flex flex-col divide-y divide-border">
-          {[...open, ...done].map((task) => (
-            <TaskRowItem
-              key={task.id}
-              task={task}
-              projectKey={projectKey}
-              team={team}
-              /*
-               * Per task, not per person. Everyone on the project reads the
-               * board; only the person holding a task, or someone managing the
-               * project, can move it. Matches the tasks_update policy, so the
-               * control is absent rather than present and refused.
-               */
-              canEdit={canManage || task.assignee?.id === viewerUserId}
-              canReassign={canManage}
-              canDelete={canDelete}
-              pending={pending}
-              run={run}
-            />
-          ))}
-        </ul>
+        <TaskGrid>
+          {[...open, ...done].map((task) => {
+            /*
+             * Per task, not per person. Everyone on the project reads the
+             * board; only whoever holds a task, or someone managing the
+             * project, can move it. Matches the tasks_update policy, so a
+             * control is absent rather than present and then refused.
+             */
+            const canEdit = canManage || task.assignee?.id === viewerUserId;
+            return (
+              <li key={task.id}>
+                <TaskCard
+                  projectKey={projectKey}
+                  task={{
+                    id: task.id,
+                    seq: task.seq,
+                    title: task.title,
+                    description: task.description,
+                    status: task.status,
+                    priority: task.priority,
+                    dueAt: task.due_at,
+                    assignee: task.assignee
+                      ? {
+                          id: task.assignee.id,
+                          fullName: task.assignee.full_name,
+                          avatarUrl: task.assignee.avatar_url,
+                        }
+                      : null,
+                  }}
+                  actions={
+                    <TaskActions
+                      task={task}
+                      projectKey={projectKey}
+                      team={team}
+                      canEdit={canEdit}
+                      canReassign={canManage}
+                      canDelete={canDelete}
+                      pending={pending}
+                      run={run}
+                    />
+                  }
+                />
+              </li>
+            );
+          })}
+        </TaskGrid>
       )}
 
       {canWrite ? (
@@ -110,7 +135,7 @@ export function TaskBoard({ projectKey, tasks, team, canWrite, canManage, canDel
   );
 }
 
-function TaskRowItem({
+function TaskActions({
   task,
   projectKey,
   team,
@@ -127,50 +152,22 @@ function TaskRowItem({
   canReassign: boolean;
   canDelete: boolean;
   pending: boolean;
-  run: (work: () => Promise<{ ok: boolean; error?: { message: string } }>, success: string) => void;
+  run: Runner;
 }) {
-  const meta = TASK_STATUS_META[task.status];
-  const finished = task.status === "done";
+  if (!canEdit && !canDelete) return null;
 
   return (
-    <li className="flex flex-wrap items-center gap-3 py-3.5 first:pt-0 last:pb-0">
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <span className="flex min-w-0 items-center gap-2">
-          <span className="shrink-0 font-mono text-[13px] text-fg-subtle">
-            {projectKey}-{task.seq}
-          </span>
-          <span className={cnTitle(finished)} title={task.title}>
-            {task.title}
-          </span>
-        </span>
-
-        <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-fg-muted">
-          {task.assignee ? (
-            <span className="flex items-center gap-1.5">
-              <AvatarGroup
-                people={[
-                  {
-                    userId: task.assignee.id,
-                    fullName: task.assignee.full_name,
-                    avatarUrl: task.assignee.avatar_url,
-                  },
-                ]}
-              />
-              {task.assignee.full_name}
-            </span>
-          ) : (
-            <span className="text-fg-subtle">Unassigned</span>
-          )}
-
-          {task.due_at ? (
-            <span className="flex items-center gap-1.5">
-              <CalendarClock className="size-3.5" aria-hidden="true" />
-              {formatDate(task.due_at)}
-              {finished ? null : <Countdown dueAt={task.due_at} className="font-medium" />}
-            </span>
-          ) : null}
-        </span>
-      </div>
+    <>
+      {canEdit ? (
+        <TaskDoneButton
+          taskId={task.id}
+          projectKey={projectKey}
+          title={task.title}
+          done={task.status === "done"}
+          // Back to where it was, not to the top of the list.
+          reopenTo={task.started_at ? "in_progress" : "todo"}
+        />
+      ) : null}
 
       {canEdit ? (
         <Select
@@ -183,7 +180,7 @@ function TaskRowItem({
             )
           }
         >
-          <SelectTrigger size="sm" className="w-36" aria-label={`Status of ${task.title}`}>
+          <SelectTrigger size="sm" className="w-32" aria-label={`Status of ${task.title}`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -194,9 +191,7 @@ function TaskRowItem({
             ))}
           </SelectContent>
         </Select>
-      ) : (
-        <StatusPill tone={meta.tone}>{meta.label}</StatusPill>
-      )}
+      ) : null}
 
       {canReassign ? (
         <Select
@@ -209,7 +204,7 @@ function TaskRowItem({
             )
           }
         >
-          <SelectTrigger size="sm" className="w-40" aria-label={`Assignee of ${task.title}`}>
+          <SelectTrigger size="sm" className="w-32" aria-label={`Assignee of ${task.title}`}>
             <SelectValue placeholder="Unassigned" />
           </SelectTrigger>
           <SelectContent>
@@ -234,14 +229,8 @@ function TaskRowItem({
           <Trash2 aria-hidden="true" />
         </Button>
       ) : null}
-    </li>
+    </>
   );
-}
-
-function cnTitle(finished: boolean): string {
-  return finished
-    ? "min-w-0 truncate text-[15px] text-fg-muted line-through"
-    : "min-w-0 truncate text-[15px] font-medium";
 }
 
 function NewTaskForm({
@@ -255,7 +244,7 @@ function NewTaskForm({
   team: readonly Assignable[];
   pending: boolean;
   onDone: () => void;
-  run: (work: () => Promise<{ ok: boolean; error?: { message: string } }>, success: string) => void;
+  run: Runner;
 }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");

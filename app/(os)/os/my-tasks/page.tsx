@@ -1,20 +1,17 @@
-import { CalendarClock, CheckCircle2 } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
 
 import { oversees } from "@/components/os/nav-audience";
-import { DueDate } from "@/components/os/data-display";
 import { EmptyState } from "@/components/os/empty-state";
 import { ErrorState } from "@/components/os/error-state";
 import { PageBody, PageHeader } from "@/components/os/page-header";
-import { PriorityBadge, StatusPill } from "@/components/os/status-badge";
 import { listProjectOptions, listTeamsByProject } from "@/features/projects/queries";
 import { AssignTaskDialog } from "@/features/tasks/components/assign-task-dialog.client";
-import { Countdown } from "@/features/tasks/components/countdown.client";
+import { TaskCard, TaskGrid } from "@/features/tasks/components/task-card";
+import { TaskDoneButton } from "@/features/tasks/components/task-done-button.client";
 import { TeamWorkload } from "@/features/tasks/components/team-workload.client";
 import { listMyTasks, listTeamTasks } from "@/features/tasks/queries";
 import { groupByAssignee } from "@/features/tasks/workload";
-import { TASK_STATUS_META } from "@/features/tasks/schemas";
 import { describeQueryFailure } from "@/lib/actions/db-errors";
 import { requireViewer } from "@/lib/auth/context";
 import { logger } from "@/lib/logger";
@@ -98,42 +95,39 @@ export default async function MyTasksPage() {
           action={assignDialog}
         />
       ) : (
-        <ul className="flex flex-col divide-y divide-border rounded-lg border border-border bg-surface">
-          {rows.map((task) => {
-            const meta = TASK_STATUS_META[task.status];
-            return (
-              <li key={task.id} className="flex flex-wrap items-center gap-4 p-5">
-                <div className="flex min-w-0 flex-1 flex-col gap-1">
-                  <span className="flex min-w-0 items-center gap-2">
-                    {task.project ? (
-                      <Link
-                        href={`/os/projects/${task.project.key}`}
-                        className="shrink-0 font-mono text-[13px] text-fg-subtle hover:text-fg hover:underline"
-                      >
-                        {task.project.key}-{task.seq}
-                      </Link>
-                    ) : null}
-                    <span className="min-w-0 truncate text-[15px] font-medium" title={task.title}>
-                      {task.title}
-                    </span>
-                  </span>
-                  {task.due_at ? (
-                    <span className="flex items-center gap-2 text-[13px] text-fg-muted">
-                      <CalendarClock className="size-3.5" aria-hidden="true" />
-                      <DueDate value={task.due_at} />
-                      <Countdown dueAt={task.due_at} className="font-medium" />
-                    </span>
-                  ) : (
-                    <span className="text-[13px] text-fg-subtle">No deadline</span>
-                  )}
-                </div>
-
-                <PriorityBadge priority={task.priority} />
-                <StatusPill tone={meta.tone}>{meta.label}</StatusPill>
-              </li>
-            );
-          })}
-        </ul>
+        <TaskGrid>
+          {rows.map((task) => (
+            <li key={task.id}>
+              <TaskCard
+                projectKey={task.project?.key ?? null}
+                linkProject
+                task={{
+                  id: task.id,
+                  seq: task.seq,
+                  title: task.title,
+                  description: task.description,
+                  status: task.status,
+                  priority: task.priority,
+                  dueAt: task.due_at,
+                  assignee: null,
+                }}
+                actions={
+                  task.project ? (
+                    /* Every task here is already yours, so the control is
+                       unconditional — the ownership test would always pass. */
+                    <TaskDoneButton
+                      taskId={task.id}
+                      projectKey={task.project.key}
+                      title={task.title}
+                      done={task.status === "done"}
+                      reopenTo={task.started_at ? "in_progress" : "todo"}
+                    />
+                  ) : null
+                }
+              />
+            </li>
+          ))}
+        </TaskGrid>
       )}
 
       <section aria-labelledby="workload-heading" className="flex flex-col gap-4">
