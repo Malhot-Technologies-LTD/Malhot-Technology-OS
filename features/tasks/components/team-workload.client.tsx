@@ -1,22 +1,22 @@
 "use client";
 
-import { CalendarClock, UserX } from "lucide-react";
-import Link from "next/link";
+import { UserX } from "lucide-react";
 
 import { UserAvatar } from "@/components/os/user-menu.client";
-import { formatDate } from "@/components/os/data-display";
-import { PriorityBadge, StatusPill } from "@/components/os/status-badge";
-import { Countdown } from "@/features/tasks/components/countdown.client";
-import { TASK_STATUS_META, type TaskStatus } from "@/features/tasks/schemas";
+import { TaskCard, TaskGrid } from "@/features/tasks/components/task-card";
+import { TaskDoneButton } from "@/features/tasks/components/task-done-button.client";
+import type { TaskStatus } from "@/features/tasks/schemas";
 import type { Priority } from "@/types/domain";
 
 export type WorkloadTask = {
   id: string;
   seq: number;
   title: string;
+  description: string | null;
   status: TaskStatus;
   priority: Priority;
   dueAt: string | null;
+  startedAt: string | null;
   projectKey: string | null;
 };
 
@@ -30,20 +30,24 @@ export type WorkloadPerson = {
 /**
  * Who is carrying what, and what runs out first.
  *
- * Grouped by person rather than listed by deadline, because a manager's
- * question is about people before it is about dates: one person holding six
- * things is a problem even when none of them is due today, and a flat list
- * sorted by deadline hides that completely.
+ * Grouped by person rather than listed by deadline, because the question is
+ * about people before it is about dates: one person holding six things is a
+ * problem even when none of them is due today, and a flat list sorted by
+ * deadline hides that completely.
  *
- * Unassigned work gets its own group at the end rather than being left out.
- * A task nobody owns is not a task with no problem — it is the manager's.
+ * Each person's work uses the same card and grid as everywhere else, minus the
+ * assignee — their name is already the heading above it, and repeating it would
+ * cost the row that shows the deadline.
+ *
+ * Unassigned work gets its own group at the end rather than being left out. A
+ * task nobody owns is not a task with no problem; it is the reader's.
  */
 export function TeamWorkload({
   people,
   viewerUserId,
 }: {
   people: readonly WorkloadPerson[];
-  /** Marks your own group, so you can find yourself in a long list. */
+  /** Marks your own group, and decides which cards you may act on. */
   viewerUserId: string;
 }) {
   if (people.length === 0) {
@@ -51,67 +55,72 @@ export function TeamWorkload({
   }
 
   return (
-    <ul className="flex flex-col gap-5">
-      {people.map((person) => (
-        <li
-          key={person.userId ?? "unassigned"}
-          className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-5"
-        >
-          <div className="flex items-center gap-3">
-            {person.userId ? (
-              <UserAvatar name={person.fullName} avatarUrl={person.avatarUrl} />
-            ) : (
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-status-warning-bg text-status-warning-fg">
-                <UserX className="size-4" aria-hidden="true" />
-              </span>
-            )}
-            <div className="flex min-w-0 flex-col">
-              <span className="truncate text-[15px] font-medium">
-                {person.fullName}
-                {person.userId === viewerUserId ? (
-                  <span className="ml-2 text-sm font-normal text-fg-subtle">you</span>
-                ) : null}
-              </span>
-              <span className="text-sm text-fg-muted tabular-nums">
-                {person.tasks.length} open {person.tasks.length === 1 ? "task" : "tasks"}
-              </span>
-            </div>
-          </div>
-
-          <ul className="flex flex-col divide-y divide-border">
-            {person.tasks.map((task) => (
-              <li key={task.id} className="flex flex-wrap items-center gap-3 py-2.5 first:pt-0 last:pb-0">
-                <span className="flex min-w-0 flex-1 items-center gap-2">
-                  {task.projectKey ? (
-                    <Link
-                      href={`/os/projects/${task.projectKey}`}
-                      className="shrink-0 font-mono text-[13px] text-fg-subtle hover:text-fg hover:underline"
-                    >
-                      {task.projectKey}-{task.seq}
-                    </Link>
-                  ) : null}
-                  <span className="min-w-0 truncate text-[15px]" title={task.title}>
-                    {task.title}
-                  </span>
+    <div className="flex flex-col gap-7">
+      {people.map((person) => {
+        const isViewer = person.userId === viewerUserId;
+        return (
+          <section key={person.userId ?? "unassigned"} className="flex flex-col gap-4">
+            <div className="flex items-center gap-3">
+              {person.userId ? (
+                <UserAvatar name={person.fullName} avatarUrl={person.avatarUrl} />
+              ) : (
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-status-warning-bg text-status-warning-fg">
+                  <UserX className="size-4" aria-hidden="true" />
                 </span>
+              )}
+              <div className="flex min-w-0 flex-col">
+                <span className="truncate text-[15px] font-medium">
+                  {person.fullName}
+                  {isViewer ? <span className="ml-2 text-sm font-normal text-fg-subtle">you</span> : null}
+                </span>
+                <span className="text-sm text-fg-muted tabular-nums">
+                  {person.tasks.length} open {person.tasks.length === 1 ? "task" : "tasks"}
+                </span>
+              </div>
+            </div>
 
-                {task.dueAt ? (
-                  <span className="flex shrink-0 items-center gap-2 text-[13px] text-fg-muted">
-                    <CalendarClock className="size-3.5" aria-hidden="true" />
-                    {formatDate(task.dueAt)}
-                    <Countdown dueAt={task.dueAt} className="font-medium" />
-                  </span>
-                ) : (
-                  <span className="shrink-0 text-[13px] text-fg-subtle">No deadline</span>
-                )}
-
-                <PriorityBadge priority={task.priority} />
-                <StatusPill tone={TASK_STATUS_META[task.status].tone}>{TASK_STATUS_META[task.status].label}</StatusPill>
-              </li>
-            ))}
-          </ul>
-        </li>
-      ))}
-    </ul>
+            <TaskGrid>
+              {person.tasks.map((task) => (
+                <li key={task.id}>
+                  <TaskCard
+                    projectKey={task.projectKey}
+                    linkProject
+                    showAssignee={false}
+                    task={{
+                      id: task.id,
+                      seq: task.seq,
+                      title: task.title,
+                      description: task.description,
+                      status: task.status,
+                      priority: task.priority,
+                      dueAt: task.dueAt,
+                      assignee: null,
+                    }}
+                    actions={
+                      /*
+                       * Only on your own work. The ownership rule says a task
+                       * is yours or a manager's to move, and a manager already
+                       * has the full controls on the project board — putting
+                       * them here too would make this page a second place to
+                       * change other people's work.
+                       */
+                      isViewer && task.projectKey ? (
+                        <TaskDoneButton
+                          taskId={task.id}
+                          projectKey={task.projectKey}
+                          title={task.title}
+                          done={task.status === "done"}
+                          reopenTo={task.startedAt ? "in_progress" : "todo"}
+                        />
+                      ) : null
+                    }
+                  />
+                </li>
+              ))}
+            </TaskGrid>
+          </section>
+        );
+      })}
+    </div>
   );
 }

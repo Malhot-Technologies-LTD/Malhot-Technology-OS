@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AvatarGroup } from "@/components/os/avatar-group";
 import { TaskCard, TaskGrid } from "@/features/tasks/components/task-card";
+import { TeamWorkload } from "@/features/tasks/components/team-workload.client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { Priority, ProjectStatus } from "@/types/domain";
@@ -204,6 +205,62 @@ export function PreviewSurface() {
                     A project counts once it has a manager, a start date, goals and an MVP.
                   </p>
                 </div>
+              </div>
+
+              <div className="flex flex-col gap-4">
+                <h2 className="text-xl font-medium">The team{String.fromCharCode(8217)}s work</h2>
+                <TeamWorkload
+                  viewerUserId="u2"
+                  people={[
+                    {
+                      userId: "u2",
+                      fullName: "Levi Gatimu",
+                      avatarUrl: null,
+                      tasks: [
+                        {
+                          id: "w1",
+                          seq: 1,
+                          title: "find what david has",
+                          description: null,
+                          status: "todo",
+                          priority: "high",
+                          dueAt: "2026-09-24T17:00:00Z",
+                          startedAt: null,
+                          projectKey: "AS",
+                        },
+                        {
+                          id: "w2",
+                          seq: 2,
+                          title: "draft the onboarding copy",
+                          description: "Two screens, plain language.",
+                          status: "in_progress",
+                          priority: "medium",
+                          dueAt: "2026-10-02T12:00:00Z",
+                          startedAt: "2026-09-20T09:00:00Z",
+                          projectKey: "AS",
+                        },
+                      ],
+                    },
+                    {
+                      userId: null,
+                      fullName: "Unassigned",
+                      avatarUrl: null,
+                      tasks: [
+                        {
+                          id: "w3",
+                          seq: 9,
+                          title: "pick a payment provider",
+                          description: null,
+                          status: "backlog",
+                          priority: "low",
+                          dueAt: null,
+                          startedAt: null,
+                          projectKey: "AS",
+                        },
+                      ],
+                    },
+                  ]}
+                />
               </div>
 
               <TaskGrid>

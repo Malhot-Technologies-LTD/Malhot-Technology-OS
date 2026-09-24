@@ -28,6 +28,12 @@ type Props = {
   linkProject?: boolean;
   /** Controls, when the reader is allowed any. Rendered in a footer rule. */
   actions?: ReactNode;
+  /**
+   * Off inside a group that already names the person. Repeating the assignee
+   * under their own heading is noise, and it costs the row that would
+   * otherwise show the deadline.
+   */
+  showAssignee?: boolean;
 };
 
 /**
@@ -45,7 +51,7 @@ type Props = {
  * Countdown exists as a client component. One honest signal beats two where
  * one of them is quietly wrong.
  */
-export function TaskCard({ task, projectKey, linkProject = false, actions }: Props) {
+export function TaskCard({ task, projectKey, linkProject = false, actions, showAssignee = true }: Props) {
   const meta = TASK_STATUS_META[task.status];
   const finished = task.status === "done";
 
@@ -89,17 +95,21 @@ export function TaskCard({ task, projectKey, linkProject = false, actions }: Pro
       </div>
 
       <dl className="mt-auto flex flex-col gap-2 text-[13px]">
-        <dt className="sr-only">Assigned to</dt>
-        <dd className="flex min-w-0 items-center gap-2">
-          {task.assignee ? (
-            <>
-              <UserAvatar name={task.assignee.fullName} avatarUrl={task.assignee.avatarUrl} className="size-6" />
-              <span className="truncate text-fg-muted">{task.assignee.fullName}</span>
-            </>
-          ) : (
-            <span className="text-fg-subtle">Unassigned</span>
-          )}
-        </dd>
+        {showAssignee ? (
+          <>
+            <dt className="sr-only">Assigned to</dt>
+            <dd className="flex min-w-0 items-center gap-2">
+              {task.assignee ? (
+                <>
+                  <UserAvatar name={task.assignee.fullName} avatarUrl={task.assignee.avatarUrl} className="size-6" />
+                  <span className="truncate text-fg-muted">{task.assignee.fullName}</span>
+                </>
+              ) : (
+                <span className="text-fg-subtle">Unassigned</span>
+              )}
+            </dd>
+          </>
+        ) : null}
 
         <dt className="sr-only">Due</dt>
         <dd className="flex min-w-0 items-center gap-2">
