@@ -195,3 +195,56 @@ export const deleteTask = withAction("tasks.delete", async (input: unknown): Pro
   revalidatePath("/os/my-tasks");
   return ok(undefined);
 });
+
+/**
+ * The assignee acknowledging a task: yes, I have seen this and I will do it.
+ *
+ * Only ever the assignee, even for a manager. A manager accepting on somebody
+ * else's behalf would produce exactly the false reassurance the feature exists
+ * to prevent — the "waiting to be picked up" list would empty without anybody
+ * having picked anything up.
+ *
+ * Idempotent. Pressing Accept twice is a double-click, not a second decision,
+ * and it must not move the timestamp.
+ */
+export const acceptTask = withAction("tasks.accept", async (input: unknown): Promise<ActionResult> => {
+  const payload = input as { taskId?: unknown; projectKey?: unknown };
+  const taskId = typeof payload?.taskId === "string" ? payload.taskId : null;
+  const projectKey = typeof payload?.projectKey === "string" ? payload.projectKey : null;
+  if (!taskId || !projectKey) return fail("validation", "Unknown task.");
+
+  const loaded = await loadProject(projectKey);
+  if (!loaded.ok) return loaded.result;
+
+  const supabase = await createClient();
+  const existing = await supabase
+    .from("tasks")
+    .select("id, assignee_id, accepted_at, title")
+    .eq("id", taskId)
+    .eq("project_id", loaded.project.id)
+    .maybeSingle();
+  if (existing.error || !existing.data) return fail("not_found", "That task does not exist.");
+
+  if (existing.data.assignee_id !== loaded.viewer.userId)
+    return fail("forbidden", "Only the person a task is assigned to can accept it.");
+
+  if (existing.data.accepted_at) return ok(undefined);
+
+  const { error } = await supabase
+    .from("tasks")
+    .update({ accepted_at: new Date().toISOString() })
+    .eq("id", taskId)
+    .eq("project_id", loaded.project.id);
+  if (error) {
+    const mapped = mapDbError(error);
+    return fail(mapped.code, mapped.message);
+  }
+
+  logger.info("task.accepted", { key: loaded.project.key, seq: existing.data.id });
+  revalidatePath(`/os/projects/${loaded.project.key}`);
+  revalidatePath("/os/my-tasks");
+  // The manager's notification is derived from accepted_at, so this is what
+  // makes it appear rather than a second write that could disagree with it.
+  revalidatePath("/os/notifications");
+  return ok(undefined);
+});

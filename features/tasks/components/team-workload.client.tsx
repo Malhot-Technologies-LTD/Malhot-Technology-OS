@@ -17,6 +17,7 @@ export type WorkloadTask = {
   priority: Priority;
   dueAt: string | null;
   startedAt: string | null;
+  acceptedAt: string | null;
   projectKey: string | null;
 };
 
@@ -94,6 +95,7 @@ export function TeamWorkload({
                       status: task.status,
                       priority: task.priority,
                       dueAt: task.dueAt,
+                      acceptedAt: task.acceptedAt,
                       assignee: null,
                     }}
                     actions={

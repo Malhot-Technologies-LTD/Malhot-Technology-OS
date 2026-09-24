@@ -226,6 +226,7 @@ export function PreviewSurface() {
                           priority: "high",
                           dueAt: "2026-09-24T17:00:00Z",
                           startedAt: null,
+                          acceptedAt: null,
                           projectKey: "AS",
                         },
                         {
@@ -237,6 +238,7 @@ export function PreviewSurface() {
                           priority: "medium",
                           dueAt: "2026-10-02T12:00:00Z",
                           startedAt: "2026-09-20T09:00:00Z",
+                          acceptedAt: "2026-09-21T08:00:00Z",
                           projectKey: "AS",
                         },
                       ],
@@ -255,6 +257,7 @@ export function PreviewSurface() {
                           priority: "low",
                           dueAt: null,
                           startedAt: null,
+                          acceptedAt: null,
                           projectKey: "AS",
                         },
                       ],

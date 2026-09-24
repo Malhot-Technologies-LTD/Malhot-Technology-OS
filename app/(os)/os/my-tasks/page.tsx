@@ -8,6 +8,7 @@ import { PageBody, PageHeader } from "@/components/os/page-header";
 import { listProjectOptions, listTeamsByProject } from "@/features/projects/queries";
 import { AssignTaskDialog } from "@/features/tasks/components/assign-task-dialog.client";
 import { TaskCard, TaskGrid } from "@/features/tasks/components/task-card";
+import { TaskAcceptButton } from "@/features/tasks/components/task-accept-button.client";
 import { TaskDoneButton } from "@/features/tasks/components/task-done-button.client";
 import { TeamWorkload } from "@/features/tasks/components/team-workload.client";
 import { listMyTasks, listTeamTasks } from "@/features/tasks/queries";
@@ -109,19 +110,30 @@ export default async function MyTasksPage() {
                   status: task.status,
                   priority: task.priority,
                   dueAt: task.due_at,
+                  acceptedAt: task.accepted_at,
                   assignee: null,
                 }}
                 actions={
                   task.project ? (
                     /* Every task here is already yours, so the control is
                        unconditional — the ownership test would always pass. */
-                    <TaskDoneButton
-                      taskId={task.id}
-                      projectKey={task.project.key}
-                      title={task.title}
-                      done={task.status === "done"}
-                      reopenTo={task.started_at ? "in_progress" : "todo"}
-                    />
+                    <>
+                      {task.status === "done" ? null : (
+                        <TaskAcceptButton
+                          taskId={task.id}
+                          projectKey={task.project.key}
+                          title={task.title}
+                          acceptedAt={task.accepted_at}
+                        />
+                      )}
+                      <TaskDoneButton
+                        taskId={task.id}
+                        projectKey={task.project.key}
+                        title={task.title}
+                        done={task.status === "done"}
+                        reopenTo={task.started_at ? "in_progress" : "todo"}
+                      />
+                    </>
                   ) : null
                 }
               />

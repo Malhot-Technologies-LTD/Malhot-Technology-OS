@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { createTask, deleteTask, updateTask } from "@/features/tasks/actions";
 import { TaskCard, TaskGrid } from "@/features/tasks/components/task-card";
+import { TaskAcceptButton } from "@/features/tasks/components/task-accept-button.client";
 import { TaskDoneButton } from "@/features/tasks/components/task-done-button.client";
 import { TASK_STATUSES, TASK_STATUS_META, type TaskStatus } from "@/features/tasks/schemas";
 import type { TaskRow } from "@/features/tasks/queries";
@@ -88,6 +89,7 @@ export function TaskBoard({ projectKey, tasks, team, canWrite, canManage, canDel
                     status: task.status,
                     priority: task.priority,
                     dueAt: task.due_at,
+                    acceptedAt: task.accepted_at,
                     assignee: task.assignee
                       ? {
                           id: task.assignee.id,
@@ -104,6 +106,7 @@ export function TaskBoard({ projectKey, tasks, team, canWrite, canManage, canDel
                       canEdit={canEdit}
                       canReassign={canManage}
                       canDelete={canDelete}
+                      viewerUserId={viewerUserId}
                       pending={pending}
                       run={run}
                     />
@@ -142,12 +145,14 @@ function TaskActions({
   canEdit,
   canReassign,
   canDelete,
+  viewerUserId,
   pending,
   run,
 }: {
   task: TaskRow;
   projectKey: string;
   team: readonly Assignable[];
+  viewerUserId: string;
   canEdit: boolean;
   canReassign: boolean;
   canDelete: boolean;
@@ -155,9 +160,17 @@ function TaskActions({
   run: Runner;
 }) {
   if (!canEdit && !canDelete) return null;
+  const isMine = task.assignee?.id === viewerUserId;
 
   return (
     <>
+      {/* Only the assignee accepts, even a manager. A manager accepting for
+          someone would empty the "not picked up" list without anybody having
+          picked anything up. */}
+      {isMine && task.status !== "done" ? (
+        <TaskAcceptButton taskId={task.id} projectKey={projectKey} title={task.title} acceptedAt={task.accepted_at} />
+      ) : null}
+
       {canEdit ? (
         <TaskDoneButton
           taskId={task.id}

@@ -591,6 +591,7 @@ export type Database = {
       }
       tasks: {
         Row: {
+          accepted_at: string | null
           assignee_id: string | null
           completed_at: string | null
           created_at: string
@@ -607,6 +608,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          accepted_at?: string | null
           assignee_id?: string | null
           completed_at?: string | null
           created_at?: string
@@ -623,6 +625,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          accepted_at?: string | null
           assignee_id?: string | null
           completed_at?: string | null
           created_at?: string

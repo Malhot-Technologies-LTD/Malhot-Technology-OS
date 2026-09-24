@@ -5,6 +5,8 @@ import { EmptyState } from "@/components/os/empty-state";
 import { PageBody, PageHeader } from "@/components/os/page-header";
 import { AccessRequests } from "@/features/organization/components/access-requests.client";
 import { listProjectOptions } from "@/features/projects/queries";
+import { AcceptanceList } from "@/features/tasks/components/acceptance-list";
+import { listAwaitingAcceptance, listRecentAcceptances } from "@/features/tasks/queries";
 import { requireViewer } from "@/lib/auth/context";
 import { logger } from "@/lib/logger";
 import { can } from "@/lib/permissions";
@@ -45,9 +47,11 @@ export default async function NotificationsPage() {
     );
   }
 
-  const [requests, projects] = await Promise.all([
+  const [requests, projects, accepted, waiting] = await Promise.all([
     listAccessRequests(viewer.userId, viewer.organizationId),
     listProjectOptions(viewer.organizationId),
+    listRecentAcceptances(viewer.organizationId),
+    listAwaitingAcceptance(viewer.organizationId),
   ]);
   if (projects.error) logger.warn("notifications.project_options_failed", { message: projects.error.message });
 
@@ -82,6 +86,29 @@ export default async function NotificationsPage() {
         ) : (
           <AccessRequests requests={requests} projects={projects.data ?? []} projectsFailed={Boolean(projects.error)} />
         )}
+      </section>
+
+      <section aria-labelledby="waiting-heading" className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1">
+          <h2 id="waiting-heading" className="text-xl font-medium">
+            Handed out, not picked up
+          </h2>
+          <p className="text-[15px] text-fg-muted">
+            Assigned work nobody has acknowledged yet. This is the list that tells you whether someone has actually seen
+            what you gave them.
+          </p>
+        </div>
+        <AcceptanceList rows={waiting.data ?? []} mode="waiting" />
+      </section>
+
+      <section aria-labelledby="accepted-heading" className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1">
+          <h2 id="accepted-heading" className="text-xl font-medium">
+            Recently accepted
+          </h2>
+          <p className="text-[15px] text-fg-muted">Who has taken on what, most recent first.</p>
+        </div>
+        <AcceptanceList rows={accepted.data ?? []} mode="accepted" />
       </section>
     </PageBody>
   );

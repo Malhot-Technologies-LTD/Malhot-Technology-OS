@@ -18,6 +18,7 @@ export type TaskCardData = {
   status: TaskStatus;
   priority: Priority;
   dueAt: string | null;
+  acceptedAt: string | null;
   assignee: { id: string; fullName: string; avatarUrl: string | null } | null;
 };
 
@@ -79,7 +80,10 @@ export function TaskCard({ task, projectKey, linkProject = false, actions, showA
         ) : (
           <span className="shrink-0 font-mono text-[13px] text-fg-subtle">#{task.seq}</span>
         )}
-        <StatusPill tone={meta.tone}>{meta.label}</StatusPill>
+        <div className="flex shrink-0 items-center gap-2">
+          {!finished && task.assignee && !task.acceptedAt ? <StatusPill tone="warning">Not accepted</StatusPill> : null}
+          <StatusPill tone={meta.tone}>{meta.label}</StatusPill>
+        </div>
       </div>
 
       <div className="flex min-w-0 flex-col gap-1.5">

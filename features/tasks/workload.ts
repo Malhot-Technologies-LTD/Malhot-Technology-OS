@@ -36,6 +36,7 @@ export function groupByAssignee(tasks: readonly TeamTaskRow[]): WorkloadPerson[]
       priority: task.priority,
       dueAt: task.due_at,
       startedAt: task.started_at,
+      acceptedAt: task.accepted_at,
       projectKey: task.project?.key ?? null,
     });
     groups.set(key, group);

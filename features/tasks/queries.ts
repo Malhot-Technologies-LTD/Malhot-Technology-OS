@@ -20,6 +20,7 @@ export type TaskRow = {
   priority: Priority;
   due_at: string | null;
   started_at: string | null;
+  accepted_at: string | null;
   completed_at: string | null;
   assignee: { id: string; full_name: string; avatar_url: string | null } | null;
 };
@@ -36,7 +37,7 @@ export async function listProjectTasks(projectId: string) {
   return supabase
     .from("tasks")
     .select(
-      "id, seq, title, description, status, priority, due_at, started_at, completed_at, assignee:profiles!tasks_assignee_id_fkey(id, full_name, avatar_url)",
+      "id, seq, title, description, status, priority, due_at, started_at, accepted_at, completed_at, assignee:profiles!tasks_assignee_id_fkey(id, full_name, avatar_url)",
     )
     .eq("project_id", projectId)
     .order("completed_at", { ascending: true, nullsFirst: true })
@@ -59,7 +60,7 @@ export async function listMyTasks(userId: string) {
   return supabase
     .from("tasks")
     .select(
-      "id, seq, title, description, status, priority, due_at, started_at, completed_at, assignee:profiles!tasks_assignee_id_fkey(id, full_name, avatar_url), project:projects!inner(key, name)",
+      "id, seq, title, description, status, priority, due_at, started_at, accepted_at, completed_at, assignee:profiles!tasks_assignee_id_fkey(id, full_name, avatar_url), project:projects!inner(key, name)",
     )
     .eq("assignee_id", userId)
     .is("completed_at", null)
@@ -88,11 +89,67 @@ export async function listTeamTasks(organizationId: string) {
   return supabase
     .from("tasks")
     .select(
-      "id, seq, title, description, status, priority, due_at, started_at, completed_at, assignee:profiles!tasks_assignee_id_fkey(id, full_name, avatar_url), project:projects!tasks_project_id_fkey!inner(id, key, name, organization_id)",
+      "id, seq, title, description, status, priority, due_at, started_at, accepted_at, completed_at, assignee:profiles!tasks_assignee_id_fkey(id, full_name, avatar_url), project:projects!tasks_project_id_fkey!inner(id, key, name, organization_id)",
     )
     .eq("project.organization_id", organizationId)
     .is("completed_at", null)
     .order("due_at", { ascending: true, nullsFirst: false })
     .limit(500)
     .returns<TeamTaskRow[]>();
+}
+
+export type AcceptanceRow = {
+  id: string;
+  seq: number;
+  title: string;
+  accepted_at: string | null;
+  due_at: string | null;
+  assignee: { id: string; full_name: string; avatar_url: string | null } | null;
+  project: { key: string; name: string } | null;
+};
+
+/**
+ * Work handed out and picked up, most recent first.
+ *
+ * Derived from `accepted_at` rather than written into a notifications table
+ * when someone accepts. A derived feed cannot disagree with the tasks it
+ * describes: there is no second row to forget to write, no row left behind when
+ * a task is deleted, and no way for the count to drift from reality. The cost
+ * is that it has no read state, which is why the bell counts the other list.
+ */
+export async function listRecentAcceptances(organizationId: string, limit = 20) {
+  const supabase = await createClient();
+  return supabase
+    .from("tasks")
+    .select(
+      "id, seq, title, accepted_at, due_at, assignee:profiles!tasks_assignee_id_fkey(id, full_name, avatar_url), project:projects!tasks_project_id_fkey!inner(key, name, organization_id)",
+    )
+    .eq("project.organization_id", organizationId)
+    .not("accepted_at", "is", null)
+    .order("accepted_at", { ascending: false })
+    .limit(limit)
+    .returns<AcceptanceRow[]>();
+}
+
+/**
+ * Work handed out and *not* picked up — the list a manager can act on.
+ *
+ * This is the one that clears itself, so it is what the bell counts. "Three
+ * people accepted something" is reassurance; "three tasks have been sitting
+ * unacknowledged" is a thing to go and chase.
+ */
+export async function listAwaitingAcceptance(organizationId: string, limit = 50) {
+  const supabase = await createClient();
+  return supabase
+    .from("tasks")
+    .select(
+      "id, seq, title, accepted_at, due_at, assignee:profiles!tasks_assignee_id_fkey(id, full_name, avatar_url), project:projects!tasks_project_id_fkey!inner(key, name, organization_id)",
+    )
+    .eq("project.organization_id", organizationId)
+    .is("accepted_at", null)
+    .not("assignee_id", "is", null)
+    .is("completed_at", null)
+    .order("due_at", { ascending: true, nullsFirst: false })
+    .limit(limit)
+    .returns<AcceptanceRow[]>();
 }
