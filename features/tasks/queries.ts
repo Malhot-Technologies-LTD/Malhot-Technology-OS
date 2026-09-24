@@ -67,3 +67,32 @@ export async function listMyTasks(userId: string) {
     .limit(100)
     .returns<MyTaskRow[]>();
 }
+
+export type TeamTaskRow = TaskRow & { project: { id: string; key: string; name: string } | null };
+
+/**
+ * Every open task across the organisation, for a manager looking at who is
+ * carrying what.
+ *
+ * RLS does the scoping without help: `tasks_select` requires
+ * `is_project_member(project_id)`, and `project_group_of` resolves an org admin
+ * to a member of every project. So an admin sees the whole company and a
+ * manager sees the projects they are on — which is the right answer for both
+ * without a branch here.
+ *
+ * Completed work is excluded. The question this answers is "who is loaded and
+ * what runs out first", and a finished task is neither.
+ */
+export async function listTeamTasks(organizationId: string) {
+  const supabase = await createClient();
+  return supabase
+    .from("tasks")
+    .select(
+      "id, seq, title, description, status, priority, due_at, started_at, completed_at, assignee:profiles!tasks_assignee_id_fkey(id, full_name, avatar_url), project:projects!tasks_project_id_fkey!inner(id, key, name, organization_id)",
+    )
+    .eq("project.organization_id", organizationId)
+    .is("completed_at", null)
+    .order("due_at", { ascending: true, nullsFirst: false })
+    .limit(500)
+    .returns<TeamTaskRow[]>();
+}

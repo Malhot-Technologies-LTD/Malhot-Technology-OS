@@ -11,7 +11,9 @@ import { PriorityBadge, StatusPill } from "@/components/os/status-badge";
 import { listProjectOptions, listTeamsByProject } from "@/features/projects/queries";
 import { AssignTaskDialog } from "@/features/tasks/components/assign-task-dialog.client";
 import { Countdown } from "@/features/tasks/components/countdown.client";
-import { listMyTasks } from "@/features/tasks/queries";
+import { TeamWorkload } from "@/features/tasks/components/team-workload.client";
+import { listMyTasks, listTeamTasks } from "@/features/tasks/queries";
+import { groupByAssignee } from "@/features/tasks/workload";
 import { TASK_STATUS_META } from "@/features/tasks/schemas";
 import { describeQueryFailure } from "@/lib/actions/db-errors";
 import { requireViewer } from "@/lib/auth/context";
@@ -34,10 +36,12 @@ export default async function MyTasksPage() {
   const canAssign = oversees({ orgRole: viewer.orgRole, projectRoles: viewer.projectRoles });
 
   // The picker data is only fetched for someone who will see the picker.
-  const [tasks, projects, teams] = await Promise.all([
+  const [tasks, projects, teams, teamTasks] = await Promise.all([
     listMyTasks(viewer.userId),
     canAssign ? listProjectOptions(viewer.organizationId) : Promise.resolve({ data: [], error: null }),
     canAssign ? listTeamsByProject(viewer.organizationId) : Promise.resolve(new Map()),
+    // Only a manager sees the workload, so only a manager pays for the query.
+    canAssign ? listTeamTasks(viewer.organizationId) : Promise.resolve({ data: [], error: null }),
   ]);
 
   if (tasks.error) {
@@ -127,6 +131,25 @@ export default async function MyTasksPage() {
           })}
         </ul>
       )}
+
+      {canAssign ? (
+        <section aria-labelledby="workload-heading" className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <h2 id="workload-heading" className="text-xl font-medium">
+              The team{String.fromCharCode(8217)}s work
+            </h2>
+            <p className="text-[15px] text-fg-muted">
+              Everyone with open work on your projects, whoever is closest to running out first.
+            </p>
+          </div>
+
+          {teamTasks.error ? (
+            <ErrorState {...describeQueryFailure(teamTasks.error)} />
+          ) : (
+            <TeamWorkload people={groupByAssignee(teamTasks.data ?? [])} />
+          )}
+        </section>
+      ) : null}
     </PageBody>
   );
 }
