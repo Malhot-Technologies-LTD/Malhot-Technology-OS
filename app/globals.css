@@ -2,6 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "../styles/tokens.css";
+@import "../styles/site.css";
 
 /* Dark mode is driven by data-theme on <html> (set by next-themes) or on a wrapper (marketing site).
    A nested data-theme="light" scope (light sections on the dark site) opts back out. */
@@ -69,7 +70,6 @@
   --color-site-blue-bright: var(--site-blue-bright);
   --color-site-navy: var(--site-navy);
   --color-site-navy-soft: var(--site-navy-soft);
-  --font-site: var(--font-schibsted);
 
   /* Status colours: each has -fg, -bg, -border */
   --color-status-neutral-fg: var(--status-neutral-fg);
@@ -111,6 +111,61 @@
   --shadow-l: var(--shadow-l);
 
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/*
+ * Website palette and motion (styles/site.css).
+ *
+ * A second, literal scale rather than more semantic tokens, because the site
+ * genuinely uses it as a ramp — `brand-200` for an eyebrow, `brand-400` for a
+ * focus ring, `brand-700` for the deep end of a gradient — where the OS only
+ * ever wants "the brand colour" and lets styles/tokens.css decide what that is.
+ *
+ * Declared in a plain `@theme` rather than the `@theme inline` above so the
+ * custom properties survive into the stylesheet: the ported components reach
+ * for `var(--color-brand-500)` inside `color-mix()` and inline gradients, which
+ * inlining would erase.
+ *
+ * `--color-brand-*` sits happily beside the OS's `--color-brand`: Tailwind
+ * generates `bg-brand` from one and `bg-brand-500` from the other, and neither
+ * shadows the other. The site-only surfaces are namespaced `site-` for the same
+ * reason the OS's are — so a stray `bg-ink` in an OS file fails loudly instead
+ * of silently painting a panel near-black.
+ */
+@theme {
+  --color-site-void: #02050c;
+  --color-site-ink-deep: #04070f;
+  --color-navy-950: #050a16;
+  --color-navy-900: #070d1d;
+  --color-navy-850: #091226;
+  --color-navy-800: #0b1630;
+  --color-navy-700: #10213f;
+  --color-navy-600: #172d53;
+
+  --color-brand-50: #eaf2ff;
+  --color-brand-100: #d2e3ff;
+  --color-brand-200: #a8c8ff;
+  --color-brand-300: #78a7ff;
+  --color-brand-400: #4b88ff;
+  --color-brand-500: #2b6cff;
+  --color-brand-600: #1652e6;
+  --color-brand-700: #0f3db4;
+  --color-brand-800: #0b2d85;
+  --color-brand-900: #081f5c;
+
+  --font-display: var(--font-sora);
+  --font-site: var(--font-inter);
+
+  --ease-swift: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-cinematic: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --animate-marquee: site-marquee 38s linear infinite;
+  --animate-float-slow: site-floaty 9s ease-in-out infinite;
+  --animate-pulse-glow: site-pulse-glow 4.5s ease-in-out infinite;
+  --animate-shimmer: site-shimmer 2.4s linear infinite;
+  --animate-aurora: site-aurora 18s ease-in-out infinite alternate;
+  --animate-scan: site-scan 3.6s ease-in-out infinite;
 }
 
 @layer base {

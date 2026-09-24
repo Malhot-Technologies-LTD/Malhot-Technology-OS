@@ -44,3 +44,6 @@ next-env.d.ts
 # Playwright
 /test-results
 /playwright-report
+
+# Design reference footage, kept locally. Not part of the build.
+/referto.mp4

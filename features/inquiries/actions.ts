@@ -13,7 +13,7 @@ import { createInquiry } from "@/lib/supabase/elevated/inquiries";
 import { createClient } from "@/lib/supabase/server";
 
 import { hashClientIp } from "./lib/ip-hash";
-import { inquirySchema } from "./schemas";
+import { briefReference, composeBriefMessage, inquirySchema, projectBriefSchema } from "./schemas";
 
 /** W8 step 1: website contact form → inquiries. Anonymous; honeypot + per-IP rate limit. */
 export const submitInquiry = withAction("inquiries.submit", async (input: unknown): Promise<ActionResult> => {
@@ -51,6 +51,58 @@ export const submitInquiry = withAction("inquiries.submit", async (input: unknow
   logger.info("inquiry.received", { inquiryId: result.id });
   return ok(undefined);
 });
+
+/**
+ * Website /start wizard → inquiries.
+ *
+ * A brief is an enquiry with more structure, so it takes the same road: the
+ * same honeypot, the same per-IP rate limit, the same admin inbox. The ten
+ * answers are flattened into the message by `composeBriefMessage`; see the note
+ * there for why this is not its own table.
+ *
+ * Anonymous, like the contact form. A signed-in visitor filling this in is
+ * still a prospect writing to the company, and requiring a session would mean
+ * the page could not be prerendered.
+ */
+export const submitProjectBrief = withAction(
+  "inquiries.submitBrief",
+  async (input: unknown): Promise<ActionResult<{ reference: string }>> => {
+    const parsed = projectBriefSchema.safeParse(input);
+    if (!parsed.success) return validationFail(parsed.error);
+
+    if (parsed.data.website) {
+      logger.info("brief.honeypot");
+      // A plausible-looking reference, so a bot cannot use the response shape
+      // to tell that it was caught.
+      return ok({ reference: briefReference(crypto.randomUUID()) });
+    }
+
+    const headerStore = await headers();
+    const ip = headerStore.get("x-forwarded-for")?.split(",")[0]?.trim() ?? headerStore.get("x-real-ip");
+    const ipHash = ip ? await hashClientIp(ip, requireServerEnv("INQUIRY_IP_SALT")) : null;
+
+    const result = await createInquiry({
+      name: parsed.data.contactName,
+      email: parsed.data.contactEmail,
+      company: parsed.data.company || null,
+      message: composeBriefMessage(parsed.data),
+      budgetRange: parsed.data.budget,
+      sourcePath: "/start",
+      ipHash,
+    });
+    if (!result.ok) {
+      if (result.error.code === "rate_limited")
+        return fail(
+          "rate_limited",
+          "Too many submissions from this network in the last hour. Try again later or email us directly.",
+        );
+      return fail("unexpected", "Your brief could not be submitted. Try again, or email us directly.");
+    }
+
+    logger.info("brief.received", { inquiryId: result.id });
+    return ok({ reference: briefReference(result.id) });
+  },
+);
 
 /** Settings → Enquiries: admins mark an enquiry handled (RLS restricts the update to admins). */
 export const markInquiryHandled = withAction("inquiries.markHandled", async (input: unknown): Promise<ActionResult> => {

@@ -1,19 +1,29 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { Logo } from "@/components/marketing/site-header";
+import { Logo } from "@/components/site/brand/Logo";
+import { sora } from "@/lib/fonts/site";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
 /**
- * Login, password and invitation flows. Styled as part of the website (same
- * light register and logo) so the OS entry does not feel like a different product.
+ * Login, password and invitation flows.
+ *
+ * A light register, deliberately: this is the seam between the near-black
+ * public site and the OS, and the OS is where you are going. It carries the
+ * website's mark so the handover does not feel like a different product, drawn
+ * with `onLight` so the arrow does not disappear into the panel.
+ *
+ * Not `data-surface="site"`. That attribute now means the dark marketing
+ * surface and would repaint this page navy; these screens keep the OS's own
+ * light tokens. Sora is loaded for the wordmark alone — Inter is not, because
+ * nothing else here is set in it.
  */
 export default function AuthLayout({ children }: LayoutProps<"/">) {
   return (
-    <div data-theme="light" data-surface="site" className="flex min-h-dvh flex-col bg-bg-subtle text-fg antialiased">
+    <div data-theme="light" className={`${sora.variable} flex min-h-dvh flex-col bg-bg-subtle text-fg antialiased`}>
       <a
         href="#auth-main"
         className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-surface focus:px-3 focus:py-2 focus:text-sm"
@@ -21,7 +31,9 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
         Skip to content
       </a>
       <header className="flex h-16 items-center justify-between px-4 md:px-6">
-        <Logo />
+        <Link href="/" aria-label="Malhot home">
+          <Logo onLight />
+        </Link>
         <Link href="/" className="text-sm text-fg-muted hover:text-fg">
           Back to website
         </Link>

@@ -1,115 +1,163 @@
 import type { Metadata } from "next";
-
-import { CtaBand, PageHero, PlaceholderMark } from "@/components/marketing/blocks";
-import { Accent, Section, SectionHead } from "@/components/marketing/section";
-import { site } from "@/content/site";
-import { capabilities, team, values } from "@/content/team";
+import { PageHero } from "@/components/site/layout/PageHero";
+import { StatsBand } from "@/components/site/sections/StatsBand";
+import { Testimonials } from "@/components/site/sections/Testimonials";
+import { ButtonLink } from "@/components/site/ui/Button";
+import { Reveal, SectionHeading, TextReveal } from "@/components/site/ui/Reveal";
+import { Icon } from "@/components/site/brand/Icon";
+import { LogoMark } from "@/components/site/brand/Logo";
+import { media, timeline } from "@/content/site";
 
 export const metadata: Metadata = {
   title: "About",
-  description: `${site.name}: who we are, what we believe about building software, and how the team operates.`,
-  alternates: { canonical: "/about" },
+  description:
+    "MALHOT is a team of passionate developers, designers and problem solvers creating digital experiences that make a real difference.",
 };
+
+const values = [
+  {
+    title: "Clarity over noise",
+    copy: "We remove everything that does not serve the user or the business. Simple is harder — and worth it.",
+    icon: "layers" as const,
+  },
+  {
+    title: "Craft as a standard",
+    copy: "Pixel accuracy, typographic rhythm and performance budgets are not extras. They are the baseline.",
+    icon: "spark" as const,
+  },
+  {
+    title: "Partnership, not tickets",
+    copy: "We push back, propose alternatives and take ownership of outcomes, not just deliverables.",
+    icon: "message" as const,
+  },
+];
 
 export default function AboutPage() {
   return (
     <>
       <PageHero
-        eyebrow="About us"
-        title={
-          <>
-            A software company that <Accent>ships</Accent>
-          </>
-        }
-        lede={`${site.name} designs, builds and operates software for clients who need it to work: websites, web applications, backend systems and automation.`}
-      />
+        eyebrow="About MALHOT"
+        title="Innovation. Creativity. Impact."
+        highlight="Impact."
+        copy="We are a team of passionate developers, designers and problem solvers. Our mission is to create digital experiences that make a real difference for the businesses and people who use them."
+        video={media.gridVideo}
+        poster={media.gridPoster}
+      >
+        <div className="flex flex-wrap gap-3">
+          <ButtonLink href="/start" icon="arrowUpRight" size="lg">
+            Work with us
+          </ButtonLink>
+          <ButtonLink href="/projects" variant="secondary" size="lg" icon="arrow">
+            See the work
+          </ButtonLink>
+        </div>
+      </PageHero>
 
-      <Section aria-labelledby="story-heading">
-        <div className="grid gap-8 lg:grid-cols-12 lg:gap-16">
-          <div className="lg:col-span-5">
-            <SectionHead id="story-heading" eyebrow="Our story" title="Built around one claim" />
+      {/* Vision — pinned editorial block */}
+      <section className="relative overflow-x-clip py-24 sm:py-32">
+        <div className="shell grid gap-14 lg:grid-cols-[0.95fr_1.05fr] lg:gap-20">
+          <div className="lg:sticky lg:top-32 lg:self-start">
+            <Reveal>
+              <span className="eyebrow">
+                <span className="h-[5px] w-[5px] rounded-full bg-brand-400 shadow-[0_0_12px_2px_rgba(43,108,255,0.8)]" />
+                Our vision
+              </span>
+            </Reveal>
+            <TextReveal
+              text="To be a leading digital brand empowering businesses with innovative technology."
+              highlight={["innovative", "technology."]}
+              className="display mt-6 text-[clamp(1.85rem,3.9vw,3rem)] text-white"
+            />
+            <Reveal delay={0.1}>
+              <p className="mt-6 max-w-lg text-[0.98rem] leading-relaxed text-white/55">
+                MALHOT started in Kigali with three engineers and one rule: only ship work we would put our name on.
+                That rule still decides everything — who we work with, how we design and when something is ready.
+              </p>
+            </Reveal>
+            <Reveal delay={0.18}>
+              <div className="mt-10 flex items-center gap-4 rounded-[36px] border border-white/10 bg-white/[0.03] p-5">
+                <LogoMark className="h-11 w-11 shrink-0" />
+                <p className="text-[0.86rem] leading-relaxed text-white/55">
+                  <span className="text-white">Build · Innovate · Grow.</span> Three words on the wall of our studio,
+                  and the order we do everything in.
+                </p>
+              </div>
+            </Reveal>
           </div>
-          <div className="flex flex-col gap-5 text-[17px] leading-relaxed text-fg-muted lg:col-span-7">
-            <p>
-              {site.shortName} exists to make one claim true: that we actually build and ship software. Everything else
-              follows from it. We keep the team small, the tools boring and the process visible.
-            </p>
-            <p>
-              Every project runs through the same seven stages, from discovery to support, with a written output at each
-              one. Plans, tasks, tests and documents live in one place, so progress is counted rather than felt.
-            </p>
-            <p className="flex flex-wrap items-center gap-2 text-sm">
-              <PlaceholderMark /> Company story to be supplied by the founders.
-            </p>
+
+          <div className="relative">
+            <div className="relative overflow-hidden rounded-[1.8rem] border border-white/10">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                loading="lazy"
+                decoding="async"
+                src={media.team}
+                alt="The MALHOT team in the studio"
+                className="aspect-[4/3] w-full object-cover opacity-80"
+              />
+              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,7,15,0.1),rgba(4,7,15,0.8))]" />
+            </div>
+
+            <ol className="mt-12 space-y-0">
+              {timeline.map((item, index) => (
+                <Reveal
+                  key={item.year}
+                  as="li"
+                  delay={index * 0.06}
+                  className="group relative grid grid-cols-[4.5rem_1fr] gap-5 border-t border-white/8 py-7"
+                >
+                  <span className="font-mono text-[0.78rem] text-brand-300">{item.year}</span>
+                  <div>
+                    <h3 className="display text-[1.3rem] text-white transition-transform duration-500 group-hover:translate-x-1">
+                      {item.title}
+                    </h3>
+                    <p className="mt-2 max-w-md text-[0.9rem] leading-relaxed text-white/60">{item.copy}</p>
+                  </div>
+                  <span
+                    aria-hidden
+                    className="absolute top-0 left-0 h-px w-0 bg-gradient-to-r from-brand-400 to-transparent transition-all duration-700 group-hover:w-full"
+                  />
+                </Reveal>
+              ))}
+            </ol>
           </div>
         </div>
-      </Section>
+      </section>
 
-      <Section tone="subtle" aria-labelledby="values-heading">
-        <SectionHead
-          id="values-heading"
-          eyebrow="What we believe"
-          title="Four beliefs about building software"
-          intro="Not a poster on a wall. Each of these changes what we do on a normal Tuesday."
-        />
-        <ol className="mt-10 grid gap-6 md:grid-cols-2">
-          {values.map((value) => (
-            <li key={value.title} className="flex flex-col gap-2.5 border border-border bg-white p-6 md:p-7">
-              <h3 className="text-[19px] leading-snug font-bold tracking-[-0.02em] text-fg">{value.title}</h3>
-              <p className="text-[15px] leading-relaxed text-fg-muted">{value.body}</p>
-            </li>
-          ))}
-        </ol>
-      </Section>
+      {/* Values */}
+      <section className="relative py-8 sm:py-14">
+        <div className="shell">
+          <SectionHeading
+            eyebrow="How we think"
+            title="Principles we refuse to compromise."
+            highlight={["compromise."]}
+            align="center"
+          />
+          <div className="mt-14 grid gap-5 md:grid-cols-3">
+            {values.map((value, index) => (
+              <Reveal key={value.title} delay={index * 0.08}>
+                <article className="group relative h-full overflow-hidden rounded-[1.4rem] border border-white/8 bg-[#070d1d] p-7 transition-all duration-700 hover:-translate-y-1 hover:border-brand-400/40 hover:shadow-[0_40px_80px_-50px_rgba(43,108,255,0.8)]">
+                  <div
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-700 group-hover:opacity-100"
+                    style={{
+                      background: "radial-gradient(80% 60% at 50% 0%, rgba(43,108,255,0.18), transparent 70%)",
+                    }}
+                  />
+                  <span className="relative grid h-12 w-12 place-items-center rounded-[28px] border border-brand-400/30 bg-brand-500/12 text-brand-200">
+                    <Icon name={value.icon} className="h-5 w-5" />
+                  </span>
+                  <h3 className="display relative mt-6 text-[1.25rem] text-white">{value.title}</h3>
+                  <p className="relative mt-3 text-[0.9rem] leading-relaxed text-white/50">{value.copy}</p>
+                </article>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
 
-      <Section aria-labelledby="team-heading">
-        <SectionHead
-          id="team-heading"
-          eyebrow="Our team"
-          title="Five people, five disciplines"
-          intro="Small enough that everyone knows the whole system, structured enough that nothing falls between roles."
-        />
-        <ul className="mt-10 grid gap-x-10 gap-y-7 sm:grid-cols-2 lg:grid-cols-3">
-          {team.map((member) => (
-            <li key={member.role} className="flex flex-col gap-1.5 border-t border-border pt-5">
-              <p className="text-[12px] font-semibold tracking-[0.14em] text-brand uppercase">{member.discipline}</p>
-              <p className="text-[19px] font-bold tracking-[-0.02em] text-fg">{member.role}</p>
-              <p className="text-[15px] text-fg-muted">{member.name}</p>
-              {member.placeholder ? <PlaceholderMark className="mt-1 w-fit" /> : null}
-            </li>
-          ))}
-        </ul>
-      </Section>
-
-      <Section tone="subtle" aria-labelledby="capabilities-heading">
-        <SectionHead
-          id="capabilities-heading"
-          eyebrow="Capabilities"
-          title="The stack we actually use"
-          intro="Boring technology, deliberately chosen: tools that will still be maintained in five years and that a new engineer can read."
-        />
-        <dl className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {capabilities.map((capability) => (
-            <div key={capability.area} className="flex flex-col gap-3 border border-border bg-white p-6">
-              <dt className="text-[12px] font-semibold tracking-[0.14em] text-fg-subtle uppercase">
-                {capability.area}
-              </dt>
-              <dd>
-                <ul className="flex flex-col gap-1.5 text-[15px] text-fg-muted">
-                  {capability.items.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </Section>
-
-      <CtaBand
-        title="Work with the team, not a queue."
-        lede="You will talk to the people writing the code, for the whole project."
-      />
+      <StatsBand />
+      <Testimonials />
     </>
   );
 }
