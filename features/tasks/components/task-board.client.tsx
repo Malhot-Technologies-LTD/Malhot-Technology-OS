@@ -24,8 +24,12 @@ type Props = {
   projectKey: string;
   tasks: readonly TaskRow[];
   team: readonly Assignable[];
+  /** May add tasks at all. */
   canWrite: boolean;
+  /** Manages the project: may change and reassign anyone else’s task. */
+  canManage: boolean;
   canDelete: boolean;
+  viewerUserId: string;
 };
 
 /**
@@ -36,7 +40,7 @@ type Props = {
  * pickers stay on every row afterwards so reassigning is one click rather than
  * a trip through an edit screen.
  */
-export function TaskBoard({ projectKey, tasks, team, canWrite, canDelete }: Props) {
+export function TaskBoard({ projectKey, tasks, team, canWrite, canManage, canDelete, viewerUserId }: Props) {
   const [pending, startTransition] = useTransition();
   const [adding, setAdding] = useState(false);
 
@@ -70,7 +74,14 @@ export function TaskBoard({ projectKey, tasks, team, canWrite, canDelete }: Prop
               task={task}
               projectKey={projectKey}
               team={team}
-              canWrite={canWrite}
+              /*
+               * Per task, not per person. Everyone on the project reads the
+               * board; only the person holding a task, or someone managing the
+               * project, can move it. Matches the tasks_update policy, so the
+               * control is absent rather than present and refused.
+               */
+              canEdit={canManage || task.assignee?.id === viewerUserId}
+              canReassign={canManage}
               canDelete={canDelete}
               pending={pending}
               run={run}
@@ -103,7 +114,8 @@ function TaskRowItem({
   task,
   projectKey,
   team,
-  canWrite,
+  canEdit,
+  canReassign,
   canDelete,
   pending,
   run,
@@ -111,7 +123,8 @@ function TaskRowItem({
   task: TaskRow;
   projectKey: string;
   team: readonly Assignable[];
-  canWrite: boolean;
+  canEdit: boolean;
+  canReassign: boolean;
   canDelete: boolean;
   pending: boolean;
   run: (work: () => Promise<{ ok: boolean; error?: { message: string } }>, success: string) => void;
@@ -159,7 +172,7 @@ function TaskRowItem({
         </span>
       </div>
 
-      {canWrite ? (
+      {canEdit ? (
         <Select
           value={task.status}
           disabled={pending}
@@ -185,7 +198,7 @@ function TaskRowItem({
         <StatusPill tone={meta.tone}>{meta.label}</StatusPill>
       )}
 
-      {canWrite ? (
+      {canReassign ? (
         <Select
           value={task.assignee?.id ?? "none"}
           disabled={pending}

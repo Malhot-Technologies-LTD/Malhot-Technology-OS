@@ -40,8 +40,12 @@ export default async function MyTasksPage() {
     listMyTasks(viewer.userId),
     canAssign ? listProjectOptions(viewer.organizationId) : Promise.resolve({ data: [], error: null }),
     canAssign ? listTeamsByProject(viewer.organizationId) : Promise.resolve(new Map()),
-    // Only a manager sees the workload, so only a manager pays for the query.
-    canAssign ? listTeamTasks(viewer.organizationId) : Promise.resolve({ data: [], error: null }),
+    /*
+     * Everyone sees what the team is carrying — knowing who holds what is how
+     * people stop stepping on each other. RLS keeps it to projects they are on,
+     * and the section is read-only for work that is not theirs.
+     */
+    listTeamTasks(viewer.organizationId),
   ]);
 
   if (tasks.error) {
@@ -132,24 +136,24 @@ export default async function MyTasksPage() {
         </ul>
       )}
 
-      {canAssign ? (
-        <section aria-labelledby="workload-heading" className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1">
-            <h2 id="workload-heading" className="text-xl font-medium">
-              The team{String.fromCharCode(8217)}s work
-            </h2>
-            <p className="text-[15px] text-fg-muted">
-              Everyone with open work on your projects, whoever is closest to running out first.
-            </p>
-          </div>
+      <section aria-labelledby="workload-heading" className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1">
+          <h2 id="workload-heading" className="text-xl font-medium">
+            The team{String.fromCharCode(8217)}s work
+          </h2>
+          <p className="text-[15px] text-fg-muted">
+            {canAssign
+              ? "Everyone with open work on your projects, whoever is closest to running out first."
+              : "What everyone on your projects is carrying, whoever is closest to running out first. Read-only unless it is yours."}
+          </p>
+        </div>
 
-          {teamTasks.error ? (
-            <ErrorState {...describeQueryFailure(teamTasks.error)} />
-          ) : (
-            <TeamWorkload people={groupByAssignee(teamTasks.data ?? [])} />
-          )}
-        </section>
-      ) : null}
+        {teamTasks.error ? (
+          <ErrorState {...describeQueryFailure(teamTasks.error)} />
+        ) : (
+          <TeamWorkload people={groupByAssignee(teamTasks.data ?? [])} viewerUserId={viewer.userId} />
+        )}
+      </section>
     </PageBody>
   );
 }

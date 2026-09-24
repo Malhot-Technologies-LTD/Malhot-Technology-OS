@@ -35,6 +35,33 @@ async function loadProject(projectKey: string) {
   return { ok: true as const, viewer, ctx, project: project.data };
 }
 
+/**
+ * You may change a task if you manage the project, or if it is yours.
+ *
+ * Mirrors the tasks_update policy in 20260924090000_task_ownership.sql. The
+ * policy is the enforcement; this exists so the refusal arrives as a sentence
+ * rather than as an empty result from a row RLS quietly withheld.
+ */
+async function loadOwnTask(taskId: string, projectId: string, viewerUserId: string, canManage: boolean) {
+  const supabase = await createClient();
+  const existing = await supabase
+    .from("tasks")
+    .select("id, assignee_id, title")
+    .eq("id", taskId)
+    .eq("project_id", projectId)
+    .maybeSingle();
+
+  if (existing.error || !existing.data)
+    return { ok: false as const, result: fail("not_found", "That task does not exist.") };
+  if (!canManage && existing.data.assignee_id !== viewerUserId)
+    return {
+      ok: false as const,
+      result: fail("forbidden", "That task belongs to someone else. Only they or the project manager can change it."),
+    };
+
+  return { ok: true as const, supabase, task: existing.data };
+}
+
 export const createTask = withAction("tasks.create", async (input: unknown): Promise<ActionResult> => {
   const parsed = createTaskSchema.safeParse(input);
   if (!parsed.success) return validationFail(parsed.error);
@@ -42,6 +69,15 @@ export const createTask = withAction("tasks.create", async (input: unknown): Pro
   const loaded = await loadProject(parsed.data.projectKey);
   if (!loaded.ok) return loaded.result;
   if (!can(loaded.viewer, "task.create", loaded.ctx)) return fail("forbidden", "You cannot add tasks to this project.");
+
+  /*
+   * Handing work to somebody else commits their time, so it needs authority
+   * over the project. Adding work for yourself, or leaving it unassigned for a
+   * manager to hand out, does not.
+   */
+  const assigningToSomeoneElse = parsed.data.assigneeId !== null && parsed.data.assigneeId !== loaded.viewer.userId;
+  if (assigningToSomeoneElse && !can(loaded.viewer, "project.manage_members", loaded.ctx))
+    return fail("forbidden", "Only the project manager can assign work to someone else.");
 
   const supabase = await createClient();
 
@@ -96,6 +132,20 @@ export const updateTask = withAction("tasks.update", async (input: unknown): Pro
   const loaded = await loadProject(projectKey);
   if (!loaded.ok) return loaded.result;
   if (!can(loaded.viewer, "task.edit", loaded.ctx)) return fail("forbidden", "You cannot change tasks here.");
+
+  const canManage = can(loaded.viewer, "project.manage_members", loaded.ctx);
+  const owned = await loadOwnTask(taskId, loaded.project.id, loaded.viewer.userId, canManage);
+  if (!owned.ok) return owned.result;
+
+  // Reassigning is a manager act for the same reason assigning is: it moves
+  // work onto someone who did not choose it.
+  if (
+    typeof payload.assigneeId === "string" &&
+    payload.assigneeId !== "" &&
+    payload.assigneeId !== loaded.viewer.userId &&
+    !canManage
+  )
+    return fail("forbidden", "Only the project manager can hand this to someone else.");
 
   // Typed rather than Record<string, unknown>: the update builder rejects an
   // open index signature, and a typo in a column name should fail here.

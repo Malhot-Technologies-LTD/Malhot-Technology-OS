@@ -149,7 +149,9 @@ export default async function ProjectOverviewPage({ params }: PageProps<"/os/pro
                     avatarUrl: member.profile?.avatar_url ?? null,
                   }))}
                   canWrite={can(viewer, "task.create", ctx) && writable}
+                  canManage={canManageTeam && writable}
                   canDelete={can(viewer, "task.delete", ctx)}
+                  viewerUserId={viewer.userId}
                 />
               )}
             </CardContent>

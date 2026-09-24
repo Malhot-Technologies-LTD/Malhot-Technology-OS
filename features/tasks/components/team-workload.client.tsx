@@ -38,7 +38,14 @@ export type WorkloadPerson = {
  * Unassigned work gets its own group at the end rather than being left out.
  * A task nobody owns is not a task with no problem — it is the manager's.
  */
-export function TeamWorkload({ people }: { people: readonly WorkloadPerson[] }) {
+export function TeamWorkload({
+  people,
+  viewerUserId,
+}: {
+  people: readonly WorkloadPerson[];
+  /** Marks your own group, so you can find yourself in a long list. */
+  viewerUserId: string;
+}) {
   if (people.length === 0) {
     return <p className="text-[15px] text-fg-muted">No open work across your projects.</p>;
   }
@@ -59,7 +66,12 @@ export function TeamWorkload({ people }: { people: readonly WorkloadPerson[] }) 
               </span>
             )}
             <div className="flex min-w-0 flex-col">
-              <span className="truncate text-[15px] font-medium">{person.fullName}</span>
+              <span className="truncate text-[15px] font-medium">
+                {person.fullName}
+                {person.userId === viewerUserId ? (
+                  <span className="ml-2 text-sm font-normal text-fg-subtle">you</span>
+                ) : null}
+              </span>
               <span className="text-sm text-fg-muted tabular-nums">
                 {person.tasks.length} open {person.tasks.length === 1 ? "task" : "tasks"}
               </span>
