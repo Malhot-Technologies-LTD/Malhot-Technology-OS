@@ -1,0 +1,89 @@
+name: Release
+
+# Migrations first, app second, and the app only if the migrations landed.
+#
+# Vercel's own Git integration cannot express that ordering: it starts building
+# the moment main moves, so a deploy can go live against a database that has not
+# caught up. That is not hypothetical — it is how production ended up running
+# code that selected a column the database did not have, three separate times,
+# each surfacing as a different confusing error in the interface.
+#
+# So Git integration is turned off for production (docs/engineering/deployment.md)
+# and the deploy is triggered here, by hook, after `supabase db push` succeeds.
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: release
+  # Never cancel a release in flight. Cancelling between "migration applied" and
+  # "app deployed" leaves exactly the mismatch this workflow exists to prevent.
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    name: Apply migrations to production
+    runs-on: ubuntu-latest
+    # Requires the `production` environment, so the secrets below are scoped to
+    # it and can carry a required reviewer if you ever want a gate here.
+    environment: production
+    outputs:
+      applied: ${{ steps.push.outcome }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Refuse to run without an explicit target
+        # The project ref is named in a secret rather than read from any env
+        # file, because the incident that motivated this workflow was an app
+        # pointed at the wrong Supabase project entirely. A release should say
+        # out loud which database it is changing.
+        run: |
+          if [ -z "${{ secrets.SUPABASE_PROJECT_REF }}" ]; then
+            echo "SUPABASE_PROJECT_REF is not set. Add it to the production environment." >&2
+            exit 1
+          fi
+
+      - name: Link to the production project
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: supabase link --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}"
+
+      - name: Show what is pending
+        # Printed before anything is applied, so the log answers "what changed"
+        # without anyone having to reconstruct it afterwards.
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: supabase migration list
+
+      - name: Apply
+        id: push
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: supabase db push
+
+  deploy:
+    name: Trigger the Vercel deploy
+    needs: migrate
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Refuse to deploy without a hook
+        run: |
+          if [ -z "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}" ]; then
+            echo "VERCEL_DEPLOY_HOOK_URL is not set. Add it to the production environment," >&2
+            echo "or re-enable Vercel's Git integration and delete this workflow." >&2
+            exit 1
+          fi
+
+      - name: Deploy
+        # -f so an HTTP error is a failed job rather than a green tick over a
+        # deploy that never started.
+        run: curl -fsS -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}"

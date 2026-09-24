@@ -27,7 +27,28 @@ Why a shared staging database for previews rather than Supabase branching: branc
 ## Release flow
 
 1. PR → CI green → review → squash-merge to `main`.
-2. Vercel builds `main` → **production deploy**. Migrations are applied **before** the app deploy by a GitHub Actions job (`supabase db push` against production using `SUPABASE_ACCESS_TOKEN` + project ref) that runs on merge and must succeed before the Vercel deploy is promoted (Vercel deploy is triggered by the workflow via deploy hook, not by Git integration, so ordering is guaranteed).
+2. `.github/workflows/release.yml` runs on merge: it applies migrations with `supabase db push`, then triggers the Vercel deploy by hook. The deploy only happens if the migration job succeeded, so the app can never go live ahead of its schema.
+
+### Setting the release workflow up
+
+Until these are in place the workflow fails loudly rather than deploying something half-configured.
+
+Create a **production** environment on the repository (Settings → Environments), and add four secrets to it:
+
+| Secret | Where it comes from |
+|---|---|
+| `SUPABASE_ACCESS_TOKEN` | Supabase → Account → Access Tokens |
+| `SUPABASE_PROJECT_REF` | The `xxxx` in `https://xxxx.supabase.co` for **production** |
+| `SUPABASE_DB_PASSWORD` | The database password set when the project was created |
+| `VERCEL_DEPLOY_HOOK_URL` | Vercel → Project → Settings → Git → Deploy Hooks |
+
+Then **turn off Vercel's Git integration for production**, or it will keep deploying on push and race the migration job. That auto-deploy is precisely what this workflow replaces.
+
+The project ref is named in a secret rather than read from an env file on purpose. The failure that motivated all of this was an app pointed at an entirely different Supabase project — one belonging to another product — and nothing in the pipeline said out loud which database it was about to change. A release should name its target.
+
+### Why ordering needs a workflow at all
+
+Vercel's Git integration starts building the moment `main` moves. It has no way to wait for a migration, so a deploy can go live against a database that has not caught up. In this project that produced three separate incidents, each surfacing as a different confusing error: a refused insert, a missing column reported as "something went wrong", and an empty picker that looked like missing data. The expand → migrate → contract rule below keeps each individual migration safe; this workflow is what keeps the *ordering* safe.
 3. Post-deploy smoke: `GET /api/health`, login e2e against production with a dedicated smoke user (read-only project).
 
 Migration compatibility rule: every migration must be backward-compatible with the currently running app version (expand → migrate → contract). Column removals happen one release after the code stops using them.
