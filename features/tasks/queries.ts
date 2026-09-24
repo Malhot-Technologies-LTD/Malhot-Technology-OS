@@ -22,6 +22,7 @@ export type TaskRow = {
   started_at: string | null;
   accepted_at: string | null;
   completed_at: string | null;
+  created_at: string;
   assignee: { id: string; full_name: string; avatar_url: string | null } | null;
 };
 
@@ -37,7 +38,7 @@ export async function listProjectTasks(projectId: string) {
   return supabase
     .from("tasks")
     .select(
-      "id, seq, title, description, status, priority, due_at, started_at, accepted_at, completed_at, assignee:profiles!tasks_assignee_id_fkey(id, full_name, avatar_url)",
+      "id, seq, title, description, status, priority, due_at, started_at, accepted_at, completed_at, created_at, assignee:profiles!tasks_assignee_id_fkey(id, full_name, avatar_url)",
     )
     .eq("project_id", projectId)
     .order("completed_at", { ascending: true, nullsFirst: true })
@@ -60,7 +61,7 @@ export async function listMyTasks(userId: string) {
   return supabase
     .from("tasks")
     .select(
-      "id, seq, title, description, status, priority, due_at, started_at, accepted_at, completed_at, assignee:profiles!tasks_assignee_id_fkey(id, full_name, avatar_url), project:projects!inner(key, name)",
+      "id, seq, title, description, status, priority, due_at, started_at, accepted_at, completed_at, created_at, assignee:profiles!tasks_assignee_id_fkey(id, full_name, avatar_url), project:projects!inner(key, name)",
     )
     .eq("assignee_id", userId)
     .is("completed_at", null)
@@ -89,7 +90,7 @@ export async function listTeamTasks(organizationId: string) {
   return supabase
     .from("tasks")
     .select(
-      "id, seq, title, description, status, priority, due_at, started_at, accepted_at, completed_at, assignee:profiles!tasks_assignee_id_fkey(id, full_name, avatar_url), project:projects!tasks_project_id_fkey!inner(id, key, name, organization_id)",
+      "id, seq, title, description, status, priority, due_at, started_at, accepted_at, completed_at, created_at, assignee:profiles!tasks_assignee_id_fkey(id, full_name, avatar_url), project:projects!tasks_project_id_fkey!inner(id, key, name, organization_id)",
     )
     .eq("project.organization_id", organizationId)
     .is("completed_at", null)

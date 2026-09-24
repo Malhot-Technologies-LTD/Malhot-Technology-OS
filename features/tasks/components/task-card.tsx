@@ -1,11 +1,14 @@
+"use client";
+
 import { CalendarClock } from "lucide-react";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import { UserAvatar } from "@/components/os/user-menu.client";
 import { formatDate } from "@/components/os/data-display";
 import { PriorityBadge, StatusPill } from "@/components/os/status-badge";
 import { Countdown } from "@/features/tasks/components/countdown.client";
+import { TaskDetailSheet } from "@/features/tasks/components/task-detail-sheet.client";
 import { TASK_STATUS_META, type TaskStatus } from "@/features/tasks/schemas";
 import { cn } from "@/lib/utils";
 import type { Priority } from "@/types/domain";
@@ -20,6 +23,10 @@ export type TaskCardData = {
   dueAt: string | null;
   acceptedAt: string | null;
   assignee: { id: string; fullName: string; avatarUrl: string | null } | null;
+  /* Only the detail panel reads these, so a caller that never opens one may omit them. */
+  startedAt?: string | null;
+  completedAt?: string | null;
+  createdAt?: string | null;
 };
 
 type Props = {
@@ -55,20 +62,44 @@ type Props = {
 export function TaskCard({ task, projectKey, linkProject = false, actions, showAssignee = true }: Props) {
   const meta = TASK_STATUS_META[task.status];
   const finished = task.status === "done";
+  const [detailOpen, setDetailOpen] = useState(false);
 
   return (
     <article
       className={cn(
-        "flex h-full flex-col gap-4 rounded-lg border border-border p-5 transition-[colors,transform] duration-[160ms] ease-standard hover:-translate-y-0.5 hover:border-border-strong",
+        "relative flex h-full flex-col gap-4 rounded-lg border border-border p-5 transition-[colors,transform] duration-[160ms] ease-standard hover:-translate-y-0.5 hover:border-border-strong",
         finished ? "border-dashed bg-transparent" : "bg-surface",
       )}
     >
+      {/*
+       * A stretched trigger rather than a clickable wrapper. The card contains
+       * buttons and links of its own, and nesting them inside another button is
+       * invalid and unusable by keyboard. An overlay sits behind them instead:
+       * the whole card opens the detail, while anything interactive is lifted
+       * above it and keeps its own behaviour.
+       */}
+      <button
+        type="button"
+        onClick={() => setDetailOpen(true)}
+        className="focus-visible:outline-focus absolute inset-0 z-0 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2"
+      >
+        <span className="sr-only">Open {task.title}</span>
+      </button>
+
+      <TaskDetailSheet
+        task={task}
+        projectKey={projectKey}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        actions={actions}
+      />
+
       <div className="flex items-start justify-between gap-3">
         {projectKey ? (
           linkProject ? (
             <Link
               href={`/os/projects/${projectKey}`}
-              className="shrink-0 font-mono text-[13px] text-fg-subtle hover:text-fg hover:underline"
+              className="relative z-10 shrink-0 font-mono text-[13px] text-fg-subtle hover:text-fg hover:underline"
             >
               {projectKey}-{task.seq}
             </Link>
@@ -131,7 +162,7 @@ export function TaskCard({ task, projectKey, linkProject = false, actions, showA
 
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4">
         <PriorityBadge priority={task.priority} />
-        {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
+        {actions ? <div className="relative z-10 flex flex-wrap items-center gap-2">{actions}</div> : null}
       </div>
     </article>
   );

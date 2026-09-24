@@ -90,6 +90,9 @@ export function TaskBoard({ projectKey, tasks, team, canWrite, canManage, canDel
                     priority: task.priority,
                     dueAt: task.due_at,
                     acceptedAt: task.accepted_at,
+                    startedAt: task.started_at,
+                    completedAt: task.completed_at,
+                    createdAt: task.created_at,
                     assignee: task.assignee
                       ? {
                           id: task.assignee.id,

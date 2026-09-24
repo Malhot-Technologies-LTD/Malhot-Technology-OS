@@ -18,6 +18,8 @@ export type WorkloadTask = {
   dueAt: string | null;
   startedAt: string | null;
   acceptedAt: string | null;
+  completedAt: string | null;
+  createdAt: string;
   projectKey: string | null;
 };
 
@@ -96,6 +98,9 @@ export function TeamWorkload({
                       priority: task.priority,
                       dueAt: task.dueAt,
                       acceptedAt: task.acceptedAt,
+                      startedAt: task.startedAt,
+                      completedAt: task.completedAt,
+                      createdAt: task.createdAt,
                       assignee: null,
                     }}
                     actions={

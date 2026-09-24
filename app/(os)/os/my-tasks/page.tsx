@@ -111,6 +111,9 @@ export default async function MyTasksPage() {
                   priority: task.priority,
                   dueAt: task.due_at,
                   acceptedAt: task.accepted_at,
+                  startedAt: task.started_at,
+                  completedAt: task.completed_at,
+                  createdAt: task.created_at,
                   assignee: null,
                 }}
                 actions={
