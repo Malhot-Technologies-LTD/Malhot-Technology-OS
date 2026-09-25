@@ -54,6 +54,8 @@ Anti-spam (in `emit_event`): no self-notifications; dedupe identical unread (use
 ## Delivery
 In-app only (v1): bell badge (unread count; realtime insert subscription), popover with the last 10 (grouped by day; mark read on click; "Mark all read"), full page `/os/notifications` with filters (type, project, unread). Email digests: roadmap (per-user daily digest with per-type opt-outs stored in `profiles.preferences`).
 
+The badge itself shows in two places and must always agree: the topbar bell and the sidebar's Notifications row. Both render `NotificationCount` (`components/os/notification-count.tsx`), which is `cache`d so one render costs one count, and both draw the same `CountPill` — capped at "9+", hidden entirely at zero. Until the table lands the count is derived, not stored: people awaiting access plus tasks assigned but not yet accepted. Both clear themselves when acted on, which is what makes them countable.
+
 Notification `href` is resolved at emit time (deep link to task panel, bug, document, project); on click, mark read then navigate.
 
 ## Activity surfaces

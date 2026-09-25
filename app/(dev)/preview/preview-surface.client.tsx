@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { CountPill } from "@/components/os/count-pill";
 import { AppSidebar } from "@/components/os/app-sidebar.client";
 import { DueDate, KeyValueList, ProgressBar, ProjectKey } from "@/components/os/data-display";
 import { EmptyState } from "@/components/os/empty-state";
@@ -121,6 +122,8 @@ export function PreviewSurface() {
           <AppSidebar
             collapsed={collapsed}
             onToggle={() => setCollapsed(!collapsed)}
+            // Fixture count: the gallery has nobody actually waiting on it.
+            notificationBadge={<CountPill count={3} />}
             user={{
               fullName: "Alpha N.",
               email: "alpha@malhot.rw",

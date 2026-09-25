@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { NoAccess } from "@/components/os/no-access";
 import { NotificationBell } from "@/components/os/notification-bell";
+import { NotificationCount } from "@/components/os/notification-count";
 import { OsShell, SIDEBAR_COOKIE } from "@/components/os/os-shell.client";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -42,6 +43,7 @@ export default async function OsLayout({ children }: LayoutProps<"/">) {
         defaultCollapsed={defaultCollapsed}
         audience={{ orgRole: viewer.orgRole, projectRoles: viewer.projectRoles }}
         bell={<NotificationBell userId={viewer.userId} organizationId={viewer.organizationId} />}
+        notificationBadge={<NotificationCount userId={viewer.userId} organizationId={viewer.organizationId} />}
         user={{
           fullName: viewer.profile.fullName,
           email: viewer.email,

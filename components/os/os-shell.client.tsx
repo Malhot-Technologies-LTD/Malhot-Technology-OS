@@ -21,6 +21,8 @@ type Props = {
    * component is a client boundary and cannot await anything itself.
    */
   bell: ReactNode;
+  /** Count for the sidebar's Notifications row; server-rendered, see notification-count.tsx. */
+  notificationBadge: ReactNode;
   children: ReactNode;
 };
 
@@ -33,7 +35,7 @@ type Props = {
  * it lands in the same place on every page and at every sidebar width — the
  * thing people reach for most stops moving.
  */
-export function OsShell({ user, defaultCollapsed, audience, bell, children }: Props) {
+export function OsShell({ user, defaultCollapsed, audience, bell, notificationBadge, children }: Props) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
 
   function toggle() {
@@ -51,7 +53,13 @@ export function OsShell({ user, defaultCollapsed, audience, bell, children }: Pr
         Skip to content
       </a>
       <div className="flex h-dvh overflow-hidden bg-bg">
-        <AppSidebar collapsed={collapsed} onToggle={toggle} user={user} audience={audience} />
+        <AppSidebar
+          collapsed={collapsed}
+          onToggle={toggle}
+          user={user}
+          audience={audience}
+          notificationBadge={notificationBadge}
+        />
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="grid h-16 shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-4 border-b border-border bg-bg/85 px-5 backdrop-blur-sm sm:px-7">
             <div className="min-w-0">

@@ -3,7 +3,7 @@
 import { Bell, ChevronRight, PanelLeftClose, PanelLeftOpen, Plus, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import type { NavAudience } from "@/components/os/nav-audience";
 import {
@@ -28,7 +28,14 @@ export type SidebarUser = {
   orgRole: OrgRole;
 };
 
-type Props = { collapsed: boolean; onToggle: () => void; user: SidebarUser; audience: NavAudience };
+type Props = {
+  collapsed: boolean;
+  onToggle: () => void;
+  user: SidebarUser;
+  audience: NavAudience;
+  /** Server-rendered count for the Notifications row; see notification-count.tsx. */
+  notificationBadge: ReactNode;
+};
 
 const RAIL = "w-16";
 const PANEL = "w-72";
@@ -43,7 +50,7 @@ const PANEL = "w-72";
  * hover state deliberately does not, because a pointer crossing the rail is not
  * a decision about how you want the OS laid out.
  */
-export function AppSidebar({ collapsed, onToggle, user, audience }: Props) {
+export function AppSidebar({ collapsed, onToggle, user, audience, notificationBadge }: Props) {
   const pathname = usePathname();
   // Sections this person has something to read; see nav-audience.ts.
   const groups = visibleGroups(audience);
@@ -168,6 +175,7 @@ export function AppSidebar({ collapsed, onToggle, user, audience }: Props) {
             pathname={pathname}
             open={open}
             role={user.orgRole}
+            badge={notificationBadge}
           />
           <NavRow
             item={{ label: "Settings", href: "/os/settings", icon: Settings, children: SETTINGS_CHILDREN }}
@@ -204,7 +212,19 @@ function OrgMark({ name }: { name: string }) {
   );
 }
 
-function NavRow({ item, pathname, open, role }: { item: NavItem; pathname: string; open: boolean; role: OrgRole }) {
+function NavRow({
+  item,
+  pathname,
+  open,
+  role,
+  badge,
+}: {
+  item: NavItem;
+  pathname: string;
+  open: boolean;
+  role: OrgRole;
+  badge?: ReactNode;
+}) {
   const children = visibleChildren(item.children, role);
   const active = isActive(pathname, item);
   const childActive = children.some((child) => pathname === child.href);
@@ -232,7 +252,12 @@ function NavRow({ item, pathname, open, role }: { item: NavItem; pathname: strin
           !open && "justify-center px-0",
         )}
       >
-        <Icon className="size-5 shrink-0" aria-hidden="true" />
+        <span className="relative flex shrink-0">
+          <Icon className="size-5" aria-hidden="true" />
+          {/* On the 56px rail there is no label to sit beside, so the count
+              rides the icon the way the topbar bell's does. */}
+          {badge && !open ? <span className="absolute -top-1.5 -right-1.5 flex">{badge}</span> : null}
+        </span>
         <span
           className={cn(
             "truncate whitespace-nowrap transition-opacity duration-[160ms]",
@@ -241,6 +266,8 @@ function NavRow({ item, pathname, open, role }: { item: NavItem; pathname: strin
         >
           {item.label}
         </span>
+        {/* Opened, it reads as part of the row rather than a mark on the icon. */}
+        {badge && open ? <span className="ml-auto flex shrink-0">{badge}</span> : null}
       </Link>
       {open && children.length > 0 ? (
         <button
