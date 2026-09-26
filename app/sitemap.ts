@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-import { projects } from "@/content/site";
+import { listPublishedShowcases } from "@/features/showcase/public";
 import { siteUrl } from "@/lib/env";
 
 /**
@@ -9,10 +9,12 @@ import { siteUrl } from "@/lib/env";
  * /start is deliberately absent, and carries `robots: noindex` of its own: it
  * is a six-step form at the end of a funnel, not a page anyone should arrive at
  * cold from a search result. The OS and the auth screens are excluded by
- * app/robots.ts.
+ * app/robots.ts. Project pages are the ones published in Settings → Website;
+ * the list refreshes with them.
  */
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
+  const projects = await listPublishedShowcases();
   const pages = ["/", "/about", "/services", "/projects", "/contact", "/privacy"];
   return [
     ...pages.map((path) => ({

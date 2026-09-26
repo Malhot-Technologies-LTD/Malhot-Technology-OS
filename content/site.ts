@@ -7,10 +7,8 @@
  * OS's.
  *
  * The rule in content/README.md still holds: never invent client names, metrics,
- * quotes or people. Anything below carrying `unverified: true` came across from
- * the website repo unsourced and must be confirmed or replaced before it can be
- * treated as fact. It is flagged rather than deleted so the page still composes
- * while the content owner decides (content/README.md, "Content gaps").
+ * quotes or people. Anything below still unconfirmed is listed in
+ * content/README.md, "Content gaps".
  */
 
 export const site = {
@@ -35,9 +33,10 @@ export const site = {
 
 /**
  * Primary navigation. `menu` names the dropdown a top-level item opens in the
- * header (components/site/layout/Navbar.tsx). The Services and Projects menus
- * are built from `services` and `projects` below, so they cannot drift from
- * the pages; only the About menu is listed here. The footer uses the top-level
+ * header (components/site/layout/Navbar.tsx). The Services menu is built from
+ * `services` below and the Projects menu from the projects published in
+ * Settings → Website, so neither can drift from its pages; only the About menu
+ * is listed here. The footer uses the top-level
  * items alone.
  */
 export type NavMenu = "about" | "services" | "projects";
@@ -196,188 +195,11 @@ export const services: Service[] = [
   },
 ];
 
-export type Project = {
-  slug: string;
-  title: string;
-  category: "Web" | "Mobile" | "Design" | "Marketing";
-  kind: string;
-  year: string;
-  client: string;
-  summary: string;
-  overview: string;
-  stack: string[];
-  features: string[];
-  results: { label: string; value: string }[];
-  liveUrl: string;
-  repoUrl: string;
-  /** Client name and results came across unsourced — confirm before launch. */
-  unverified?: boolean;
-};
-
-export const projects: Project[] = [
-  {
-    slug: "nexus-circle-pulse",
-    title: "Nexus Circle Pulse",
-    category: "Mobile",
-    kind: "Full-stack social productivity app",
-    year: "2025",
-    client: "Nexus Circle",
-    summary: "A life-organization and social app with AI-powered productivity, study and timetable management.",
-    overview:
-      "Nexus Circle Pulse is a comprehensive platform designed to help users organize their life, connect with friends, manage tasks and study schedules, explore places and more — all in one app. We designed the product end to end, then built the mobile client, real-time API and admin console.",
-    stack: ["React Native", "Node.js", "MongoDB", "Tailwind", "OpenAI"],
-    features: [
-      "User accounts & secure authentication",
-      "AI task & timetable organisation",
-      "Social layer: friends, follows, messages",
-      "Places to go & map integration",
-      "Beautiful UI with smooth animations",
-    ],
-    results: [
-      { label: "Active users", value: "12k+" },
-      { label: "Retention (D30)", value: "46%" },
-      { label: "Store rating", value: "4.8★" },
-    ],
-    liveUrl: "https://malhot.com",
-    repoUrl: "https://github.com",
-    unverified: true,
-  },
-  {
-    slug: "smart-finance-tracker",
-    title: "Smart Finance Tracker",
-    category: "Web",
-    kind: "Personal finance web application",
-    year: "2025",
-    client: "Umoja Finance",
-    summary: "Budgeting, forecasting and spending intelligence in one calm, fast dashboard.",
-    overview:
-      "A finance workspace that turns messy transaction data into decisions. We built the ingestion pipeline, categorisation engine and a dashboard that stays readable even with years of history loaded.",
-    stack: ["Next.js", "PostgreSQL", "Drizzle", "Recharts", "Stripe"],
-    features: [
-      "Automatic transaction categorisation",
-      "Budget envelopes & alerts",
-      "Cashflow forecasting",
-      "Multi-currency support",
-      "Exportable financial reports",
-    ],
-    results: [
-      { label: "Data processed", value: "9.4M rows" },
-      { label: "Dashboard load", value: "0.8s" },
-      { label: "Churn drop", value: "-23%" },
-    ],
-    liveUrl: "https://malhot.com",
-    repoUrl: "https://github.com",
-    unverified: true,
-  },
-  {
-    slug: "agri-connect",
-    title: "AGRI CONNECT",
-    category: "Web",
-    kind: "Marketplace for farmers & buyers",
-    year: "2024",
-    client: "AgriConnect Rwanda",
-    summary: "Connecting cooperatives directly with buyers, logistics and fair market pricing.",
-    overview:
-      "A marketplace and logistics platform for agricultural cooperatives. Built offline-tolerant so field agents can register harvests with poor connectivity, then sync when they are back on network.",
-    stack: ["Next.js", "PostgreSQL", "PWA", "Mapbox", "Twilio"],
-    features: [
-      "Cooperative & farmer registry",
-      "Live produce pricing board",
-      "Offline-first field data capture",
-      "SMS notifications for buyers",
-      "Logistics & delivery tracking",
-    ],
-    results: [
-      { label: "Cooperatives", value: "180+" },
-      { label: "Farmer income", value: "+31%" },
-      { label: "Offline sync", value: "99.6%" },
-    ],
-    liveUrl: "https://malhot.com",
-    repoUrl: "https://github.com",
-    unverified: true,
-  },
-  {
-    slug: "commerce-platform",
-    title: "E-Commerce Platform",
-    category: "Web",
-    kind: "Headless commerce build",
-    year: "2024",
-    client: "Kigali Threads",
-    summary: "A headless storefront with instant search, local payments and a merchandising studio.",
-    overview:
-      "We replatformed a growing retail brand onto a headless stack, cutting page weight by 62% and giving the merchandising team full control of the homepage without touching code.",
-    stack: ["Next.js", "Medusa", "Algolia", "MoMo Pay", "Vercel"],
-    features: [
-      "Instant search & faceted filtering",
-      "Mobile Money + card checkout",
-      "Merchandising studio for the team",
-      "Inventory sync with warehouse",
-      "Abandoned cart automation",
-    ],
-    results: [
-      { label: "Revenue", value: "+54%" },
-      { label: "Page weight", value: "-62%" },
-      { label: "Checkout time", value: "41s" },
-    ],
-    liveUrl: "https://malhot.com",
-    repoUrl: "https://github.com",
-    unverified: true,
-  },
-  {
-    slug: "student-manager",
-    title: "Student Manager",
-    category: "Design",
-    kind: "School operations suite",
-    year: "2024",
-    client: "Horizon Academy",
-    summary: "Attendance, grading, fees and parent communication in one operations suite.",
-    overview:
-      "A full operations product for schools. The design challenge was density: administrators needed hundreds of data points on screen without the interface becoming hostile.",
-    stack: ["Figma", "React", "Design System", "Supabase"],
-    features: [
-      "Attendance & grading workflows",
-      "Fees and invoicing",
-      "Parent portal & messaging",
-      "Role-based permissions",
-      "Printable report cards",
-    ],
-    results: [
-      { label: "Admin time saved", value: "11h/week" },
-      { label: "Components", value: "140+" },
-      { label: "Schools live", value: "9" },
-    ],
-    liveUrl: "https://malhot.com",
-    repoUrl: "https://github.com",
-    unverified: true,
-  },
-  {
-    slug: "rwanda-tourism",
-    title: "Rwanda Tourism",
-    category: "Marketing",
-    kind: "Destination campaign site",
-    year: "2023",
-    client: "Visit Rwanda Collective",
-    summary: "A cinematic destination experience with scroll-driven storytelling and booking flows.",
-    overview:
-      "A campaign platform built around full-bleed media and scroll storytelling, with itinerary builders and partner booking handoff.",
-    stack: ["Next.js", "GSAP", "Sanity", "Cloudinary"],
-    features: [
-      "Scroll-driven story chapters",
-      "Itinerary builder",
-      "Partner booking handoff",
-      "Multilingual content",
-      "Campaign analytics",
-    ],
-    results: [
-      { label: "Session time", value: "4m 12s" },
-      { label: "Leads", value: "7.3k" },
-      { label: "Bounce rate", value: "-29%" },
-    ],
-    liveUrl: "https://malhot.com",
-    repoUrl: "https://github.com",
-    unverified: true,
-  },
-];
+/*
+ * Projects are not here. They are managed in the OS under Settings → Website
+ * (features/showcase), where admins choose which real projects to show, write
+ * their case studies and upload photos.
+ */
 
 export const processSteps = [
   {
@@ -427,7 +249,7 @@ export const timeline = [
 
 /**
  * Sectors. Positioning, not a client list: each one names the kind of problem
- * we build for and matches work in `projects`. It claims no client and no
+ * we build for. It claims no client and no
  * number, so nothing here needs sourcing.
  */
 export const sectors = [

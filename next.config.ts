@@ -1,6 +1,16 @@
 import type { NextConfig } from "next";
 
+/**
+ * Project photos uploaded in Settings → Website live in the public `site-media`
+ * bucket of the Supabase project this build points at. Allowing only that path
+ * keeps the image optimiser from being used as an open proxy.
+ */
+const siteMediaPattern = process.env.NEXT_PUBLIC_SUPABASE_URL
+  ? new URL(`${process.env.NEXT_PUBLIC_SUPABASE_URL.replace(/\/$/, "")}/storage/v1/object/public/site-media/**`)
+  : null;
+
 const nextConfig: NextConfig = {
+  images: { remotePatterns: siteMediaPattern ? [siteMediaPattern] : [] },
   /**
    * The previous website's routes.
    *

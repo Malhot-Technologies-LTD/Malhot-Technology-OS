@@ -589,6 +589,136 @@ export type Database = {
           },
         ]
       }
+      project_showcase_images: {
+        Row: {
+          alt: string
+          created_at: string
+          created_by: string
+          id: string
+          position: number
+          project_id: string
+          storage_path: string
+        }
+        Insert: {
+          alt: string
+          created_at?: string
+          created_by: string
+          id?: string
+          position: number
+          project_id: string
+          storage_path: string
+        }
+        Update: {
+          alt?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          position?: number
+          project_id?: string
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_showcase_images_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_showcase_images_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_showcases"
+            referencedColumns: ["project_id"]
+          },
+        ]
+      }
+      project_showcases: {
+        Row: {
+          category: string
+          client_label: string | null
+          created_at: string
+          created_by: string
+          features: string[]
+          live_url: string | null
+          organization_id: string
+          overview: string | null
+          position: number
+          project_id: string
+          published: boolean
+          scope: string | null
+          slug: string
+          stack: string[]
+          summary: string
+          title: string
+          updated_at: string
+          year: number | null
+        }
+        Insert: {
+          category?: string
+          client_label?: string | null
+          created_at?: string
+          created_by: string
+          features?: string[]
+          live_url?: string | null
+          organization_id: string
+          overview?: string | null
+          position?: number
+          project_id: string
+          published?: boolean
+          scope?: string | null
+          slug: string
+          stack?: string[]
+          summary: string
+          title: string
+          updated_at?: string
+          year?: number | null
+        }
+        Update: {
+          category?: string
+          client_label?: string | null
+          created_at?: string
+          created_by?: string
+          features?: string[]
+          live_url?: string | null
+          organization_id?: string
+          overview?: string | null
+          position?: number
+          project_id?: string
+          published?: boolean
+          scope?: string | null
+          slug?: string
+          stack?: string[]
+          summary?: string
+          title?: string
+          updated_at?: string
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_showcases_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_showcases_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_showcases_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: true
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           accepted_at: string | null
@@ -752,6 +882,7 @@ export type Database = {
       auth_uid: { Args: never; Returns: string }
       can_contribute: { Args: { project: string }; Returns: boolean }
       can_manage_project: { Args: { project: string }; Returns: boolean }
+      can_manage_site_media: { Args: { object_name: string }; Returns: boolean }
       is_org_admin: { Args: { org: string }; Returns: boolean }
       is_org_member: { Args: { org: string }; Returns: boolean }
       is_org_owner: { Args: { org: string }; Returns: boolean }

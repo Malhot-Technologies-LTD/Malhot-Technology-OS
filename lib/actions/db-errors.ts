@@ -10,6 +10,7 @@ const UNIQUE_MESSAGES: Record<string, string> = {
   clients_organization_id_name_key: "A client with that name already exists.",
   projects_organization_id_key_key: "That project key is already used by another project.",
   project_members_project_id_user_id_key: "That person is already on this project.",
+  project_showcases_slug_key: "Another project on the website already uses that address.",
 };
 
 const MALHOT_PREFIX = "MALHOT:";

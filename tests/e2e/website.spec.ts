@@ -45,13 +45,29 @@ test("primary navigation reaches every section", async ({ page, isMobile }) => {
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Real solutions");
 });
 
+/*
+ * Projects are data now (Settings → Website), so which ones exist depends on
+ * the database the build points at. With none published the index says so;
+ * with some, the first card must lead to a page carrying its title.
+ */
 test("project pages open from the projects index", async ({ page }) => {
   await page.goto("/projects");
-  const card = page.getByRole("link", { name: /nexus circle pulse/i }).first();
-  await expect(card).toHaveAttribute("href", "/projects/nexus-circle-pulse");
+  const cards = page.locator('main a[href^="/projects/"]');
+  if ((await cards.count()) === 0) {
+    await expect(page.getByText("Case studies are on their way")).toBeVisible();
+    return;
+  }
+  const card = cards.first();
+  const title = (await card.textContent())?.trim() ?? "";
+  const href = (await card.getAttribute("href")) ?? "";
   await card.click();
-  await expect(page).toHaveURL(/\/projects\/nexus-circle-pulse$/);
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Nexus Circle Pulse");
+  await expect(page).toHaveURL(new RegExp(`${href}$`));
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(title);
+});
+
+test("an unpublished or unknown project is a 404", async ({ page }) => {
+  const response = await page.goto("/projects/no-such-project-exists");
+  expect(response?.status()).toBe(404);
 });
 
 test("the previous site's routes still resolve", async ({ page }) => {
@@ -103,7 +119,7 @@ test("sitemap and robots exclude the OS", async ({ request }) => {
   expect(robots).toMatch(/Disallow: \/os/);
 
   const sitemap = await (await request.get("/sitemap.xml")).text();
-  expect(sitemap).toContain("/projects/nexus-circle-pulse");
+  expect(sitemap).toContain("/projects</loc>");
   expect(sitemap).not.toContain("/os");
   // A form at the end of a funnel has no business in a search result.
   expect(sitemap).not.toContain("/start");

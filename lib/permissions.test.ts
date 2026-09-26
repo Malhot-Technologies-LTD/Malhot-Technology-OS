@@ -140,7 +140,14 @@ describe("organisation actions", () => {
     expect(can(viewerFor("contributor"), "project.create")).toBe(false);
   });
 
-  for (const action of ["org.manage", "org.invite", "org.integrations", "org.reports", "org.inquiries"] as const) {
+  for (const action of [
+    "org.manage",
+    "org.invite",
+    "org.integrations",
+    "org.reports",
+    "org.inquiries",
+    "org.website",
+  ] as const) {
     it(`restricts ${action} to org admins`, () => {
       expect(can({ userId: ME, organizationId: "org-1", orgRole: "owner" }, action)).toBe(true);
       expect(can({ userId: ME, organizationId: "org-1", orgRole: "admin" }, action)).toBe(true);

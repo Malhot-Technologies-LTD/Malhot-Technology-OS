@@ -2,6 +2,7 @@ import { Analytics } from "@vercel/analytics/next";
 
 import { Footer } from "@/components/site/layout/Footer";
 import { Navbar } from "@/components/site/layout/Navbar";
+import { listPublishedShowcases } from "@/features/showcase/public";
 import { inter, sora } from "@/lib/fonts/site";
 
 /**
@@ -19,9 +20,22 @@ import { inter, sora } from "@/lib/fonts/site";
  * navbar asks `/api/site/session` after hydration for the one fact it needs;
  * see the note in that route before moving identity up to this level.
  *
+ * The Projects menu lists what is published in Settings → Website. That read
+ * is anonymous and cached (features/showcase/public.ts), so it keeps the pages
+ * static; the same request on the page itself is deduplicated. A failed read
+ * leaves the menu as a plain link rather than taking down every page with it.
+ *
  * Analytics is cookie-less and mounted only here, never under /os (ADR-014).
  */
-export default function MarketingLayout({ children }: LayoutProps<"/">) {
+export default async function MarketingLayout({ children }: LayoutProps<"/">) {
+  const published = await listPublishedShowcases().catch(() => []);
+  const projects = published.map(({ slug, title, category, scope }) => ({
+    slug,
+    title,
+    category,
+    scope,
+  }));
+
   return (
     <div
       data-theme="light"
@@ -36,7 +50,7 @@ export default function MarketingLayout({ children }: LayoutProps<"/">) {
         Skip to content
       </a>
 
-      <Navbar />
+      <Navbar projects={projects} />
       <main id="site-main" className="flex-1">
         {children}
       </main>

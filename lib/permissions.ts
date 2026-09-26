@@ -94,7 +94,8 @@ export type Action =
   | "org.invite"
   | "org.integrations"
   | "org.reports"
-  | "org.inquiries";
+  | "org.inquiries"
+  | "org.website";
 
 const ORG_ACTIONS = new Set<Action>([
   "project.create",
@@ -103,6 +104,7 @@ const ORG_ACTIONS = new Set<Action>([
   "org.integrations",
   "org.reports",
   "org.inquiries",
+  "org.website",
 ]);
 
 /** Everything that writes. Archived projects are read-only unless you are an org admin. */
@@ -282,6 +284,7 @@ function canOrgAction(viewer: PermissionViewer, action: Action): boolean {
     case "org.integrations":
     case "org.reports":
     case "org.inquiries":
+    case "org.website":
       return isOrgAdmin(viewer);
     default:
       return false;

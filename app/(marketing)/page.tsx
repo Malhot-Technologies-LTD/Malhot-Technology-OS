@@ -7,7 +7,8 @@ import { CtaBand } from "@/components/site/sections/CtaBand";
 import { HeroSlides } from "@/components/site/sections/HeroSlides";
 import { ButtonLink } from "@/components/site/ui/Button";
 import { CheckList, Eyebrow, Section, SectionHeader } from "@/components/site/ui/Section";
-import { commitments, media, processSteps, projects, sectors, services, site } from "@/content/site";
+import { commitments, media, processSteps, sectors, services, site } from "@/content/site";
+import { listPublishedShowcases } from "@/features/showcase/public";
 
 const facts = [
   { term: "End to end", detail: "Design, engineering, testing and launch, handled by one team.", icon: "layers" },
@@ -17,7 +18,9 @@ const facts = [
 
 const commitmentIcons = ["users", "rocket", "shield", "clipboard"] as const;
 
-export default function HomePage() {
+export default async function HomePage() {
+  const projects = (await listPublishedShowcases()).slice(0, 3);
+
   return (
     <>
       {/* Hero */}
@@ -202,27 +205,29 @@ export default function HomePage() {
         </ul>
       </Section>
 
-      {/* Selected work */}
-      <Section tone="muted" labelledBy="work-title">
-        <SectionHeader
-          id="work-title"
-          eyebrow="Selected work"
-          title="Recent projects"
-          lead="A few of the products we have designed and built."
-          action={
-            <ButtonLink href="/projects" variant="secondary" icon="arrow">
-              See all projects
-            </ButtonLink>
-          }
-        />
-        <ul className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {projects.slice(0, 3).map((project) => (
-            <li key={project.slug}>
-              <ProjectCard project={project} />
-            </li>
-          ))}
-        </ul>
-      </Section>
+      {/* Selected work: only once at least one project is published in Settings → Website. */}
+      {projects.length > 0 ? (
+        <Section tone="muted" labelledBy="work-title">
+          <SectionHeader
+            id="work-title"
+            eyebrow="Selected work"
+            title="Recent projects"
+            lead="A few of the products we have designed and built."
+            action={
+              <ButtonLink href="/projects" variant="secondary" icon="arrow">
+                See all projects
+              </ButtonLink>
+            }
+          />
+          <ul className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {projects.map((project) => (
+              <li key={project.slug}>
+                <ProjectCard project={project} />
+              </li>
+            ))}
+          </ul>
+        </Section>
+      ) : null}
 
       <CtaBand />
     </>

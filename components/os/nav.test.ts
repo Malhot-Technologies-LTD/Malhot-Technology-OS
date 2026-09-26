@@ -52,6 +52,7 @@ describe("visibleChildren", () => {
     const labels = visibleChildren(SETTINGS_CHILDREN, "member").map((child) => child.label);
     expect(labels).not.toContain("Members");
     expect(labels).not.toContain("Enquiries");
+    expect(labels).not.toContain("Website");
   });
 
   it("shows everything to owners and admins", () => {

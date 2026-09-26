@@ -83,7 +83,11 @@ Marketing content (case studies, service copy, team) lives as **typed content fi
 - Fully static, fast, SEO-friendly.
 - No CMS dependency, cost, or admin UI to build.
 
-Future: if non-engineers need to publish frequently, move case studies to the database with an OS-side editor (the OS already holds the project data that case studies summarise).
+**Case studies moved to the database (27 September 2026).** The "future" this section once described arrived: the owner needed to publish projects without a developer. Org admins now manage the portfolio in the OS under **Settings → Website** (`features/showcase`): pick which projects appear, write the public copy (kept separate from the internal project description), upload photos to the public `site-media` bucket and set the order. Each project gets its own page at `/projects/[slug]`.
+
+- Pages stay static. Public reads are anonymous and cached under the `showcase` tag (`lib/supabase/public.ts`); every save calls `updateTag("showcase")`, so the change is live on the next request. A one-hour revalidate is the backstop for writes made outside the app.
+- Anonymous visitors can read only published showcases and their photos (RLS); `projects` itself stays private.
+- Service copy, team and company facts remain typed files in `content/`.
 
 ## SEO and metadata
 - Per-page `generateMetadata` with title, description, canonical, Open Graph and Twitter cards.

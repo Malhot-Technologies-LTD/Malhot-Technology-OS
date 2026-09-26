@@ -1,12 +1,23 @@
 # HANDOFF
 
 ## Current Task
-Website redesign (2026-09-26): the owner called the imported cinematic site "AI slop" and asked for a professional, human, corporate look in the spirit of a reference they supplied (`image.png` at the repo root, untracked; an Evolve agency homepage — pattern only, not to be copied). **Done and verified, uncommitted.** Phase 3 below is paused behind it.
+**Website projects from the database (2026-09-27).** The owner could not change anything on the public site and the six
+case studies were fake. Projects now come from the OS: **Settings → Website** (`/os/settings/website`, org admins only)
+lists every project; an admin writes its public copy, uploads photos, switches "Show on the website" and sets the order.
+Each published project has its own page at `/projects/[slug]` with a photo gallery.
 
-Phase 3 — Organisation, projects, goals, MVP (`docs/features/projects.md`, `docs/planning/implementation-phases.md`). A thin vertical slice is live; the rest of Phase 3 is listed under Progress.
+Phase 3 (below) is paused behind it.
 
 ## Status
-Migration 0006 applied to the hosted project (2026-09-21) and the first slice of Phase 3 is working end to end: create a project, see it listed, open its overview, add goals and MVP items, activate it. Verified against the live database as the signed-in owner, so the RLS policies — not just the service role — are known good.
+**Code complete, not yet verified against a real database.** Format, lint, typecheck, 420 unit tests and `npm run build`
+pass; website e2e 26/28 against a local build. The 2 failures are "unknown project → 404", which returns 500 until the
+migration exists (a DB error is deliberately not treated as not-found). Not committed (owner has not asked).
+
+**Blocking next step:** apply `supabase/migrations/20260926120000_project_showcase.sql` to the hosted project, either by
+pushing to main (release.yml runs `supabase db push` then deploys) or by pasting it into the SQL editor (it is idempotent,
+so the later `db push` re-run is harmless). Then verify as the owner: set up a project, upload 2 photos, publish, reorder,
+check `/projects`, `/projects/<slug>`, home "Recent projects", header menu, sitemap; delete a photo; confirm a member gets
+404 on `/os/settings/website`; re-run the e2e suite (expect 28/28).
 
 ## Progress
 ### Phase 3 (in progress)
@@ -34,6 +45,20 @@ Migration 0006 applied to the hosted project (2026-09-21) and the first slice of
 - [ ] Deferred to Phase 4: `inquiry_received` notification to admins (needs `notifications` + `emit_event`); daily prune of `inquiry_rate_limits` (W9 cron)
 
 ## Working Notes
+- **Showcase design (2026-09-27).** `project_showcases` (1:1 with projects, public copy kept apart from the internal
+  description) + `project_showcase_images` + public bucket `site-media` (`{org}/showcase/{project}/{uuid}.ext`, 10 MB,
+  jpeg/png/webp/avif). RLS: anon reads published only; org admins write. Storage writes authorised by
+  `can_manage_site_media(name)`. Soft-deleting a project unpublishes it (trigger). Permission action `org.website`.
+  - Public reads: `features/showcase/public.ts` via `lib/supabase/public.ts` (anon, cookie-less, `fetch` cached with tag
+    `showcase`, 1h revalidate). Every action calls `updateTag("showcase")`, so saves are live immediately and pages stay
+    static. A read failure during `next build` renders no projects (CI builds against a placeholder DB); at runtime it
+    throws so ISR keeps the last good page. The marketing layout swallows the error for the nav only.
+  - Uploads go browser → Storage directly (no Server Action body limit), then `addShowcaseImage` records the row and checks
+    the path belongs to the org/project; a failed record deletes the upload. Alt text is required per photo before upload.
+  - `types/database.ts` was hand-edited for the two tables and `can_manage_site_media`; regenerate with `npm run db:types`
+    when credentials exist.
+  - Not built (offer as follow-ups): editable company details (email/phone/socials still in `content/site.ts`), results /
+    metrics on case studies, a lightbox, per-project OG image route. Orphaned files if a project is hard-deleted.
 - **OS visual register decided 2026-09-22: the Vercel dashboard direction**, chosen by the owner from a
   side-by-side of Linear / Vercel / Notion. Airy and high contrast: near-black text (`--fg` oklch 0.145),
   page recedes to light grey so white cards read as raised, borders separate rather than shadows, 32px page
@@ -84,10 +109,11 @@ Migration 0006 applied to the hosted project (2026-09-21) and the first slice of
 - Do not use Docker on the owner's machine; local Supabase is CI-only.
 - **Verifying the site locally:** port 3000 is occupied by an unrelated app on this machine, so use another port — `npm run build && npx next start -p 3100`, then `E2E_BASE_URL=http://localhost:3100 npx playwright test tests/e2e/website.spec.ts`. Never pipe `npm run build` into `head`: SIGPIPE kills the build midway and leaves a `.next` that serves unstyled pages.
 - Local checks: `npm run format:check && npm run lint && npm run typecheck && npm test`.
-- Next step on resume: the owner reviews the redesign; commit it when asked (`image.png` is the owner's reference, do not commit it unless asked). Lighthouse was not run for the redesign. Then resume Phase 3 from its unchecked items.
+- Next step on resume: see Status (apply migration 20260926120000, verify live). `image.png` is the owner's reference, do not commit it unless asked. Lighthouse was not run for the redesign. Then resume Phase 3 from its unchecked items.
 
 ## Recently Completed
-- 2026-09-26: Home intro card replaced with an open two-column section; e2e website suite passes (uncommitted).
+- 2026-09-27: Settings → Website: projects, copy and photos on the public site now come from the OS; fake case studies deleted (pending migration + live verification).
+- 2026-09-26: Home intro card replaced with an open two-column section; e2e website suite passes; pushed in 4b4c55b.
 - Website redesigned as a light corporate site: photo carousel hero with African team photos, sign in in footer, dead motion stack removed; e2e + axe AA 26/26, 404 unit tests (2026-09-26).
 - Website UI rebuilt as a plain business site (white/grey/navy, centred type-only hero, no motion); all 8 marketing routes restored and verified; axe AA green (2026-09-17).
 - Phase 2 public website: pages, contact → enquiries, SEO, analytics, axe/Lighthouse budgets (2026-09-17).

@@ -11,6 +11,7 @@ const SECTIONS = [
   { label: "Appearance", href: "/os/settings/appearance", adminOnly: false },
   { label: "Members", href: "/os/settings/members", adminOnly: true },
   { label: "Enquiries", href: "/os/settings/inquiries", adminOnly: true },
+  { label: "Website", href: "/os/settings/website", adminOnly: true },
 ] as const;
 
 export function SettingsNav({ isAdmin }: { isAdmin: boolean }) {
@@ -18,7 +19,7 @@ export function SettingsNav({ isAdmin }: { isAdmin: boolean }) {
   return (
     <nav aria-label="Settings sections" className="flex gap-1 md:w-56 md:flex-col">
       {SECTIONS.filter((section) => isAdmin || !section.adminOnly).map((section) => {
-        const active = pathname === section.href;
+        const active = pathname === section.href || pathname.startsWith(`${section.href}/`);
         return (
           <Link
             key={section.href}

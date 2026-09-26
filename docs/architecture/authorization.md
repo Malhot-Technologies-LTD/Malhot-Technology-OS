@@ -50,7 +50,7 @@ type Action =
   | 'bug.create' | 'bug.edit' | 'bug.transition' | 'bug.verify' | 'bug.delete'
   | 'document.create' | 'document.edit' | 'document.submit' | 'document.approve' | 'document.return' | 'document.archive' | 'document.delete' | 'document.view'
   | 'github.connect' | 'github.sync' | 'github.link' | 'deployment.record'
-  | 'org.manage' | 'org.invite' | 'org.integrations' | 'org.reports' | 'org.inquiries'
+  | 'org.manage' | 'org.invite' | 'org.integrations' | 'org.reports' | 'org.inquiries' | 'org.website'
 
 function can(viewer: Viewer, action: Action, ctx: ProjectContext | null, resource?: ResourceFacts): boolean
 ```

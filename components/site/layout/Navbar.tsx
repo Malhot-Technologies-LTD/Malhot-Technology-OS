@@ -7,10 +7,15 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Icon, type IconName } from "@/components/site/brand/Icon";
 import { Logo } from "@/components/site/brand/Logo";
 import { ButtonLink } from "@/components/site/ui/Button";
-import { aboutLinks, navLinks, projects, services, site, type NavMenu } from "@/content/site";
+import { categoryIcon } from "@/components/site/cards/ProjectCard";
+import { aboutLinks, navLinks, services, site, type NavMenu } from "@/content/site";
+import type { ShowcaseCard } from "@/features/showcase/public";
 import { cn } from "@/lib/utils";
 
 export type NavUser = { name: string; email: string } | null;
+
+/** A published project as the Projects menu needs it (from Settings → Website). */
+export type NavProject = Pick<ShowcaseCard, "slug" | "title" | "category" | "scope">;
 
 /** Delay before a hovered menu closes, so crossing a few pixels of gap does not drop it. */
 const CLOSE_DELAY_MS = 150;
@@ -55,7 +60,7 @@ function useSessionUser(): NavUser {
  * lives in the footer. Someone already signed in gets a Dashboard link here,
  * because for them it is the most likely next step.
  */
-export function Navbar() {
+export function Navbar({ projects }: { projects: readonly NavProject[] }) {
   const user = useSessionUser();
   const pathname = usePathname();
   const headerRef = useRef<HTMLElement>(null);
@@ -118,7 +123,8 @@ export function Navbar() {
           <ul className="flex h-full items-stretch">
             {navLinks.map((link) => {
               const active = isActive(link.href);
-              const menu = link.menu;
+              // With nothing published, Projects is a plain link: an empty dropdown is a dead end.
+              const menu = link.menu === "projects" && projects.length === 0 ? undefined : link.menu;
               const expanded = menu !== undefined && openMenu === menu;
 
               return (
@@ -170,7 +176,7 @@ export function Navbar() {
 
                   {expanded ? (
                     <DesktopPanel id={`nav-panel-${menu}`} label={link.label}>
-                      <MenuContent menu={menu} onNavigate={close} />
+                      <MenuContent menu={menu} projects={projects} onNavigate={close} />
                     </DesktopPanel>
                   ) : null}
                 </li>
@@ -212,7 +218,8 @@ export function Navbar() {
           <nav aria-label="Primary" className="shell py-3">
             <ul>
               {navLinks.map((link) => {
-                const menu = link.menu;
+                // With nothing published, Projects is a plain link: an empty dropdown is a dead end.
+                const menu = link.menu === "projects" && projects.length === 0 ? undefined : link.menu;
                 const expanded = menu !== undefined && mobileSection === menu;
                 return (
                   <li key={link.href} className="border-b border-border last:border-b-0">
@@ -246,7 +253,7 @@ export function Navbar() {
                     </div>
                     {expanded ? (
                       <div id={`mobile-panel-${menu}`} className="pb-4">
-                        <MobileMenuLinks menu={menu} onNavigate={() => setMobilePath(null)} />
+                        <MobileMenuLinks menu={menu} projects={projects} onNavigate={() => setMobilePath(null)} />
                       </div>
                     ) : null}
                   </li>
@@ -292,7 +299,15 @@ function DesktopPanel({ id, label, children }: { id: string; label: string; chil
   );
 }
 
-function MenuContent({ menu, onNavigate }: { menu: NavMenu; onNavigate: () => void }) {
+function MenuContent({
+  menu,
+  projects,
+  onNavigate,
+}: {
+  menu: NavMenu;
+  projects: readonly NavProject[];
+  onNavigate: () => void;
+}) {
   if (menu === "about") {
     return (
       <div className="grid grid-cols-[1fr_20rem] gap-8">
@@ -353,8 +368,8 @@ function MenuContent({ menu, onNavigate }: { menu: NavMenu; onNavigate: () => vo
             <MenuLink
               label={project.title}
               href={`/projects/${project.slug}`}
-              description={`${project.category} · ${project.kind}`}
-              icon={project.category === "Mobile" ? "mobile" : project.category === "Design" ? "design" : "code"}
+              description={project.scope ? `${project.category} · ${project.scope}` : project.category}
+              icon={categoryIcon[project.category]}
               onNavigate={onNavigate}
             />
           </li>
@@ -452,7 +467,15 @@ function Promo({
 
 /* --------------------------------- Mobile --------------------------------- */
 
-function MobileMenuLinks({ menu, onNavigate }: { menu: NavMenu; onNavigate: () => void }) {
+function MobileMenuLinks({
+  menu,
+  projects,
+  onNavigate,
+}: {
+  menu: NavMenu;
+  projects: readonly NavProject[];
+  onNavigate: () => void;
+}) {
   const items =
     menu === "about"
       ? aboutLinks.map((item) => ({ label: item.label, href: item.href }))

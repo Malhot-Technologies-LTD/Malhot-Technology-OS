@@ -15,6 +15,8 @@ export type ProjectMember = Tables<"project_members">;
 export type Goal = Tables<"goals">;
 export type MvpItem = Tables<"mvp_items">;
 export type Milestone = Tables<"milestones">;
+export type ProjectShowcase = Tables<"project_showcases">;
+export type ProjectShowcaseImage = Tables<"project_showcase_images">;
 
 export type OrgRole = Enums<"org_role">;
 export type ProjectRole = Enums<"project_role">;

@@ -54,6 +54,7 @@ export const SETTINGS_CHILDREN: readonly NavChild[] = [
   { label: "Appearance", href: "/os/settings/appearance" },
   { label: "Members", href: "/os/settings/members", adminOnly: true },
   { label: "Enquiries", href: "/os/settings/inquiries", adminOnly: true },
+  { label: "Website", href: "/os/settings/website", adminOnly: true },
 ];
 
 /**

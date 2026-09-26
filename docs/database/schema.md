@@ -523,6 +523,29 @@ Index `(processed_at) where processed_at is null`.
 
 **inquiry_rate_limits** — `(ip_hash text, window_start timestamptz, count int, pk (ip_hash, window_start))`; rows older than 1 day pruned by cron.
 
+**project_showcases** — a project's public case study (Settings → Website). One per project.
+| column | type | notes |
+|---|---|---|
+| project_id | uuid pk → projects | cascade |
+| organization_id | uuid ! → organizations | must equal the project's (insert/update policy) |
+| slug | text ! unique | `/projects/[slug]`; lowercase, hyphenated, ≤ 80 |
+| published | bool ! | default false; unset automatically when the project is soft-deleted |
+| title | text ! | ≤ 120 |
+| category | text ! | Web · Mobile · Design · Marketing |
+| scope | text | short label on the card, ≤ 120 |
+| year | smallint | 2000–2100 |
+| client_label | text | public client name; null = unnamed |
+| summary | text ! | card copy, ≤ 300 |
+| overview | text | ≤ 5000 |
+| features, stack | text[] ! | ≤ 20 each |
+| live_url | text | https only |
+| position | float8 ! | website order |
+| created_by, created_at, updated_at | | |
+
+**project_showcase_images** — `(id, project_id → project_showcases cascade, storage_path unique, alt text ! ≤ 200, position, created_by, created_at)`. The first by position is the cover.
+
+RLS: `anon` selects published showcases and their images only; org admins read and write their organisation's.
+
 ## Functions (public schema)
 
 Authorisation helpers (`architecture/authorization.md`), `next_project_sequence()`, `project_health()`, `project_progress()`, `dashboard_counts()`, `report_*()` (see `features/reports.md`), `search_entities(org uuid, q text, limit int)` for the command palette.
@@ -534,6 +557,7 @@ Authorisation helpers (`architecture/authorization.md`), `next_project_sequence(
 | `avatars` | read | 2 MB | image/* | `{user_id}/{filename}` |
 | `attachments` | no | 50 MB | images, pdf, office docs, text, zip | `{project_id}/{attachment_id}/{filename}` |
 | `org-assets` | no | 5 MB | image/* | `{organization_id}/{filename}` |
+| `site-media` | read | 10 MB | jpeg, png, webp, avif | `{organization_id}/showcase/{project_id}/{uuid}.{ext}`; org admins write |
 
 ## Migration order
 
