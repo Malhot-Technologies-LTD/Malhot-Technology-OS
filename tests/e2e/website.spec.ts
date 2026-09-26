@@ -5,9 +5,8 @@ import { expect, test } from "@playwright/test";
  * Journey 12: website renders, navigation works, contact form validates and
  * submits.
  *
- * Rewritten when the standalone Malhot-Website replaced the previous public
- * site: the routes, the headings and the register are all different, and
- * /work and /process now only exist as redirects.
+ * /work and /process only exist as redirects since the Malhot-Website import;
+ * the headings below are the light corporate redesign's.
  *
  * Submission needs the secret key on the server (it creates a real enquiry),
  * so it runs only where E2E credentials are configured, and the enquiry it
@@ -16,9 +15,9 @@ import { expect, test } from "@playwright/test";
 const canSubmit = Boolean(process.env.E2E_EMAIL && process.env.E2E_PASSWORD);
 
 const PAGES = [
-  { path: "/", heading: "Turning Ideas Into Powerful Digital Solutions" },
-  { path: "/about", heading: "Innovation. Creativity. Impact." },
-  { path: "/services", heading: "Everything you need to build, grow and scale." },
+  { path: "/", heading: "We design, build and ship software that businesses run on." },
+  { path: "/about", heading: "A software team that finishes what it starts" },
+  { path: "/services", heading: "Everything you need to build, launch and grow" },
   { path: "/projects", heading: "Real solutions. Real impact." },
   { path: "/contact", heading: "We'd love to hear from you." },
   { path: "/privacy", heading: "Privacy notice" },
@@ -27,23 +26,7 @@ const PAGES = [
 for (const page of PAGES) {
   test(`${page.path} renders its heading and has no serious accessibility violations`, async ({ page: browser }) => {
     await browser.goto(page.path);
-    /*
-     * By accessible name, which is the point of the assertion: the headings
-     * animate in word by word from separate elements, and without the visually
-     * hidden copy each one would compute to a single run-on word. If someone
-     * removes that copy, this fails rather than passing on a heading no screen
-     * reader can read.
-     */
     await expect(browser.getByRole("heading", { level: 1, name: page.heading })).toBeVisible();
-
-    /*
-     * Let the entrance animations settle first. Several elements arrive from
-     * opacity 0, and axe measures whatever colour is composited at the instant
-     * it runs — mid-fade that is not the colour anybody reads, and the result
-     * is a contrast failure that depends on how fast the machine is. The
-     * chrome itself no longer fades (see Navbar); this covers the content.
-     */
-    await browser.waitForTimeout(1500);
 
     const results = await new AxeBuilder({ page: browser }).withTags(["wcag2a", "wcag2aa", "wcag22aa"]).analyze();
     const serious = results.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
@@ -56,20 +39,14 @@ test("primary navigation reaches every section", async ({ page, isMobile }) => {
   if (isMobile) {
     await page.getByRole("button", { name: "Open menu" }).click();
   }
-  await page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Projects" }).click();
+  // Exact: the Projects dropdown opens on hover and holds an "All projects" link too.
+  await page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Projects", exact: true }).click();
   await expect(page).toHaveURL(/\/projects$/);
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Real solutions");
 });
 
 test("project pages open from the projects index", async ({ page }) => {
   await page.goto("/projects");
-  /*
-   * The grid reveals on scroll and re-animates when the category filter
-   * changes, so a card clicked on the first frame can be mid-transform or
-   * replaced under the cursor. Settle first — this test is about routing, not
-   * about how fast the page becomes clickable.
-   */
-  await page.waitForTimeout(1500);
   const card = page.getByRole("link", { name: /nexus circle pulse/i }).first();
   await expect(card).toHaveAttribute("href", "/projects/nexus-circle-pulse");
   await card.click();
@@ -87,10 +64,10 @@ test("the previous site's routes still resolve", async ({ page }) => {
   await expect(page).toHaveURL(/\/services$/);
 });
 
-test("login page is reachable from the website and noindexed", async ({ page, isMobile }) => {
+test("login page is reachable from the footer and noindexed", async ({ page }) => {
+  // The team login lives in the footer, not the header: visitors have no account.
   await page.goto("/");
-  if (isMobile) await page.getByRole("button", { name: "Open menu" }).click();
-  await page.getByRole("link", { name: "Sign in" }).first().click();
+  await page.getByRole("contentinfo").getByRole("link", { name: "Team sign in" }).click();
   await expect(page).toHaveURL(/\/login$/);
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
 });

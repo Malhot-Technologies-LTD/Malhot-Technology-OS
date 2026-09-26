@@ -1,6 +1,8 @@
 # HANDOFF
 
 ## Current Task
+Website redesign (2026-09-26): the owner called the imported cinematic site "AI slop" and asked for a professional, human, corporate look in the spirit of a reference they supplied (`image.png` at the repo root, untracked; an Evolve agency homepage — pattern only, not to be copied). **Done and verified, uncommitted.** Phase 3 below is paused behind it.
+
 Phase 3 — Organisation, projects, goals, MVP (`docs/features/projects.md`, `docs/planning/implementation-phases.md`). A thin vertical slice is live; the rest of Phase 3 is listed under Progress.
 
 ## Status
@@ -42,26 +44,51 @@ Migration 0006 applied to the hosted project (2026-09-21) and the first slice of
 - **`/preview` is a dev-only component gallery** (`app/(dev)/preview`). It renders the real components,
   fonts and tokens with fixture data and needs no session, which is the only practical way to review OS
   design without signing in. It calls `notFound()` when `NODE_ENV === "production"`.
-- The website register is insulated from all of the above: `[data-surface="site"]` overrides radius (3/5/8)
-  and colour, so OS changes never touch the approved marketing pages.
+- The website register is insulated from all of the above: `[data-surface="site"]` in `styles/tokens.css`
+  overrides colour and radius (3/4/6), so OS changes never touch the marketing pages.
 - `--accent` is the shadcn alias for `--brand-subtle` (a pale tint), **not** the cobalt. Use `bg-brand` for
   anything that should read as the accent; `bg-accent` renders nearly invisible.
-- **Design register (current, 2026-09-17).** Primitives live in `components/marketing/section.tsx` (Container, Section with tone light/subtle/ink, Eyebrow, Display, Title, Accent, SectionHead, ChevronList) — the type scale and section rhythm are decided there, not per page. Do not re-decide them inline.
-  - White header (`site-header.tsx`), hero is **type only and centred** (no graphic, no logo — the owner removed it explicitly), promise strip under it, then alternating white / `bg-subtle` sections, navy `CtaBand`, navy footer.
-  - Rejected and not to be reintroduced without asking: dark hero band, animated/drifting geometry, texture overlays, gradient glows, hover lifts, oversized display type, mono/tabular index numerals everywhere. The decorative CSS layer that carried these was deleted from `app/globals.css`.
-- **`components/marketing/mark.tsx`** is the logo traced as vector geometry (102x82 viewBox, measured off `public/logo.png` by sampling its pixels), exposing `Mark` and the `Chevron` list marker. The PNG has a white background, so never place it on a dark surface — use `Mark`, which recolours.
+- **Website design register (current, 2026-09-26).** Light corporate: white / `bg-bg-subtle` sections, solid navy
+  bands (`bg-site-ink` #0b1f4b) for page headers, commitments and the footer, brand blue #1652e6, square-ish
+  corners (4–6px), Sora headings + Inter body. Primitives: `components/site/ui/Section.tsx` (Section tone
+  white/muted/ink, Eyebrow, SectionHeader, CheckList), `ui/Button.tsx`, `layout/PageHero.tsx`, `sections/CtaBand.tsx`.
+  Decide rhythm there, not per page.
+  - Home "Who we are" intro is an **open muted section** (statement left, copy right, three facts under a hairline).
+    The owner disliked the old blue-panel card overlapping the hero; do not bring back overlapping cards.
+  - Home hero is a **sliding photo carousel** (`sections/HeroSlides.tsx`, owner request): 6s autoplay, slide
+    transition, pause button + dots (WCAG 2.2.2), no autoplay under reduced motion. Headline stays fixed.
+  - **Photos must show African people** (owner, explicit). Six free Pexels photos in `public/images/site`, listed in
+    `media` in `content/site.ts`. Hero slides need the subject on the right (left is darkened under the text).
+    Real Malhot team photos should replace them; see `content/README.md`.
+  - **Header has hover dropdowns** (owner request, 2026-09-26): Home, About ▾, Services ▾, Projects ▾, How we work,
+    Contact (`navLinks` in `content/site.ts`; `menu` names the dropdown). Full-width panels; Services and Projects
+    panels are generated from `services` / `projects`, About from `aboutLinks`. Keyboard: chevron button with
+    `aria-expanded`, Escape returns focus. Mobile: accordions. Dropdown links target section ids (`#values`,
+    `#journey`, `#commitments`, `#process`, `#engagements`, `/#industries`); keep those ids if sections move.
+  - Home intro card: brand-blue "Who we are" panel + three icon facts (a `ul`: axe rejects icons inside a `dl`).
+  - **Sign in lives only in the footer** ("Team sign in" button; owner request). The header shows "Dashboard" only
+    to a signed-in user.
+  - Removed as "AI slop" and not to be reintroduced without asking: preloader, route curtain, Lenis smooth scroll,
+    magnetic buttons, glass/aurora/glow effects, gradient text, word-by-word heading reveals, background video.
+    `lenis` and `motion` were uninstalled.
+  - Content honesty: testimonials, headline stats and service metrics were deleted; case-study results render only
+    when a project's `unverified` flag is cleared; placeholder live/repo links and social icons are not rendered.
+- The logo is `components/site/brand/Logo.tsx` (vector trace of `public/logo.png`); pass `onLight` on white surfaces
+  so the arrow renders navy instead of white.
 - **`font-variant-numeric`.** `html` sets `tabular-nums` for the OS's data tables. `[data-surface="site"]` resets it to `normal` in `app/globals.css` — in Schibsted Grotesk the `tnum` feature also widens the comma and full stop to a digit's advance, which renders as a visible gap before every piece of punctuation. Opt back in per element with the `tabular-nums` class.
-- `--fg-subtle` is `#616981`: 5.0:1 on `--bg-subtle`, which is the worst case on this surface. The previous value failed WCAG 1.4.3 at 4.40:1 and broke the axe check on `/`.
+- Site `--fg-subtle` is `#5b6580`; keep it ≥4.5:1 on `--bg-subtle` (axe runs on every page in the e2e suite).
 - Owner rules for the site still stand: never show or name Malhot OS; no invented clients, metrics, quotes or people; no placeholder testimonials. The testimonials section is intentionally absent until real quotes exist.
 - Magic MCP (the UI component source named in the global CLAUDE.md) has never connected; components are hand-written.
-- `/work` is the only dynamic marketing route (search-param filter); everything else is static or SSG.
+- `/start` is the only dynamic marketing route (reads the session to prefill the brief); everything else is static or SSG. `/work` and `/process` are 308 redirects.
 - `INQUIRY_IP_SALT` is set in `.env.local`; Vercel needs its own value.
 - Do not use Docker on the owner's machine; local Supabase is CI-only.
 - **Verifying the site locally:** port 3000 is occupied by an unrelated app on this machine, so use another port — `npm run build && npx next start -p 3100`, then `E2E_BASE_URL=http://localhost:3100 npx playwright test tests/e2e/website.spec.ts`. Never pipe `npm run build` into `head`: SIGPIPE kills the build midway and leaves a `.next` that serves unstyled pages.
 - Local checks: `npm run format:check && npm run lint && npm run typecheck && npm test`.
-- Next step on resume: confirm CI (Lighthouse), then Phase 3 (organisation, projects, goals, MVP) starting with migration 3 and `lib/permissions.ts`.
+- Next step on resume: the owner reviews the redesign; commit it when asked (`image.png` is the owner's reference, do not commit it unless asked). Lighthouse was not run for the redesign. Then resume Phase 3 from its unchecked items.
 
 ## Recently Completed
+- 2026-09-26: Home intro card replaced with an open two-column section; e2e website suite passes (uncommitted).
+- Website redesigned as a light corporate site: photo carousel hero with African team photos, sign in in footer, dead motion stack removed; e2e + axe AA 26/26, 404 unit tests (2026-09-26).
 - Website UI rebuilt as a plain business site (white/grey/navy, centred type-only hero, no motion); all 8 marketing routes restored and verified; axe AA green (2026-09-17).
 - Phase 2 public website: pages, contact → enquiries, SEO, analytics, axe/Lighthouse budgets (2026-09-17).
 - Test harness (pgTAP + RLS integration), Husky, tokens page, sidebar spacing (2026-09-16).

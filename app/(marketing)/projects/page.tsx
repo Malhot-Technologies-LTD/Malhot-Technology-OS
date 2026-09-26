@@ -1,34 +1,39 @@
 import type { Metadata } from "next";
+
+import { ProjectCard } from "@/components/site/cards/ProjectCard";
 import { PageHero } from "@/components/site/layout/PageHero";
-import { ProjectsGrid } from "@/components/site/sections/ProjectsGrid";
-import { Testimonials } from "@/components/site/sections/Testimonials";
-import { ButtonLink } from "@/components/site/ui/Button";
-import { media } from "@/content/site";
+import { CtaBand } from "@/components/site/sections/CtaBand";
+import { Section } from "@/components/site/ui/Section";
+import { projects } from "@/content/site";
 
 export const metadata: Metadata = {
   title: "Projects",
-  description:
-    "Selected MALHOT work — web platforms, mobile apps, design systems and campaigns built for real businesses.",
+  description: "Selected MALHOT work: web platforms, mobile apps and design systems built for real businesses.",
 };
 
 export default function ProjectsPage() {
   return (
     <>
       <PageHero
-        eyebrow="Our projects"
+        eyebrow="Our work"
         title="Real solutions. Real impact."
-        highlight="impact."
-        copy="A selection of products we designed, engineered and launched. Every one of them is live, measured and still evolving."
-        video={media.gridVideo}
-        poster={media.gridPoster}
-      >
-        <ButtonLink href="/start" size="lg" icon="arrowUpRight">
-          Start your project
-        </ButtonLink>
-      </PageHero>
+        lead="A selection of products we have designed, engineered and launched, and what each one set out to solve."
+      />
 
-      <ProjectsGrid />
-      <Testimonials />
+      <Section tone="muted" labelledBy="projects-title">
+        <h2 id="projects-title" className="sr-only">
+          All projects
+        </h2>
+        <ul className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {projects.map((project) => (
+            <li key={project.slug}>
+              <ProjectCard project={project} />
+            </li>
+          ))}
+        </ul>
+      </Section>
+
+      <CtaBand title="Want to be our next case study?" />
     </>
   );
 }

@@ -95,7 +95,7 @@ export function Logo({ className, markClassName, withTagline = false, glow, id, 
         */}
         <span className="-mr-[0.26em] font-display text-[0.95rem] font-semibold tracking-[0.26em]">MALHOT</span>
         {withTagline ? (
-          <span className="mt-1.5 -mr-[0.34em] text-[0.56rem] font-medium tracking-[0.34em] text-brand-200/70 uppercase">
+          <span className="mt-1.5 -mr-[0.34em] text-[0.56rem] font-medium tracking-[0.34em] uppercase opacity-70">
             Build · Innovate · Grow
           </span>
         ) : null}

@@ -19,7 +19,7 @@ export const site = {
   tagline: "Build · Innovate · Grow",
   promise: "Turning ideas into powerful digital solutions.",
   description:
-    "MALHOT is a digital product studio building modern websites, powerful applications and smart digital solutions that help businesses grow.",
+    "MALHOT is a software company in Kigali, Rwanda. We design, build and ship websites, web and mobile applications and the systems behind them.",
   /** Both unconfirmed — the website repo and the previous site disagreed. */
   email: "hello@malhot.com",
   phone: "+250 788 113 456",
@@ -33,41 +33,74 @@ export const site = {
   ],
 };
 
-export const navLinks = [
+/**
+ * Primary navigation. `menu` names the dropdown a top-level item opens in the
+ * header (components/site/layout/Navbar.tsx). The Services and Projects menus
+ * are built from `services` and `projects` below, so they cannot drift from
+ * the pages; only the About menu is listed here. The footer uses the top-level
+ * items alone.
+ */
+export type NavMenu = "about" | "services" | "projects";
+
+export const navLinks: { label: string; href: string; menu?: NavMenu }[] = [
   { label: "Home", href: "/" },
-  { label: "About", href: "/about" },
-  { label: "Services", href: "/services" },
-  { label: "Projects", href: "/projects" },
+  { label: "About", href: "/about", menu: "about" },
+  { label: "Services", href: "/services", menu: "services" },
+  { label: "Projects", href: "/projects", menu: "projects" },
+  { label: "How we work", href: "/services#process" },
   { label: "Contact", href: "/contact" },
 ];
 
+export const aboutLinks = [
+  { label: "About MALHOT", href: "/about", description: "Who we are and why we started", icon: "users" as const },
+  {
+    label: "Our values",
+    href: "/about#values",
+    description: "The principles behind every project",
+    icon: "shield" as const,
+  },
+  { label: "Our journey", href: "/about#journey", description: "How the company has grown", icon: "rocket" as const },
+  {
+    label: "Our commitments",
+    href: "/about#commitments",
+    description: "What you can count on when you work with us",
+    icon: "clipboard" as const,
+  },
+  {
+    label: "Industries",
+    href: "/#industries",
+    description: "The sectors our software serves",
+    icon: "layers" as const,
+  },
+];
+
 /**
- * Imagery.
+ * Photography, served from `public/images/site`.
  *
- * Stills are served from `public/images/site` rather than hotlinked. The
- * website repo pointed at images.pexels.com and at four local files it never
- * contained, so half the site rendered broken alt boxes; vendoring fixes that
- * and keeps the largest contentful paint on our own origin, which the
- * performance budget in lighthouserc.json depends on.
+ * Free stock photos from Pexels (Pexels licence: free for commercial use, no
+ * attribution required) of African teams at work, two of them in Lagos and
+ * Nairobi offices. They are stand-ins: replace them with Malhot's own
+ * team and office in Kigali at 1920x1280 or larger (content/README.md).
  *
- * Video stays remote. The three clips are 4K and run to tens of megabytes —
- * far too heavy for the repository — and `VideoBackground` already treats them
- * as a desktop-only enhancement loaded after the poster, so a slow fetch costs
- * nothing that is on the critical path.
+ * Hero slides are chosen with the subject on the right, because the left half
+ * sits under the headline and is darkened for legibility.
+ *
+ * There is no video. The previous design streamed three 4K clips from Pexels,
+ * which set Cloudflare cookies on every visitor and put tens of megabytes
+ * behind a background effect.
  */
 export const media = {
-  heroVideo: "https://videos.pexels.com/video-files/34645139/14683903_3840_2160_30fps.mp4",
-  heroPoster: "/images/site/hero-poster.jpg",
-  gridVideo: "https://videos.pexels.com/video-files/28561463/12421439_3840_2160_30fps.mp4",
-  gridPoster: "/images/site/grid-poster.jpg",
-  flowVideo: "https://videos.pexels.com/video-files/34127955/14471459_3840_2160_30fps.mp4",
-  flowPoster: "/images/site/flow-poster.jpg",
-  studio: "/images/site/studio.jpg",
-  desk: "/images/site/desk.jpg",
-  pair: "/images/site/pair.jpg",
-  focus: "/images/site/focus.jpg",
-  team: "/images/site/team.jpg",
-  night: "/images/site/night.jpg",
+  heroSlides: [
+    { src: "/images/site/team-laptop.jpg", alt: "A team gathered around a laptop in an office" },
+    { src: "/images/site/developer-coding.jpg", alt: "A developer writing code on a desktop and a laptop" },
+    { src: "/images/site/team-standup.jpg", alt: "Four colleagues talking in a bright office" },
+    { src: "/images/site/developer-focus.jpg", alt: "A developer concentrating at a laptop in a shared office" },
+  ],
+  presentation: {
+    src: "/images/site/team-presentation.jpg",
+    alt: "A team member presenting a project dashboard to colleagues",
+  },
+  meeting: { src: "/images/site/team-meeting.jpg", alt: "A team in a planning meeting around a table" },
 };
 
 export type IconKey = "code" | "mobile" | "design" | "brand" | "growth" | "consulting";
@@ -79,10 +112,6 @@ export type Service = {
   description: string;
   icon: IconKey;
   bullets: string[];
-  image: string;
-  metric: string;
-  /** The metric is a marketing claim nobody has sourced yet. */
-  unverified?: boolean;
 };
 
 export const services: Service[] = [
@@ -99,9 +128,6 @@ export const services: Service[] = [
       "Core Web Vitals performance budget",
       "Accessible, responsive systems",
     ],
-    image: media.desk,
-    metric: "0.9s median load",
-    unverified: true,
   },
   {
     slug: "mobile-apps",
@@ -116,9 +142,6 @@ export const services: Service[] = [
       "App Store & Play release support",
       "Crash and usage analytics",
     ],
-    image: media.night,
-    metric: "4.8★ avg rating",
-    unverified: true,
   },
   {
     slug: "ui-ux-design",
@@ -133,9 +156,6 @@ export const services: Service[] = [
       "Design systems in Figma",
       "Usability testing rounds",
     ],
-    image: media.pair,
-    metric: "+38% conversion",
-    unverified: true,
   },
   {
     slug: "branding",
@@ -150,8 +170,6 @@ export const services: Service[] = [
       "Motion & sound direction",
       "Brand guideline handbook",
     ],
-    image: media.team,
-    metric: "Full identity kit",
   },
   {
     slug: "digital-marketing",
@@ -161,9 +179,6 @@ export const services: Service[] = [
       "Performance marketing wired directly to your product analytics, so every campaign is measured against real revenue and retention.",
     icon: "growth",
     bullets: ["SEO & content engines", "Paid social & search", "Lifecycle email automation", "Attribution dashboards"],
-    image: media.focus,
-    metric: "3.2x ROAS",
-    unverified: true,
   },
   {
     slug: "it-consulting",
@@ -178,8 +193,6 @@ export const services: Service[] = [
       "Security & compliance reviews",
       "Team training & enablement",
     ],
-    image: media.night,
-    metric: "24/7 support",
   },
 ];
 
@@ -192,8 +205,6 @@ export type Project = {
   client: string;
   summary: string;
   overview: string;
-  image: string;
-  cover: string;
   stack: string[];
   features: string[];
   results: { label: string; value: string }[];
@@ -214,8 +225,6 @@ export const projects: Project[] = [
     summary: "A life-organization and social app with AI-powered productivity, study and timetable management.",
     overview:
       "Nexus Circle Pulse is a comprehensive platform designed to help users organize their life, connect with friends, manage tasks and study schedules, explore places and more — all in one app. We designed the product end to end, then built the mobile client, real-time API and admin console.",
-    image: media.night,
-    cover: media.night,
     stack: ["React Native", "Node.js", "MongoDB", "Tailwind", "OpenAI"],
     features: [
       "User accounts & secure authentication",
@@ -243,8 +252,6 @@ export const projects: Project[] = [
     summary: "Budgeting, forecasting and spending intelligence in one calm, fast dashboard.",
     overview:
       "A finance workspace that turns messy transaction data into decisions. We built the ingestion pipeline, categorisation engine and a dashboard that stays readable even with years of history loaded.",
-    image: media.desk,
-    cover: media.desk,
     stack: ["Next.js", "PostgreSQL", "Drizzle", "Recharts", "Stripe"],
     features: [
       "Automatic transaction categorisation",
@@ -272,8 +279,6 @@ export const projects: Project[] = [
     summary: "Connecting cooperatives directly with buyers, logistics and fair market pricing.",
     overview:
       "A marketplace and logistics platform for agricultural cooperatives. Built offline-tolerant so field agents can register harvests with poor connectivity, then sync when they are back on network.",
-    image: media.pair,
-    cover: media.pair,
     stack: ["Next.js", "PostgreSQL", "PWA", "Mapbox", "Twilio"],
     features: [
       "Cooperative & farmer registry",
@@ -301,8 +306,6 @@ export const projects: Project[] = [
     summary: "A headless storefront with instant search, local payments and a merchandising studio.",
     overview:
       "We replatformed a growing retail brand onto a headless stack, cutting page weight by 62% and giving the merchandising team full control of the homepage without touching code.",
-    image: media.studio,
-    cover: media.studio,
     stack: ["Next.js", "Medusa", "Algolia", "MoMo Pay", "Vercel"],
     features: [
       "Instant search & faceted filtering",
@@ -330,8 +333,6 @@ export const projects: Project[] = [
     summary: "Attendance, grading, fees and parent communication in one operations suite.",
     overview:
       "A full operations product for schools. The design challenge was density: administrators needed hundreds of data points on screen without the interface becoming hostile.",
-    image: media.focus,
-    cover: media.focus,
     stack: ["Figma", "React", "Design System", "Supabase"],
     features: [
       "Attendance & grading workflows",
@@ -359,8 +360,6 @@ export const projects: Project[] = [
     summary: "A cinematic destination experience with scroll-driven storytelling and booking flows.",
     overview:
       "A campaign platform built around full-bleed media and scroll storytelling, with itinerary builders and partner booking handoff.",
-    image: media.team,
-    cover: media.team,
     stack: ["Next.js", "GSAP", "Sanity", "Cloudinary"],
     features: [
       "Scroll-driven story chapters",
@@ -380,38 +379,26 @@ export const projects: Project[] = [
   },
 ];
 
-/** Headline numbers. Unsourced — see content/README.md before launch. */
-export const stats = [
-  { value: 50, suffix: "+", label: "Projects delivered" },
-  { value: 30, suffix: "+", label: "Happy clients" },
-  { value: 3, suffix: "+", label: "Years of excellence" },
-  { value: 98, suffix: "%", label: "Client retention" },
-];
-
 export const processSteps = [
   {
     index: "01",
     title: "Discover",
     copy: "We pressure-test the idea, map the users and agree on what success actually looks like before a single pixel moves.",
-    image: media.pair,
   },
   {
     index: "02",
     title: "Design",
     copy: "Journeys, prototypes and a design system. You see and click the product long before it is engineered.",
-    image: media.studio,
   },
   {
     index: "03",
     title: "Build",
     copy: "Weekly shipping cadence, visible progress, clean architecture and tests where they matter.",
-    image: media.desk,
   },
   {
     index: "04",
     title: "Grow",
     copy: "Launch is the start. We measure, iterate and scale the product alongside your business.",
-    image: media.focus,
   },
 ];
 
@@ -439,46 +426,56 @@ export const timeline = [
 ];
 
 /**
- * Quotes attributed to named people at named companies.
- *
- * These are the highest-risk content on the site: a testimonial nobody said is
- * a statement about a real person. They are carried over unchanged because the
- * design depends on the section, and flagged so they cannot ship as fact by
- * accident. Replace with real, permissioned quotes or remove the section.
+ * Sectors. Positioning, not a client list: each one names the kind of problem
+ * we build for and matches work in `projects`. It claims no client and no
+ * number, so nothing here needs sourcing.
  */
-export const testimonials = [
+export const sectors = [
   {
-    quote:
-      "MALHOT rebuilt our platform in eleven weeks. It is faster, calmer and our team finally enjoys using it. The communication was flawless.",
-    name: "Aline Uwase",
-    role: "COO, Umoja Finance",
-    unverified: true,
+    title: "Finance",
+    copy: "Dashboards, budgeting and reporting tools that turn transaction data into decisions.",
+    icon: "finance" as const,
   },
   {
-    quote:
-      "They treat design and engineering as one craft. What they shipped looked exactly like the prototype and performed better than we expected.",
-    name: "Daniel Mugisha",
-    role: "Founder, Nexus Circle",
-    unverified: true,
+    title: "Agriculture",
+    copy: "Marketplaces and field tools built to keep working on a weak connection.",
+    icon: "leaf" as const,
   },
   {
-    quote:
-      "The most senior team we have worked with. They challenged our assumptions early and saved us two quarters of wasted build.",
-    name: "Sarah Kimani",
-    role: "Product Lead, AgriConnect",
-    unverified: true,
+    title: "Commerce",
+    copy: "Online stores with local payments, inventory sync and fast checkout.",
+    icon: "cart" as const,
+  },
+  {
+    title: "Education",
+    copy: "School operations: attendance, grading, fees and parent communication.",
+    icon: "school" as const,
   },
 ];
 
-export const capabilities = [
-  "Product Strategy",
-  "Web Platforms",
-  "Mobile Apps",
-  "Design Systems",
-  "AI Integration",
-  "Cloud & DevOps",
-  "Brand Identity",
-  "Growth Engineering",
+/**
+ * What every engagement leaves behind. This is true of how Malhot runs
+ * projects (docs/product/project-lifecycle.md): each stage ends in a document
+ * the client receives. It is the site's main proof point, so keep it in step
+ * with the lifecycle if that changes.
+ */
+export const commitments = [
+  {
+    title: "One accountable team",
+    copy: "Design, engineering, testing and project management under one roof. You deal with one team, not a chain of subcontractors.",
+  },
+  {
+    title: "Progress you can see",
+    copy: "Work ships in short cycles against milestones you agreed. You review real, working software along the way, not one big reveal at the end.",
+  },
+  {
+    title: "Tested before it ships",
+    copy: "Testing is a stage of its own, with test cases, results and tracked fixes. You get the report, not just our word for it.",
+  },
+  {
+    title: "Documented handover",
+    copy: "A project brief, MVP specification, delivery plan, test report and deployment report. You own the product and the knowledge behind it.",
+  },
 ];
 
 /* ----------------------------- Start a project ---------------------------- */

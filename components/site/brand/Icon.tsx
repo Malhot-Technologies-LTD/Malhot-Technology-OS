@@ -32,7 +32,15 @@ export type IconName =
   | "message"
   | "logout"
   | "user"
-  | "alert";
+  | "alert"
+  | "finance"
+  | "leaf"
+  | "cart"
+  | "school"
+  | "users"
+  | "clipboard"
+  | "shield"
+  | "rocket";
 
 const paths: Record<IconName, React.ReactNode> = {
   code: (
@@ -207,6 +215,59 @@ const paths: Record<IconName, React.ReactNode> = {
       <circle cx="12" cy="12" r="9" />
       <path d="M12 7.5v5.5" />
       <path d="M12 16.4v.2" />
+    </>
+  ),
+  finance: (
+    <>
+      <path d="M3 21h18" />
+      <path d="M4 10h16L12 4 4 10Z" />
+      <path d="M6.5 10v8M10 10v8M14 10v8M17.5 10v8" />
+    </>
+  ),
+  leaf: (
+    <>
+      <path d="M5 19c0-8 5-13.5 14-14 .5 9-5 14-12 14" />
+      <path d="M5 19c3-4 6-6.5 9-8" />
+    </>
+  ),
+  cart: (
+    <>
+      <path d="M3 4h2.2l2.3 11h10.8l2-8H6.4" />
+      <circle cx="9" cy="19.5" r="1.3" />
+      <circle cx="17" cy="19.5" r="1.3" />
+    </>
+  ),
+  school: (
+    <>
+      <path d="m2.5 9 9.5-5 9.5 5-9.5 5-9.5-5Z" />
+      <path d="M6.5 11.2V16c1.5 1.6 3.4 2.4 5.5 2.4s4-.8 5.5-2.4v-4.8" />
+    </>
+  ),
+  users: (
+    <>
+      <circle cx="9" cy="8" r="3.2" />
+      <path d="M3 19.5c.6-3.3 3-5.2 6-5.2s5.4 1.9 6 5.2" />
+      <path d="M15.5 4.9a3.2 3.2 0 0 1 0 6.2M17.5 14.6c2 .6 3.2 2.3 3.5 4.9" />
+    </>
+  ),
+  clipboard: (
+    <>
+      <rect x="5" y="4.5" width="14" height="17" rx="2" />
+      <path d="M9 4.5V3h6v1.5" />
+      <path d="M8.5 11h7M8.5 15h5" />
+    </>
+  ),
+  shield: (
+    <>
+      <path d="M12 3 5 6v5.5c0 4.4 3 8.2 7 9.5 4-1.3 7-5.1 7-9.5V6l-7-3Z" />
+      <path d="m9 12 2.2 2.2L15.5 10" />
+    </>
+  ),
+  rocket: (
+    <>
+      <path d="M14.5 4.5c2.5-1 4.5-1 5-.5s.5 2.5-.5 5l-6 6-4-4 5.5-6.5Z" />
+      <path d="m9 11-3.5.5L3.5 14l4 .5M13 15l-.5 3.5-2.5 2-.5-4" />
+      <circle cx="15.5" cy="8.5" r="1.3" />
     </>
   ),
 };

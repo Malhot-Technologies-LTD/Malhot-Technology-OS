@@ -1,155 +1,100 @@
-"use client";
-
 import Link from "next/link";
-import { useRef } from "react";
-import { motion, useScroll, useTransform } from "motion/react";
-import { Logo } from "@/components/site/brand/Logo";
+
 import { Icon } from "@/components/site/brand/Icon";
-import { ButtonLink } from "@/components/site/ui/Button";
-import { Reveal, TextReveal } from "@/components/site/ui/Reveal";
+import { Logo } from "@/components/site/brand/Logo";
 import { navLinks, services, site } from "@/content/site";
 
+/**
+ * Site footer: brand and address, then three link columns, then a legal bar.
+ *
+ * Social links are not rendered: every entry in `site.socials` still points at
+ * a platform's home page rather than a Malhot account (content/README.md), and
+ * an icon that opens x.com is worse than no icon. Add them back here once the
+ * real profile URLs exist.
+ */
 export function Footer() {
-  const ref = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "end end"],
-  });
-  const glow = useTransform(scrollYProgress, [0, 1], [0.15, 0.75]);
-  const lift = useTransform(scrollYProgress, [0, 1], [70, 0]);
+  const year = new Date().getFullYear();
 
   return (
-    <footer ref={ref} className="relative isolate overflow-hidden border-t border-white/8 bg-[#04070f] pt-24">
-      <motion.div
-        aria-hidden
-        style={{ opacity: glow }}
-        className="pointer-events-none absolute top-0 left-1/2 h-[34rem] w-[64rem] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[140px]"
-      >
-        <div className="h-full w-full rounded-full bg-[radial-gradient(circle,rgba(43,108,255,0.38),transparent_68%)]" />
-      </motion.div>
-      <div aria-hidden className="grid-noise pointer-events-none absolute inset-0 opacity-30" />
-
-      <div className="shell relative">
-        <motion.div style={{ y: lift }} className="flex flex-col items-center text-center">
-          <Reveal>
-            <span className="eyebrow">
-              <span className="h-[5px] w-[5px] rounded-full bg-brand-400 shadow-[0_0_12px_2px_rgba(43,108,255,0.8)]" />
-              Let&apos;s build
-            </span>
-          </Reveal>
-          <TextReveal
-            text="Let's create something amazing together."
-            highlight={["amazing"]}
-            className="display mt-6 max-w-4xl justify-center text-[clamp(2.2rem,6vw,4.6rem)] text-white"
-          />
-          <Reveal delay={0.12} className="mt-9 flex flex-wrap items-center justify-center gap-3">
-            <ButtonLink href="/start" size="lg" icon="arrowUpRight">
-              Start a Project
-            </ButtonLink>
-            <ButtonLink href="/contact" size="lg" variant="secondary" icon="mail" iconPosition="left">
-              Talk to us
-            </ButtonLink>
-          </Reveal>
-        </motion.div>
-
-        <div className="mt-24 grid gap-12 border-t border-white/8 pt-14 md:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <Logo withTagline />
-            <p className="mt-6 max-w-xs text-[0.88rem] leading-relaxed text-white/60">
-              A digital product studio turning ambitious ideas into fast, beautiful and reliable software.
-            </p>
-            <div className="mt-6 flex gap-2.5">
-              {site.socials.map((social) => (
-                <a
-                  key={social.label}
-                  href={social.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label={social.label}
-                  className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/[0.03] text-white/55 transition-all duration-500 hover:-translate-y-0.5 hover:border-brand-400/60 hover:bg-brand-500/12 hover:text-white"
-                >
-                  <Icon name={social.icon} className="h-4 w-4" />
-                </a>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <h3 className="text-[0.72rem] font-semibold tracking-[0.24em] text-white/55 uppercase">Quick links</h3>
-            <ul className="mt-5 space-y-3">
-              {[...navLinks, { label: "Start a Project", href: "/start" }].map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="group inline-flex items-center gap-2 text-[0.88rem] text-white/55 transition-colors hover:text-white"
-                  >
-                    <span className="h-px w-0 bg-brand-400 transition-all duration-500 group-hover:w-4" />
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-[0.72rem] font-semibold tracking-[0.24em] text-white/55 uppercase">Services</h3>
-            <ul className="mt-5 space-y-3">
-              {services.slice(0, 5).map((service) => (
-                <li key={service.slug}>
-                  <Link
-                    href={`/services#${service.slug}`}
-                    className="group inline-flex items-center gap-2 text-[0.88rem] text-white/55 transition-colors hover:text-white"
-                  >
-                    <span className="h-px w-0 bg-brand-400 transition-all duration-500 group-hover:w-4" />
-                    {service.title}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-[0.72rem] font-semibold tracking-[0.24em] text-white/55 uppercase">Contact</h3>
-            <ul className="mt-5 space-y-4 text-[0.88rem] text-white/55">
-              <li className="flex items-center gap-3">
-                <Icon name="mail" className="h-4 w-4 text-brand-300" />
-                <a href={`mailto:${site.email}`} className="transition hover:text-white">
-                  {site.email}
-                </a>
-              </li>
-              <li className="flex items-center gap-3">
-                <Icon name="phone" className="h-4 w-4 text-brand-300" />
-                <a href={`tel:${site.phone.replace(/\s/g, "")}`} className="transition hover:text-white">
-                  {site.phone}
-                </a>
-              </li>
-              <li className="flex items-center gap-3">
-                <Icon name="pin" className="h-4 w-4 text-brand-300" />
-                {site.location}
-              </li>
-            </ul>
-          </div>
+    <footer className="on-ink bg-site-ink text-white">
+      <div className="shell grid gap-12 py-14 sm:py-16 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1.2fr_1.2fr]">
+        <div className="max-w-xs">
+          <Link href="/" aria-label={`${site.name} home`} className="inline-block">
+            <Logo />
+          </Link>
+          <p className="mt-5 text-[0.9rem] leading-relaxed text-site-ink-fg-muted">
+            Software company in {site.location}. We design, build and ship websites, applications and the systems behind
+            them.
+          </p>
         </div>
 
-        <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-white/8 py-8 text-[0.76rem] text-white/55 sm:flex-row">
-          <p>© {new Date().getFullYear()} MALHOT. All rights reserved.</p>
-          <div className="flex items-center gap-6">
-            <Link href="/contact" className="transition hover:text-white/70">
-              Privacy Policy
-            </Link>
-            <Link href="/contact" className="transition hover:text-white/70">
-              Terms
-            </Link>
-            <span className="hidden sm:inline">{site.timezone}</span>
-          </div>
-        </div>
+        <FooterColumn title="Company">
+          {navLinks.map((link) => (
+            <li key={link.href}>
+              <FooterLink href={link.href}>{link.label}</FooterLink>
+            </li>
+          ))}
+        </FooterColumn>
+
+        <FooterColumn title="Services">
+          {services.map((service) => (
+            <li key={service.slug}>
+              <FooterLink href={`/services#${service.slug}`}>{service.title}</FooterLink>
+            </li>
+          ))}
+        </FooterColumn>
+
+        <FooterColumn title="Contact">
+          <li className="flex gap-2.5">
+            <Icon name="pin" className="mt-0.5 h-4 w-4 shrink-0 text-site-blue-bright" />
+            <span className="text-site-ink-fg-muted">{site.location}</span>
+          </li>
+          <li className="flex gap-2.5">
+            <Icon name="mail" className="mt-0.5 h-4 w-4 shrink-0 text-site-blue-bright" />
+            <FooterLink href={`mailto:${site.email}`}>{site.email}</FooterLink>
+          </li>
+          <li className="flex gap-2.5">
+            <Icon name="phone" className="mt-0.5 h-4 w-4 shrink-0 text-site-blue-bright" />
+            <FooterLink href={`tel:${site.phone.replace(/\s/g, "")}`}>{site.phone}</FooterLink>
+          </li>
+        </FooterColumn>
       </div>
 
-      <div aria-hidden className="pointer-events-none relative -mb-6 overflow-hidden mask-fade-b select-none">
-        <p className="display text-center text-[clamp(4rem,19vw,17rem)] leading-[0.8] whitespace-nowrap text-white/[0.045]">
-          MALHOT
-        </p>
+      <div className="border-t border-site-ink-line">
+        <div className="shell flex flex-col gap-3 py-6 text-[0.825rem] text-site-ink-fg-subtle sm:flex-row sm:items-center sm:justify-between">
+          <p>
+            © {year} {site.legalName}. All rights reserved.
+          </p>
+          <div className="flex items-center gap-6">
+            <FooterLink href="/privacy">Privacy</FooterLink>
+            {/* The only sign-in entry on the site: the login is for the team, so it stays out of the header. */}
+            <Link
+              href="/login"
+              className="inline-flex h-9 items-center gap-2 rounded-[var(--radius-m)] border border-white/40 px-3.5 text-[0.85rem] font-semibold text-white transition-colors hover:border-white hover:bg-white/10"
+            >
+              <Icon name="user" className="h-4 w-4" />
+              Team sign in
+            </Link>
+          </div>
+        </div>
       </div>
     </footer>
+  );
+}
+
+function FooterColumn({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <h2 className="text-[0.8rem] font-semibold tracking-[0.12em] text-white uppercase">{title}</h2>
+      <ul className="mt-5 space-y-3 text-[0.9rem]">{children}</ul>
+    </div>
+  );
+}
+
+function FooterLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link href={href} className="text-site-ink-fg-muted transition-colors hover:text-white hover:underline">
+      {children}
+    </Link>
   );
 }

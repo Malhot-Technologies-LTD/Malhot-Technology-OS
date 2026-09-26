@@ -176,52 +176,48 @@
 }
 
 /*
- * Public website register (data-surface="site"). A light reading surface with
- * dark "ink" bands (hero, work, CTA, footer) that carry the brand: the logo's
- * electric blue over a near-black navy. Shared components keep working because
- * the token names are the same; the OS never sets this attribute.
+ * Public website register (data-surface="site"). A light, corporate surface:
+ * white and pale-grey sections, with solid navy bands (intro, commitments, CTA,
+ * footer) carrying the brand. The blue is the logo's mid-tone, darkened just
+ * enough to pass 4.5:1 as link text on white. The OS never sets this attribute.
  */
 [data-surface="site"] {
   --bg: #ffffff;
-  --bg-subtle: #f4f6fb;
+  --bg-subtle: #f3f5f9;
   --surface: #ffffff;
   --surface-raised: #ffffff;
-  --border: #e2e6f0;
-  --border-strong: #c3cade;
+  --border: #dfe4ec;
+  --border-strong: #c4ccda;
 
-  --fg: #0b1020;
-  --fg-muted: #4b5468;
-  /* 5.0:1 on --bg-subtle, the worst case on this surface (WCAG 1.4.3 AA). */
-  --fg-subtle: #616981;
+  --fg: #0d1730;
+  --fg-muted: #46516a;
+  /* 5.2:1 on --bg-subtle, the worst case on this surface (WCAG 1.4.3 AA). */
+  --fg-subtle: #5b6580;
 
-  --brand: #1f5eff;
+  --brand: #1652e6;
   --brand-fg: #ffffff;
-  --brand-subtle: #eef3ff;
+  --brand-subtle: #eaf0fe;
   --focus: var(--brand);
 
-  /* Dark bands. --site-ink is the page-dark surface; -raised sits on top of it. */
-  --site-ink: #070b1a;
-  --site-ink-raised: #0e1530;
-  --site-ink-line: rgb(255 255 255 / 0.12);
+  /* Navy bands. Solid colour, no gradients: the logo's dark arrow, lifted to navy. */
+  --site-ink: #0b1f4b;
+  --site-ink-raised: #122b63;
+  --site-ink-line: rgb(255 255 255 / 0.14);
   --site-ink-fg: #ffffff;
-  --site-ink-fg-muted: rgb(255 255 255 / 0.72);
-  --site-ink-fg-subtle: rgb(255 255 255 / 0.58);
+  /* 9.6:1 and 6.9:1 on --site-ink. */
+  --site-ink-fg-muted: rgb(255 255 255 / 0.8);
+  --site-ink-fg-subtle: rgb(255 255 255 / 0.66);
 
-  /* Blue scale, read off the logo gradient. -bright is legible on ink. */
-  --site-blue: #1f5eff;
-  --site-blue-deep: #1230cf;
-  --site-blue-bright: #7aa2ff;
-  --site-blue-glow: rgb(43 107 255 / 0.5);
-
-  /* Kept for the legacy navy band styling until every usage moves to --site-ink. */
-  --site-navy: #070b1a;
-  --site-navy-soft: #0e1530;
+  --site-blue: #1652e6;
+  --site-blue-deep: #0f3db4;
+  /* Link and accent colour on navy: 6.3:1 on --site-ink. */
+  --site-blue-bright: #8fb2ff;
 
   --radius-s: 3px;
-  --radius-m: 5px;
-  --radius-l: 8px;
+  --radius-m: 4px;
+  --radius-l: 6px;
 
-  --shadow-s: 0 1px 2px rgb(11 16 32 / 0.06);
-  --shadow-m: 0 8px 24px rgb(11 16 32 / 0.08);
-  --shadow-l: 0 24px 60px rgb(11 16 32 / 0.14);
+  --shadow-s: 0 1px 2px rgb(13 23 48 / 0.06);
+  --shadow-m: 0 6px 20px rgb(13 23 48 / 0.08);
+  --shadow-l: 0 20px 48px rgb(13 23 48 / 0.12);
 }

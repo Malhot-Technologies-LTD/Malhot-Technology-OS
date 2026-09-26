@@ -2,14 +2,12 @@
 
 import { usePathname } from "next/navigation";
 import { useId, useState, useTransition } from "react";
-import { AnimatePresence, motion } from "motion/react";
 
 import { Icon } from "@/components/site/brand/Icon";
 import { Button, ButtonLink } from "@/components/site/ui/Button";
 import { FormStatus, TextArea, TextField } from "@/components/site/ui/Field";
 import { submitInquiry } from "@/features/inquiries/actions";
 import { BUDGET_RANGES } from "@/features/inquiries/schemas";
-import { EASE } from "@/lib/motion";
 import { isEmail } from "@/lib/utils";
 
 type Errors = Partial<Record<"name" | "email" | "message", string>>;
@@ -22,7 +20,7 @@ type Errors = Partial<Record<"name" | "email" | "message", string>>;
  * calls `submitInquiry` instead, so a message lands in `inquiries` — the same
  * table an admin already reviews at /os/settings/inquiries — and inherits the
  * honeypot, the per-IP rate limit and the hashed-IP audit trail that action
- * carries. The look is unchanged; only the wire is different.
+ * carries.
  *
  * The honeypot below is the reason this is not a plain `<form action={...}>`:
  * the field has to be present in the DOM, invisible, and excluded from the tab
@@ -92,178 +90,146 @@ export function ContactForm() {
     });
   };
 
-  return (
-    <div className="relative overflow-hidden rounded-[1.6rem] border border-white/10 bg-navy-900 p-7 sm:p-9">
+  if (status === "success") {
+    return (
       <div
-        aria-hidden
-        className="pointer-events-none absolute -top-24 -right-20 h-64 w-64 rounded-full blur-[90px]"
-        style={{ background: "radial-gradient(circle, rgba(43,108,255,0.22), transparent 70%)" }}
+        role="status"
+        className="flex min-h-[26rem] flex-col items-center justify-center rounded-[var(--radius-l)] border border-border bg-white p-8 text-center sm:p-10"
+      >
+        <span aria-hidden className="grid h-14 w-14 place-items-center rounded-full bg-brand-subtle text-brand">
+          <Icon name="check" className="h-7 w-7" strokeWidth={2.2} />
+        </span>
+        <h2 className="mt-6 text-[1.5rem] font-semibold text-fg">Message received</h2>
+        <p className="mt-3 max-w-sm text-[0.975rem] leading-relaxed text-fg-muted">
+          Thank you, {values.name.split(" ")[0] || "and welcome"}. Someone from our team will reply within one business
+          day.
+        </p>
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <ButtonLink href="/projects" icon="arrow">
+            Browse our work
+          </ButtonLink>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setValues({ name: "", email: "", company: "", budgetRange: "", message: "", website: "" });
+              setStatus("idle");
+            }}
+          >
+            Send another message
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <form
+      onSubmit={submit}
+      noValidate
+      aria-labelledby="contact-form-title"
+      className="relative space-y-5 rounded-[var(--radius-l)] border border-border bg-white p-6 shadow-[var(--shadow-s)] sm:p-9"
+    >
+      <div>
+        <h2 id="contact-form-title" className="text-[1.5rem] font-semibold text-fg">
+          Send us a message
+        </h2>
+        <p className="mt-1.5 text-[0.925rem] text-fg-muted">Fields marked optional can be left blank.</p>
+      </div>
+
+      {/* Announced, because a failed submit changes nothing else on screen. */}
+      <div aria-live="polite">
+        <FormStatus status={status === "error" ? "error" : "idle"} message={feedback} />
+      </div>
+
+      <div className="grid gap-5 sm:grid-cols-2">
+        <TextField
+          label="Your name"
+          value={values.name}
+          onChange={update("name")}
+          error={errors.name}
+          autoComplete="name"
+        />
+        <TextField
+          label="Email address"
+          type="email"
+          value={values.email}
+          onChange={update("email")}
+          error={errors.email}
+          autoComplete="email"
+        />
+      </div>
+
+      <div className="grid gap-5 sm:grid-cols-2">
+        <TextField
+          label="Company"
+          hint="Optional"
+          value={values.company}
+          onChange={update("company")}
+          autoComplete="organization"
+        />
+        <div>
+          <label
+            htmlFor={budgetId}
+            className="mb-1.5 flex items-baseline justify-between text-[0.875rem] font-medium text-fg"
+          >
+            Budget
+            <span className="text-[0.8rem] font-normal text-fg-subtle">Optional</span>
+          </label>
+          <select
+            id={budgetId}
+            value={values.budgetRange}
+            onChange={update("budgetRange")}
+            className="field appearance-none bg-[length:1.1rem] bg-[right_0.75rem_center] bg-no-repeat pr-10"
+            style={{
+              backgroundImage:
+                "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2346516a' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")",
+            }}
+          >
+            <option value="">Choose a range</option>
+            {BUDGET_RANGES.map((range) => (
+              <option key={range.value} value={range.value}>
+                {range.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <TextArea
+        label="Message"
+        placeholder="What are you building, and what do you need help with?"
+        value={values.message}
+        onChange={update("message")}
+        error={errors.message}
       />
 
-      <AnimatePresence mode="wait">
-        {status === "success" ? (
-          <motion.div
-            key="success"
-            role="status"
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.6, ease: EASE.soft }}
-            className="relative flex min-h-[26rem] flex-col items-center justify-center text-center"
-          >
-            <motion.span
-              aria-hidden
-              initial={{ scale: 0.4, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.7, ease: EASE.soft, delay: 0.08 }}
-              className="grid h-20 w-20 place-items-center rounded-full border border-brand-400/40 bg-brand-500/15 text-brand-200 shadow-[0_0_60px_-15px_rgba(43,108,255,1)]"
-            >
-              <Icon name="check" className="h-8 w-8" strokeWidth={2.2} />
-            </motion.span>
-            <h3 className="display mt-7 text-[1.7rem] text-white">Message received</h3>
-            <p className="mt-3 max-w-sm text-[0.92rem] leading-relaxed text-white/60">
-              Thank you, {values.name.split(" ")[0] || "friend"}. A human from MALHOT will reply within one business
-              day.
-            </p>
-            <div className="mt-8 flex flex-wrap justify-center gap-3">
-              <ButtonLink href="/start" icon="arrowUpRight">
-                Start a project
-              </ButtonLink>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setValues({
-                    name: "",
-                    email: "",
-                    company: "",
-                    budgetRange: "",
-                    message: "",
-                    website: "",
-                  });
-                  setStatus("idle");
-                }}
-              >
-                Send another
-              </Button>
-            </div>
-          </motion.div>
-        ) : (
-          <motion.form
-            key="form"
-            onSubmit={submit}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="relative space-y-5"
-            noValidate
-          >
-            <div>
-              <h2 className="display text-[1.5rem] text-white">Send us a message</h2>
-              <p className="mt-2 text-[0.88rem] text-white/55">
-                Tell us what you are working on. We reply to everything.
-              </p>
-            </div>
+      {/*
+       * Honeypot. Off-screen rather than display:none — some bots skip
+       * fields they can tell are hidden — and out of both the tab order
+       * and the accessibility tree, so nobody using the page can reach it.
+       */}
+      <div aria-hidden="true" className="absolute top-auto -left-[9999px] h-px w-px overflow-hidden">
+        <label htmlFor={honeypotId}>Website</label>
+        <input
+          id={honeypotId}
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+          value={values.website}
+          onChange={update("website")}
+        />
+      </div>
 
-            {/* Announced, because a failed submit changes nothing else on screen. */}
-            <div aria-live="polite">
-              <FormStatus status={status === "error" ? "error" : "idle"} message={feedback} />
-            </div>
-
-            <div className="grid gap-5 sm:grid-cols-2">
-              <TextField
-                label="Your name"
-                placeholder="John Doe"
-                value={values.name}
-                onChange={update("name")}
-                error={errors.name}
-                autoComplete="name"
-              />
-              <TextField
-                label="Email address"
-                type="email"
-                placeholder="you@example.com"
-                value={values.email}
-                onChange={update("email")}
-                error={errors.email}
-                autoComplete="email"
-              />
-            </div>
-
-            <div className="grid gap-5 sm:grid-cols-2">
-              <TextField
-                label="Company"
-                hint="optional"
-                placeholder="Acme Ltd"
-                value={values.company}
-                onChange={update("company")}
-                autoComplete="organization"
-              />
-              <div className="group/field">
-                <label
-                  htmlFor={budgetId}
-                  className="mb-2 flex items-center justify-between text-[0.72rem] font-medium tracking-[0.18em] text-white/60 uppercase transition-colors duration-300 group-focus-within/field:text-brand-200"
-                >
-                  Budget
-                  <span className="text-[0.66rem] tracking-normal text-white/55 normal-case">optional</span>
-                </label>
-                <select
-                  id={budgetId}
-                  value={values.budgetRange}
-                  onChange={update("budgetRange")}
-                  className="field appearance-none bg-[length:1.1rem] bg-[right_0.9rem_center] bg-no-repeat pr-10"
-                  style={{
-                    backgroundImage:
-                      "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a8c8ff' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")",
-                  }}
-                >
-                  <option value="">Choose a range</option>
-                  {BUDGET_RANGES.map((range) => (
-                    <option key={range.value} value={range.value}>
-                      {range.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <TextArea
-              label="Message"
-              placeholder="How can we help you?"
-              value={values.message}
-              onChange={update("message")}
-              error={errors.message}
-            />
-
-            {/*
-             * Honeypot. Off-screen rather than display:none — some bots skip
-             * fields they can tell are hidden — and out of both the tab order
-             * and the accessibility tree, so nobody using the page can reach it.
-             */}
-            <div aria-hidden="true" className="absolute top-auto -left-[9999px] h-px w-px overflow-hidden">
-              <label htmlFor={honeypotId}>Website</label>
-              <input
-                id={honeypotId}
-                type="text"
-                tabIndex={-1}
-                autoComplete="off"
-                value={values.website}
-                onChange={update("website")}
-              />
-            </div>
-
-            <Button type="submit" size="lg" icon="arrow" loading={pending} className="w-full">
-              {pending ? "Sending" : "Send message"}
-            </Button>
-            <p className="text-center text-[0.72rem] text-white/60">
-              We only use this to reply to you. See our{" "}
-              <a href="/privacy" className="underline underline-offset-4 hover:text-brand-200">
-                privacy notice
-              </a>
-              .
-            </p>
-          </motion.form>
-        )}
-      </AnimatePresence>
-    </div>
+      <Button type="submit" size="lg" icon="arrow" loading={pending} className="w-full sm:w-auto">
+        {pending ? "Sending" : "Send message"}
+      </Button>
+      <p className="text-[0.825rem] text-fg-subtle">
+        We only use your details to reply to you. Read our{" "}
+        <a href="/privacy" className="text-brand underline underline-offset-2">
+          privacy notice
+        </a>
+        .
+      </p>
+    </form>
   );
 }

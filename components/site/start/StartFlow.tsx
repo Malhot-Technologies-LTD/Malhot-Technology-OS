@@ -2,15 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import { AnimatePresence, motion } from "motion/react";
+
 import { Icon } from "@/components/site/brand/Icon";
-import { LogoMark } from "@/components/site/brand/Logo";
 import { Button, ButtonLink } from "@/components/site/ui/Button";
 import { FormStatus, TextArea, TextField } from "@/components/site/ui/Field";
-import { Aurora } from "@/components/site/ui/Atmosphere";
 import { budgetOptions, needOptions, timelineOptions, typeOptions } from "@/content/site";
 import { submitProjectBrief } from "@/features/inquiries/actions";
-import { EASE } from "@/lib/motion";
 import { cn, isEmail } from "@/lib/utils";
 
 type FormState = {
@@ -94,7 +91,6 @@ function Flow({ defaults, signedIn, draft }: { defaults: Defaults; signedIn: boo
   const [step, setStep] = useState(() =>
     typeof draft?.step === "number" ? Math.max(0, Math.min(steps.length - 1, draft.step)) : 0,
   );
-  const [direction, setDirection] = useState(1);
   const [form, setForm] = useState<FormState>(() => {
     const base: FormState = {
       need: "",
@@ -201,7 +197,6 @@ function Flow({ defaults, signedIn, draft }: { defaults: Defaults; signedIn: boo
         return;
       }
     }
-    setDirection(next > step ? 1 : -1);
     setStep(Math.max(0, Math.min(steps.length - 1, next)));
     setError("");
   };
@@ -210,7 +205,6 @@ function Flow({ defaults, signedIn, draft }: { defaults: Defaults; signedIn: boo
     for (let i = 0; i < steps.length - 1; i += 1) {
       const message = validateStep(i);
       if (message) {
-        setDirection(-1);
         setStep(i);
         setError(message);
         return;
@@ -253,376 +247,323 @@ function Flow({ defaults, signedIn, draft }: { defaults: Defaults; signedIn: boo
 
   if (status === "success") {
     return (
-      <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-6 py-32">
-        <Aurora intensity={1.4} />
-        <motion.div
-          initial={{ opacity: 0, scale: 0.94 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.85, ease: EASE.soft }}
-          className="relative w-full max-w-xl text-center"
-        >
-          <motion.div
-            initial={{ scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.9, ease: EASE.soft, delay: 0.1 }}
-            className="mx-auto grid h-24 w-24 place-items-center rounded-full border border-brand-400/40 bg-brand-500/12 shadow-[0_0_80px_-18px_rgba(43,108,255,1)]"
+      <section className="bg-bg-subtle py-20 sm:py-28">
+        <div className="shell">
+          <div
+            role="status"
+            className="mx-auto max-w-xl rounded-[var(--radius-l)] border border-border bg-white p-8 text-center sm:p-12"
           >
-            <LogoMark className="h-11 w-11" glow id="success" />
-          </motion.div>
-          <h1 className="display mt-9 text-[clamp(2rem,5vw,3rem)] text-white">Brief received</h1>
-          <p className="mt-4 text-[0.98rem] leading-relaxed text-white/55">
-            Thank you, {form.contactName.split(" ")[0]}. Your project is in our queue and a strategist will reply within
-            one business day.
-          </p>
-          <div className="mx-auto mt-8 inline-flex items-center gap-3 rounded-full border border-white/12 bg-white/[0.04] px-5 py-3">
-            <span className="text-[0.72rem] tracking-[0.2em] text-white/55 uppercase">Reference</span>
-            <span className="font-mono text-[0.95rem] text-brand-200">{reference}</span>
+            <span
+              aria-hidden
+              className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-brand-subtle text-brand"
+            >
+              <Icon name="check" className="h-7 w-7" strokeWidth={2.2} />
+            </span>
+            <h1 className="mt-6 text-[clamp(1.75rem,4vw,2.25rem)] font-semibold text-fg">Brief received</h1>
+            <p className="mt-3 text-[1rem] leading-relaxed text-fg-muted">
+              Thank you, {form.contactName.split(" ")[0]}. Your project is in our queue and we will reply within one
+              business day.
+            </p>
+            <p className="mt-6 inline-flex items-center gap-3 rounded-[var(--radius-m)] border border-border bg-bg-subtle px-4 py-2.5">
+              <span className="text-[0.825rem] text-fg-muted">Reference</span>
+              <span className="font-mono text-[0.95rem] font-semibold text-fg">{reference}</span>
+            </p>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+              <ButtonLink href={signedIn ? "/os" : "/contact"} icon="arrow">
+                {signedIn ? "Open your dashboard" : "Ask us something else"}
+              </ButtonLink>
+              <ButtonLink href="/projects" variant="secondary">
+                Explore our work
+              </ButtonLink>
+            </div>
           </div>
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
-            <ButtonLink href={signedIn ? "/os" : "/contact"} icon="arrowUpRight" size="lg">
-              {signedIn ? "Open your dashboard" : "Ask us something else"}
-            </ButtonLink>
-            <ButtonLink href="/projects" variant="secondary" size="lg" icon="arrow">
-              Explore our work
-            </ButtonLink>
-          </div>
-        </motion.div>
-      </main>
+        </div>
+      </section>
     );
   }
 
   return (
-    <main className="relative min-h-screen overflow-x-clip pt-28 pb-16 sm:pt-32">
-      <Aurora />
-      <div aria-hidden className="grid-noise pointer-events-none absolute inset-0 opacity-20" />
-
-      <div className="shell relative grid gap-10 lg:grid-cols-[22rem_1fr] lg:gap-14">
-        {/* process column */}
-        <aside className="lg:sticky lg:top-28 lg:self-start">
-          <span className="eyebrow">
-            <span className="h-[5px] w-[5px] rounded-full bg-brand-400 shadow-[0_0_12px_2px_rgba(43,108,255,0.8)]" />
+    <>
+      <section className="on-ink bg-site-ink text-white">
+        <div className="shell py-12 sm:py-14">
+          <p className="text-[0.75rem] font-semibold tracking-[0.14em] text-site-blue-bright uppercase">
             Start a project
-          </span>
-          <h1 className="display mt-5 text-[clamp(2rem,4.6vw,2.9rem)] text-white">
-            Let&apos;s create <span className="text-gradient">something amazing</span>
-          </h1>
-
-          <div className="mt-8 h-[3px] w-full overflow-hidden rounded-full bg-white/8">
-            <motion.div
-              className="h-full rounded-full bg-gradient-to-r from-brand-600 via-brand-400 to-brand-200"
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.6, ease: EASE.swift }}
-            />
-          </div>
-          <p className="mt-3 text-[0.75rem] tracking-[0.2em] text-white/55 uppercase">
-            Step {step + 1} of {steps.length}
           </p>
+          <h1 className="mt-3 text-[clamp(1.9rem,4vw,2.75rem)] leading-tight font-semibold">
+            Tell us about your project
+          </h1>
+          <p className="mt-4 max-w-2xl text-[1.05rem] leading-relaxed text-site-ink-fg-muted">
+            Six short steps, about five minutes. Your answers are saved in this browser as you go, so you can come back
+            and finish later.
+          </p>
+        </div>
+      </section>
 
-          <ol className="mt-8 hidden space-y-1 lg:block">
-            {steps.map((item, index) => {
-              const done = index < step;
-              const active = index === step;
-              return (
-                <li key={item.id}>
-                  <button
-                    type="button"
-                    onClick={() => go(index)}
-                    disabled={index > step}
-                    className={cn(
-                      "group flex w-full items-center gap-3.5 rounded-[28px] px-3 py-3 text-left transition-all duration-500",
-                      active && "border border-brand-400/35 bg-brand-500/10",
-                      !active && "border border-transparent hover:bg-white/[0.03]",
-                      index > step && "cursor-not-allowed opacity-45",
-                    )}
-                  >
-                    <span
+      <section className="bg-bg-subtle py-12 sm:py-16">
+        <div className="shell grid gap-8 lg:grid-cols-[18rem_1fr] lg:gap-12">
+          <aside className="lg:sticky lg:top-24 lg:self-start">
+            <div
+              className="h-1.5 w-full overflow-hidden rounded-full bg-border"
+              role="progressbar"
+              aria-label="Brief progress"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(progress)}
+            >
+              <div className="h-full bg-brand transition-[width] duration-300" style={{ width: `${progress}%` }} />
+            </div>
+            <p className="mt-3 text-[0.875rem] font-medium text-fg-muted">
+              Step {step + 1} of {steps.length}
+            </p>
+
+            <ol className="mt-6 hidden space-y-1 lg:block">
+              {steps.map((item, index) => {
+                const done = index < step;
+                const active = index === step;
+                return (
+                  <li key={item.id}>
+                    <button
+                      type="button"
+                      onClick={() => go(index)}
+                      disabled={index > step}
+                      aria-current={active ? "step" : undefined}
                       className={cn(
-                        "grid h-7 w-7 shrink-0 place-items-center rounded-full border text-[0.7rem] font-semibold transition-all duration-500",
-                        done
-                          ? "border-brand-400/60 bg-brand-500 text-white"
-                          : active
-                            ? "border-brand-400 bg-brand-500/20 text-brand-100"
-                            : "border-white/15 text-white/55",
+                        "flex w-full items-center gap-3 rounded-[var(--radius-m)] px-3 py-2.5 text-left transition-colors",
+                        active ? "bg-white shadow-[var(--shadow-s)]" : "hover:bg-white/70",
+                        index > step && "cursor-not-allowed hover:bg-transparent",
                       )}
                     >
-                      {done ? <Icon name="check" className="h-3.5 w-3.5" strokeWidth={3} /> : index + 1}
-                    </span>
-                    <span className="min-w-0">
                       <span
                         className={cn(
-                          "block truncate text-[0.88rem] transition-colors",
-                          active ? "text-white" : "text-white/55",
+                          "grid h-7 w-7 shrink-0 place-items-center rounded-full border text-[0.8rem] font-semibold",
+                          done
+                            ? "border-brand bg-brand text-white"
+                            : active
+                              ? "border-brand bg-white text-brand"
+                              : "border-border-strong bg-white text-fg-subtle",
                         )}
                       >
+                        {done ? <Icon name="check" className="h-3.5 w-3.5" strokeWidth={3} /> : index + 1}
+                      </span>
+                      <span className={cn("text-[0.9rem]", active ? "font-semibold text-fg" : "text-fg-muted")}>
                         {item.label}
                       </span>
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ol>
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
 
-          {/* live summary */}
-          <div className="mt-8 rounded-[36px] border border-white/8 bg-white/[0.02] p-5">
-            <p className="text-[0.7rem] tracking-[0.2em] text-white/55 uppercase">Your brief</p>
-            <dl className="mt-4 space-y-3">
-              {summary.map((row) => (
-                <div key={row.label} className="flex items-start justify-between gap-4 text-[0.82rem]">
-                  <dt className="shrink-0 text-white/55">{row.label}</dt>
-                  <AnimatePresence mode="wait">
-                    <motion.dd
-                      key={row.value || "empty"}
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -6 }}
-                      transition={{ duration: 0.3 }}
-                      className={cn("truncate text-right", row.value ? "text-white/80" : "text-white/55")}
-                    >
+            <div className="mt-6 hidden rounded-[var(--radius-l)] border border-border bg-white p-5 lg:block">
+              <p className="text-[0.8rem] font-semibold tracking-[0.12em] text-fg uppercase">Your brief</p>
+              <dl className="mt-4 space-y-2.5">
+                {summary.map((row) => (
+                  <div key={row.label} className="flex items-start justify-between gap-4 text-[0.85rem]">
+                    <dt className="shrink-0 text-fg-muted">{row.label}</dt>
+                    <dd className={cn("truncate text-right", row.value ? "text-fg" : "text-fg-subtle")}>
                       {row.value || "—"}
-                    </motion.dd>
-                  </AnimatePresence>
-                </div>
-              ))}
-            </dl>
-          </div>
-        </aside>
-
-        {/* step column */}
-        <section className="relative">
-          <div className="relative overflow-hidden rounded-[1.6rem] border border-white/10 bg-[#070d1d]/85 p-6 backdrop-blur-xl sm:p-9">
-            <div
-              aria-hidden
-              className="pointer-events-none absolute -top-28 -right-24 h-72 w-72 rounded-full blur-[110px]"
-              style={{ background: "radial-gradient(circle, rgba(43,108,255,0.2), transparent 70%)" }}
-            />
-
-            <div className="relative flex items-start justify-between gap-6">
-              <div>
-                <p className="font-mono text-[0.72rem] text-brand-300">STEP {String(step + 1).padStart(2, "0")}</p>
-                <h2 className="display mt-2.5 text-[clamp(1.4rem,3vw,2rem)] text-white">{steps[step].label}</h2>
-                <p className="mt-2 text-[0.88rem] text-white/60">{steps[step].hint}</p>
-              </div>
-              <div className="hidden gap-1.5 sm:flex">
-                {steps.map((s, i) => (
-                  <span
-                    key={s.id}
-                    className={cn(
-                      "h-1 rounded-full transition-all duration-500",
-                      i === step ? "w-7 bg-brand-400" : i < step ? "w-3 bg-brand-600" : "w-3 bg-white/15",
-                    )}
-                  />
+                    </dd>
+                  </div>
                 ))}
+              </dl>
+            </div>
+          </aside>
+
+          <div>
+            <div className="relative rounded-[var(--radius-l)] border border-border bg-white p-6 shadow-[var(--shadow-s)] sm:p-9">
+              <p className="text-[0.85rem] font-semibold text-brand">Step {step + 1}</p>
+              <h2 className="mt-1.5 text-[clamp(1.35rem,2.6vw,1.75rem)] font-semibold text-fg">{steps[step].label}</h2>
+              <p className="mt-1.5 text-[0.95rem] text-fg-muted">{steps[step].hint}</p>
+
+              <div className="mt-7 min-h-[20rem]">
+                {step === 0 ? (
+                  <div className="grid gap-3">
+                    {needOptions.map((option) => (
+                      <OptionCard
+                        key={option.value}
+                        selected={form.need === option.value}
+                        onClick={() => set("need", option.value)}
+                        title={option.label}
+                        hint={option.hint}
+                      />
+                    ))}
+                  </div>
+                ) : null}
+
+                {step === 1 ? (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {typeOptions.map((option) => (
+                      <OptionCard
+                        key={option.value}
+                        selected={form.projectTypes.includes(option.value)}
+                        onClick={() => toggleType(option.value)}
+                        title={option.label}
+                        hint={option.hint}
+                        icon={option.icon}
+                        multi
+                      />
+                    ))}
+                  </div>
+                ) : null}
+
+                {step === 2 ? (
+                  <div className="space-y-5">
+                    <TextField
+                      label="Project name"
+                      placeholder="A working title is fine"
+                      value={form.title}
+                      onChange={(e) => set("title", e.target.value)}
+                    />
+                    <TextArea
+                      label="What are you trying to achieve?"
+                      placeholder="Describe the product, the users, the problem and anything that already exists."
+                      value={form.description}
+                      onChange={(e) => set("description", e.target.value)}
+                    />
+                    <p className="text-[0.85rem] text-fg-subtle">
+                      Tip: the clearer the goal, the more useful our first reply.
+                    </p>
+                  </div>
+                ) : null}
+
+                {step === 3 ? (
+                  <div className="space-y-8">
+                    <fieldset>
+                      <legend className="mb-3 text-[0.9rem] font-semibold text-fg">Budget range</legend>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {budgetOptions.map((option) => (
+                          <OptionCard
+                            key={option.value}
+                            selected={form.budget === option.value}
+                            onClick={() => set("budget", option.value)}
+                            title={option.label}
+                            compact
+                          />
+                        ))}
+                      </div>
+                    </fieldset>
+                    <fieldset>
+                      <legend className="mb-3 text-[0.9rem] font-semibold text-fg">Timeline</legend>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {timelineOptions.map((option) => (
+                          <OptionCard
+                            key={option.value}
+                            selected={form.timeline === option.value}
+                            onClick={() => set("timeline", option.value)}
+                            title={option.label}
+                            compact
+                          />
+                        ))}
+                      </div>
+                    </fieldset>
+                  </div>
+                ) : null}
+
+                {step === 4 ? (
+                  <div className="grid gap-5 sm:grid-cols-2">
+                    <TextField
+                      label="Full name"
+                      value={form.contactName}
+                      onChange={(e) => set("contactName", e.target.value)}
+                      autoComplete="name"
+                    />
+                    <TextField
+                      label="Email address"
+                      type="email"
+                      value={form.contactEmail}
+                      onChange={(e) => set("contactEmail", e.target.value)}
+                      autoComplete="email"
+                    />
+                    <TextField
+                      label="Phone"
+                      hint="Optional"
+                      value={form.contactPhone}
+                      onChange={(e) => set("contactPhone", e.target.value)}
+                      autoComplete="tel"
+                    />
+                    <TextField
+                      label="Company"
+                      hint="Optional"
+                      value={form.company}
+                      onChange={(e) => set("company", e.target.value)}
+                      autoComplete="organization"
+                    />
+                  </div>
+                ) : null}
+
+                {step === 5 ? (
+                  <div>
+                    <dl className="divide-y divide-border border-y border-border">
+                      {summary.map((row) => (
+                        <div key={row.label} className="flex items-start justify-between gap-6 py-3.5">
+                          <dt className="text-[0.9rem] text-fg-muted">{row.label}</dt>
+                          <dd className="max-w-[60%] text-right text-[0.925rem] font-medium text-fg">
+                            {row.value || "—"}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                    <div className="mt-5 rounded-[var(--radius-m)] bg-bg-subtle p-4">
+                      <p className="text-[0.9rem] text-fg-muted">Description</p>
+                      <p className="mt-1.5 text-[0.925rem] leading-relaxed text-fg">{form.description || "—"}</p>
+                    </div>
+                    <p className="mt-5 text-[0.85rem] text-fg-subtle">
+                      By submitting you agree that we may contact you about this enquiry.
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="mt-4" aria-live="polite">
+                <FormStatus status={error ? "error" : "idle"} message={error} />
+              </div>
+
+              <div className="mt-7 flex items-center justify-between gap-4 border-t border-border pt-6">
+                <Button
+                  variant="ghost"
+                  onClick={() => go(step - 1)}
+                  disabled={step === 0 || status === "loading"}
+                  icon="arrowLeft"
+                  iconPosition="left"
+                >
+                  Back
+                </Button>
+
+                {step < steps.length - 1 ? (
+                  <Button size="lg" icon="arrow" onClick={() => go(step + 1)}>
+                    Next step
+                  </Button>
+                ) : (
+                  <Button size="lg" icon="arrow" loading={status === "loading"} onClick={submit}>
+                    {status === "loading" ? "Submitting" : "Submit brief"}
+                  </Button>
+                )}
+              </div>
+
+              {/* Honeypot — off-screen, untabbable, hidden from assistive tech. */}
+              <div aria-hidden="true" className="absolute top-auto -left-[9999px] h-px w-px overflow-hidden">
+                <label htmlFor="brief-website">Website</label>
+                <input
+                  id="brief-website"
+                  type="text"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  value={honeypot}
+                  onChange={(event) => setHoneypot(event.target.value)}
+                />
               </div>
             </div>
 
-            <div className="relative mt-8 min-h-[22rem]">
-              <AnimatePresence mode="wait" custom={direction}>
-                <motion.div
-                  key={step}
-                  custom={direction}
-                  initial={{ opacity: 0, x: direction * 36, filter: "blur(8px)" }}
-                  animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-                  exit={{ opacity: 0, x: direction * -36, filter: "blur(8px)" }}
-                  transition={{ duration: 0.5, ease: EASE.swift }}
-                >
-                  {step === 0 ? (
-                    <div className="grid gap-3">
-                      {needOptions.map((option) => (
-                        <OptionCard
-                          key={option.value}
-                          selected={form.need === option.value}
-                          onClick={() => set("need", option.value)}
-                          title={option.label}
-                          hint={option.hint}
-                        />
-                      ))}
-                    </div>
-                  ) : null}
-
-                  {step === 1 ? (
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {typeOptions.map((option) => (
-                        <OptionCard
-                          key={option.value}
-                          selected={form.projectTypes.includes(option.value)}
-                          onClick={() => toggleType(option.value)}
-                          title={option.label}
-                          hint={option.hint}
-                          icon={option.icon}
-                          multi
-                        />
-                      ))}
-                    </div>
-                  ) : null}
-
-                  {step === 2 ? (
-                    <div className="space-y-5">
-                      <TextField
-                        label="Project name"
-                        placeholder="e.g. Nexus Circle Pulse"
-                        value={form.title}
-                        onChange={(e) => set("title", e.target.value)}
-                      />
-                      <TextArea
-                        label="What are you trying to achieve?"
-                        placeholder="Describe the product, the users, the problem and anything that already exists."
-                        value={form.description}
-                        onChange={(e) => set("description", e.target.value)}
-                      />
-                      <p className="text-[0.76rem] text-white/55">
-                        Tip: the sharper the goal, the sharper our first response.
-                      </p>
-                    </div>
-                  ) : null}
-
-                  {step === 3 ? (
-                    <div className="space-y-8">
-                      <div>
-                        <p className="mb-3 text-[0.72rem] tracking-[0.2em] text-white/55 uppercase">Budget range</p>
-                        <div className="grid gap-3 sm:grid-cols-2">
-                          {budgetOptions.map((option) => (
-                            <OptionCard
-                              key={option.value}
-                              selected={form.budget === option.value}
-                              onClick={() => set("budget", option.value)}
-                              title={option.label}
-                              compact
-                            />
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <p className="mb-3 text-[0.72rem] tracking-[0.2em] text-white/55 uppercase">Timeline</p>
-                        <div className="grid gap-3 sm:grid-cols-2">
-                          {timelineOptions.map((option) => (
-                            <OptionCard
-                              key={option.value}
-                              selected={form.timeline === option.value}
-                              onClick={() => set("timeline", option.value)}
-                              title={option.label}
-                              compact
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  ) : null}
-
-                  {step === 4 ? (
-                    <div className="grid gap-5 sm:grid-cols-2">
-                      <TextField
-                        label="Full name"
-                        placeholder="John Doe"
-                        value={form.contactName}
-                        onChange={(e) => set("contactName", e.target.value)}
-                        autoComplete="name"
-                      />
-                      <TextField
-                        label="Email address"
-                        type="email"
-                        placeholder="you@example.com"
-                        value={form.contactEmail}
-                        onChange={(e) => set("contactEmail", e.target.value)}
-                        autoComplete="email"
-                      />
-                      <TextField
-                        label="Phone"
-                        hint="optional"
-                        placeholder="+250 788 000 000"
-                        value={form.contactPhone}
-                        onChange={(e) => set("contactPhone", e.target.value)}
-                        autoComplete="tel"
-                      />
-                      <TextField
-                        label="Company"
-                        hint="optional"
-                        placeholder="Company or team"
-                        value={form.company}
-                        onChange={(e) => set("company", e.target.value)}
-                        autoComplete="organization"
-                      />
-                    </div>
-                  ) : null}
-
-                  {step === 5 ? (
-                    <div className="space-y-4">
-                      {summary.map((row, index) => (
-                        <motion.div
-                          key={row.label}
-                          initial={{ opacity: 0, y: 14 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.45, ease: EASE.soft, delay: index * 0.06 }}
-                          className="flex items-start justify-between gap-6 border-b border-white/8 pb-4"
-                        >
-                          <span className="text-[0.78rem] tracking-[0.16em] text-white/55 uppercase">{row.label}</span>
-                          <span className="max-w-[60%] text-right text-[0.9rem] text-white/80">{row.value || "—"}</span>
-                        </motion.div>
-                      ))}
-                      <div className="rounded-[28px] border border-white/8 bg-white/[0.02] p-4">
-                        <p className="text-[0.78rem] tracking-[0.16em] text-white/55 uppercase">Description</p>
-                        <p className="mt-2 text-[0.9rem] leading-relaxed text-white/65">{form.description || "—"}</p>
-                      </div>
-                      <p className="text-[0.76rem] text-white/55">
-                        By submitting you agree that MALHOT may contact you about this enquiry.
-                      </p>
-                    </div>
-                  ) : null}
-                </motion.div>
-              </AnimatePresence>
-            </div>
-
-            <div className="relative mt-4">
-              <FormStatus status={error ? "error" : "idle"} message={error} />
-            </div>
-
-            <div className="relative mt-7 flex items-center justify-between gap-4 border-t border-white/8 pt-6">
-              <Button
-                variant="ghost"
-                size="md"
-                magnetic={false}
-                onClick={() => go(step - 1)}
-                disabled={step === 0 || status === "loading"}
-                icon="arrowLeft"
-                iconPosition="left"
-              >
-                Back
-              </Button>
-
-              {step < steps.length - 1 ? (
-                <Button size="lg" icon="arrow" onClick={() => go(step + 1)}>
-                  Next step
-                </Button>
-              ) : (
-                <Button size="lg" icon="arrowUpRight" loading={status === "loading"} onClick={submit}>
-                  {status === "loading" ? "Submitting" : "Submit brief"}
-                </Button>
-              )}
-            </div>
-
-            {/* Honeypot — off-screen, untabbable, hidden from assistive tech. */}
-            <div aria-hidden="true" className="absolute top-auto -left-[9999px] h-px w-px overflow-hidden">
-              <label htmlFor="brief-website">Website</label>
-              <input
-                id="brief-website"
-                type="text"
-                tabIndex={-1}
-                autoComplete="off"
-                value={honeypot}
-                onChange={(event) => setHoneypot(event.target.value)}
-              />
-            </div>
+            <p className="mt-6 text-[0.9rem] text-fg-muted">
+              Prefer to write to us?{" "}
+              <Link href="/contact" className="font-medium text-brand hover:underline">
+                Send a message instead
+              </Link>
+            </p>
           </div>
-
-          <p className="mt-6 text-center text-[0.8rem] text-white/55 lg:text-left">
-            Prefer email?{" "}
-            <Link href="/contact" className="text-brand-300 transition hover:text-brand-200">
-              Contact us directly
-            </Link>
-          </p>
-        </section>
-      </div>
-    </main>
+        </div>
+      </section>
+    </>
   );
 }
 
@@ -644,64 +585,42 @@ function OptionCard({
   compact?: boolean;
 }) {
   return (
-    <motion.button
+    <button
       type="button"
       onClick={onClick}
-      whileTap={{ scale: 0.985 }}
+      aria-pressed={selected}
       className={cn(
-        "group relative flex w-full items-center gap-4 overflow-hidden rounded-[28px] border px-4 text-left transition-all duration-500",
-        compact ? "py-3.5" : "py-4",
-        selected
-          ? "border-brand-400/70 bg-brand-500/12 shadow-[0_18px_50px_-30px_rgba(43,108,255,1)]"
-          : "border-white/10 bg-white/[0.025] hover:border-white/25 hover:bg-white/[0.05]",
+        "flex w-full items-center gap-4 rounded-[var(--radius-m)] border px-4 text-left transition-colors",
+        compact ? "py-3" : "py-4",
+        selected ? "border-brand bg-brand-subtle" : "border-border-strong bg-white hover:border-fg-subtle",
       )}
     >
-      {selected ? (
-        <motion.span
-          layoutId={undefined}
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(70%_100%_at_0%_50%,rgba(43,108,255,0.18),transparent_70%)]"
-        />
-      ) : null}
-
       {icon ? (
         <span
           className={cn(
-            "relative grid h-10 w-10 shrink-0 place-items-center rounded-[20px] border transition-all duration-500",
-            selected
-              ? "border-brand-400/60 bg-brand-500/20 text-brand-100"
-              : "border-white/10 bg-white/[0.03] text-white/60",
+            "grid h-10 w-10 shrink-0 place-items-center rounded-[var(--radius-m)]",
+            selected ? "bg-brand text-white" : "bg-bg-subtle text-fg-muted",
           )}
         >
-          <Icon name={icon} className="h-4.5 w-4.5" />
+          <Icon name={icon} className="h-5 w-5" />
         </span>
       ) : null}
 
-      <span className="relative min-w-0 flex-1">
-        <span className={cn("block text-[0.95rem]", selected ? "text-white" : "text-white/80")}>{title}</span>
-        {hint ? <span className="mt-1 block truncate text-[0.78rem] text-white/55">{hint}</span> : null}
+      <span className="min-w-0 flex-1">
+        <span className="block text-[0.95rem] font-medium text-fg">{title}</span>
+        {hint ? <span className="mt-0.5 block text-[0.85rem] text-fg-muted">{hint}</span> : null}
       </span>
 
       <span
+        aria-hidden
         className={cn(
-          "relative grid h-6 w-6 shrink-0 place-items-center transition-all duration-500",
-          multi ? "rounded-[14px]" : "rounded-full",
-          selected ? "border border-brand-400 bg-brand-500 text-white" : "border border-white/18 text-transparent",
+          "grid h-5 w-5 shrink-0 place-items-center border",
+          multi ? "rounded-[var(--radius-s)]" : "rounded-full",
+          selected ? "border-brand bg-brand text-white" : "border-border-strong bg-white text-transparent",
         )}
       >
-        <AnimatePresence>
-          {selected ? (
-            <motion.span
-              initial={{ scale: 0.4, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.4, opacity: 0 }}
-              transition={{ duration: 0.22 }}
-            >
-              <Icon name="check" className="h-3.5 w-3.5" strokeWidth={3} />
-            </motion.span>
-          ) : null}
-        </AnimatePresence>
+        <Icon name="check" className="h-3 w-3" strokeWidth={3} />
       </span>
-    </motion.button>
+    </button>
   );
 }
