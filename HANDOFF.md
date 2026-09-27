@@ -1,27 +1,26 @@
 # HANDOFF
 
 ## Current Task
-**OS overhaul (started 2026-09-27).** The owner judged the OS unfinished and unprofessional: "MT" instead of a logo,
-a home page with one big project card and no stats, a card-grid My Tasks with side sheets instead of task pages, a
-one-long-page project view with a poor Kanban, and no Timeline, Documents, Photos or Analytics. Agreed plan, in order:
-
-1. **Done (uncommitted):** sidebar logo, dashboard, task pages, My Tasks, phone layout for the whole OS shell.
-2. **Next: Projects.** Cleaner list with progress/task counts; project page split into tab routes
-   `/os/projects/[key]/{board,timeline,documents,photos,analytics,team,settings}` under a shared layout; Kanban rebuilt
-   with drag-and-drop (keyboard move too). The task page's Delete currently redirects to `/os/projects/[key]`; point it
-   at `/board` once that exists.
-3. Timeline: per-project Gantt-lite + `/os/timeline`, including milestone create/edit (no milestone UI exists yet).
-4. Analytics tab, Documents (**owner chose uploaded files**, not an in-app editor), Photos. Both need a migration and a
-   private bucket.
+**OS overhaul, steps 2 to 4 (2026-09-27), uncommitted.** Owner asked for: a better project list, the project split
+into many purposeful pages (documents, progress, team, timeline, MVP, detail, milestone pages and more), a proper
+Kanban, working Ctrl+K, a far bigger My Tasks with per-task pages, global Timeline/Documents, and (mid-task) a
+Documents generator for professional letterhead documents (contracts, offer letters…) with the logo.
 
 ## Status
-Step 1 verified in a browser (Playwright, headless: the Chrome extension was not connected) as a temporary admin with a
-sample project, light + dark, 1440px + 390px; title/priority edits, row → task page and complete-from-list all passed.
-Temp admin and project deleted afterwards (0 rows left). Format, lint, typecheck, 424 unit tests, build all pass.
+**Built and verified; waiting on one migration.** Everything except saving/uploading documents works on the current
+database. `supabase/migrations/20260927120000_project_documents.sql` (table `project_documents` + private bucket
+`project-files` + storage policies) is **not applied**: no DB credentials on this machine. Until it is, Documents pages
+show a "database update needed" notice and the generator still prints / saves PDFs. Apply it (SQL editor or
+`supabase db push`), then regenerate `types/database.ts` (hand-edited for the new table + `project_file_project`).
+Upload/save/delete/download of documents is therefore **untested against a real database**.
 
-Still open from before: migration `20260926120000_project_showcase.sql` is **not applied to production**, because the
-Release workflow lacks `SUPABASE_PROJECT_REF` / `SUPABASE_ACCESS_TOKEN` / `SUPABASE_DB_PASSWORD` /
-`VERCEL_DEPLOY_HOOK_URL`. CI's types-drift check is broken (formatting mismatch; pre-existing).
+Verified in Playwright (dev server :3100) as a temp admin with sample project ZQ: every tab at 1440px, key pages at
+390px and dark mode; Ctrl+K open, search, Enter to a task; card move via menu and via drag (stepped mouse); task-page
+stepper; new task; new milestone; generator live preview and print output. Temp users + ZQ deleted (only RS, AS left).
+Format, lint, typecheck, 489 unit tests, production build all pass.
+
+Still open from before: the CI types-drift check is broken (pre-existing). The showcase migration now IS applied
+(`project_showcases` answers on the live REST API).
 
 ## Progress
 ### Phase 3 (in progress)

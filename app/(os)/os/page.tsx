@@ -1,16 +1,6 @@
-import {
-  AlertTriangle,
-  ArrowRight,
-  CalendarClock,
-  CheckCircle2,
-  FolderKanban,
-  ListTodo,
-  Plus,
-  Rocket,
-} from "lucide-react";
+import { AlertTriangle, CalendarClock, CheckCircle2, FolderKanban, ListTodo, Plus, Rocket } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import type { ReactNode } from "react";
 
 import { BarList, ColumnChart } from "@/components/os/charts";
 import { DueDate, ProjectKey } from "@/components/os/data-display";
@@ -18,6 +8,7 @@ import { EmptyState } from "@/components/os/empty-state";
 import { ErrorState } from "@/components/os/error-state";
 import { StatRow, StatTile } from "@/components/os/metrics";
 import { PageBody, PageHeader } from "@/components/os/page-header";
+import { Panel, PanelLink } from "@/components/os/panel";
 import { ProjectStatusBadge } from "@/components/os/status-badge";
 import { UserAvatar } from "@/components/os/user-menu.client";
 import { Button } from "@/components/ui/button";
@@ -375,47 +366,6 @@ function TeamLoad({ people }: { people: DashboardStats["people"] }) {
         </li>
       ))}
     </ul>
-  );
-}
-
-function Panel({
-  title,
-  description,
-  action,
-  className,
-  children,
-}: {
-  title: string;
-  description?: string;
-  action?: ReactNode;
-  className?: string;
-  children: ReactNode;
-}) {
-  return (
-    <section
-      className={`flex min-w-0 flex-col gap-5 rounded-lg border border-border bg-surface p-5 ${className ?? ""}`}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 flex-col gap-0.5">
-          <h2 className="text-base font-semibold tracking-tight">{title}</h2>
-          {description ? <p className="text-[13px] text-fg-subtle">{description}</p> : null}
-        </div>
-        {action}
-      </div>
-      {children}
-    </section>
-  );
-}
-
-function PanelLink({ href, children }: { href: string; children: ReactNode }) {
-  return (
-    <Link
-      href={href}
-      className="flex shrink-0 items-center gap-1 text-[13px] text-fg-muted hover:text-fg hover:underline"
-    >
-      {children}
-      <ArrowRight className="size-3.5" aria-hidden="true" />
-    </Link>
   );
 }
 
