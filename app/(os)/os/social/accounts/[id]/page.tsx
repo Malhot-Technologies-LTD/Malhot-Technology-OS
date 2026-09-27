@@ -49,7 +49,11 @@ export default async function SocialAccountPage({ params, searchParams }: PagePr
       >
         <ChevronLeft className="size-4" aria-hidden="true" /> All accounts
       </Link>
-      <OutcomeBanner outcome={typeof query.instagram === "string" ? query.instagram : undefined} />
+      <OutcomeBanner
+        outcome={typeof query.instagram === "string" ? query.instagram : undefined}
+        step={typeof query.step === "string" ? query.step : undefined}
+        detail={typeof query.detail === "string" ? query.detail : undefined}
+      />
       {isInstagram ? (
         connections?.missing ? (
           <SocialSetupNotice migration="20260927170000_social_connections.sql" />

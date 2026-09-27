@@ -48,13 +48,18 @@ export async function GET(request: NextRequest) {
     .maybeSingle();
   if (!account || account.platform !== "instagram") return finish(`${accountPage}?instagram=not_instagram`);
 
+  // Which step failed, so the page can say more than "refused".
+  let step = "settings";
   try {
     const appId = requireServerEnv("INSTAGRAM_APP_ID");
     const appSecret = requireServerEnv("INSTAGRAM_APP_SECRET");
     const key = requireServerEnv("SOCIAL_TOKEN_KEY");
 
+    step = "code";
     const short = await exchangeCode({ appId, appSecret, redirectUri: redirectUri(), code: params.get("code")! });
+    step = "long_lived";
     const long = await toLongLived(appSecret, short.accessToken);
+    step = "profile";
     const profile = await getProfile(long.accessToken);
 
     const saved = await saveConnection({
@@ -73,8 +78,11 @@ export async function GET(request: NextRequest) {
     const first = connection ? await syncInstagram(connection) : null;
     return finish(`${accountPage}?instagram=${first?.ok ? "connected" : "connected_sync_failed"}`);
   } catch (error) {
-    if (!(error instanceof InstagramError)) logger.error("social.instagram_connect_failed", { error: String(error) });
-    else logger.warn("social.instagram_connect_refused", { kind: error.kind, message: error.message });
-    return finish(`${accountPage}?instagram=failed`);
+    if (!(error instanceof InstagramError))
+      logger.error("social.instagram_connect_failed", { step, error: String(error) });
+    else logger.warn("social.instagram_connect_refused", { step, kind: error.kind, message: error.message });
+    // Instagram's own words are what make this fixable; they carry no secrets.
+    const detail = error instanceof InstagramError ? error.message : "Unexpected error";
+    return finish(`${accountPage}?instagram=failed&step=${step}&detail=${encodeURIComponent(detail.slice(0, 200))}`);
   }
 }

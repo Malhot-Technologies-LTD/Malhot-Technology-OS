@@ -34,6 +34,9 @@ type GraphErrorBody = { error?: { message?: string; type?: string; code?: number
 
 /** Meta's error codes, in the words the page shows. */
 export function classifyError(status: number, body: unknown): InstagramError {
+  // The login endpoints (api.instagram.com) answer flat: { error_type, code, error_message }.
+  const flat = body as { error_type?: string; error_message?: string } | null;
+  if (typeof flat?.error_message === "string") return new InstagramError(flat.error_message, "other");
   const error = (body as GraphErrorBody | null)?.error;
   const code = error?.code;
   if (code === 190 || error?.type === "OAuthException" || status === 401)

@@ -25,7 +25,8 @@ async function documentXml(key: string): Promise<string> {
   return zip.file("word/document.xml")!.async("string");
 }
 
-describe("Word export", () => {
+// Loading the Word library cold takes a few seconds when the whole suite runs in parallel.
+describe("Word export", { timeout: 20_000 }, () => {
   it("sets the page to A4", async () => {
     const xml = await documentXml("offer_letter");
     expect(xml).toMatch(/<w:pgSz w:w="11906" w:h="16838"/);

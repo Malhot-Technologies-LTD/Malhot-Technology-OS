@@ -54,6 +54,16 @@ describe("errors", () => {
     expect(classifyError(400, { error: { code: 100, message: "metric" } }).kind).toBe("unsupported");
     expect(classifyError(500, null).kind).toBe("other");
   });
+
+  it("keeps the reason from the login endpoints' flat error shape", () => {
+    const error = classifyError(400, {
+      error_type: "OAuthException",
+      code: 400,
+      error_message: "Error validating verification code. Please make sure your redirect_uri is identical",
+    });
+    expect(error.message).toContain("redirect_uri is identical");
+    expect(error.kind).toBe("other");
+  });
 });
 
 describe("reading figures", () => {

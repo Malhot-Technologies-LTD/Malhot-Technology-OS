@@ -37,13 +37,31 @@ const TONE_CLASS = {
   danger: "border-status-danger-border bg-status-danger-bg text-status-danger-fg",
 };
 
-export function OutcomeBanner({ outcome }: { outcome: string | undefined }) {
+const STEP: Record<string, string> = {
+  settings: "reading the app keys on this server",
+  code: "trading Instagram's login code for access (check the redirect URL and the Instagram app secret)",
+  long_lived: "turning the 1-hour access into 60-day access",
+  profile: "reading the account's profile",
+};
+
+export function OutcomeBanner({
+  outcome,
+  step,
+  detail,
+}: {
+  outcome: string | undefined;
+  step?: string;
+  detail?: string;
+}) {
   const meta = outcome ? OUTCOME[outcome] : undefined;
   if (!meta) return null;
+  const where = step ? STEP[step] : undefined;
   return (
-    <p role="status" className={`rounded-md border px-4 py-3 text-sm ${TONE_CLASS[meta.tone]}`}>
-      {meta.text}
-    </p>
+    <div role="status" className={`flex flex-col gap-1 rounded-md border px-4 py-3 text-sm ${TONE_CLASS[meta.tone]}`}>
+      <p>{meta.text}</p>
+      {where ? <p>Failed while {where}.</p> : null}
+      {detail ? <p className="font-mono text-xs break-words">Instagram said: {detail.slice(0, 200)}</p> : null}
+    </div>
   );
 }
 

@@ -24,10 +24,11 @@ const serverSchema = z.object({
   GITHUB_APP_WEBHOOK_SECRET: z.string().optional(),
   GITHUB_STATE_SECRET: z.string().optional(),
   CRON_SECRET: z.string().optional(),
-  INSTAGRAM_APP_ID: z.string().optional(),
-  INSTAGRAM_APP_SECRET: z.string().optional(),
+  // Trimmed: values pasted into a dashboard often carry a newline, and a secret with one is refused.
+  INSTAGRAM_APP_ID: z.string().trim().optional(),
+  INSTAGRAM_APP_SECRET: z.string().trim().optional(),
   /** 32 random bytes, base64: encrypts platform access tokens at rest (lib/crypto/secret-box.ts). */
-  SOCIAL_TOKEN_KEY: z.string().optional(),
+  SOCIAL_TOKEN_KEY: z.string().trim().optional(),
   INQUIRY_IP_SALT: z.string().optional(),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 });
