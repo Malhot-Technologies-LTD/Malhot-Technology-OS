@@ -1,4 +1,4 @@
-import { CheckCircle2, Circle, Flag, ListChecks, ListTodo, Target, Users } from "lucide-react";
+import { CheckCircle2, Circle, Flag, FolderGit2, ListChecks, ListTodo, Target, Users } from "lucide-react";
 import type { Metadata } from "next";
 
 import { DueDate, KeyValueList, ProgressBar, ProjectKey } from "@/components/os/data-display";
@@ -6,6 +6,8 @@ import { ErrorState } from "@/components/os/error-state";
 import { PageBody, PageHeader } from "@/components/os/page-header";
 import { GoalStatusBadge, MvpStatusBadge, PriorityBadge, ProjectStatusBadge } from "@/components/os/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RepositoryList } from "@/features/github/components/repository-list.client";
+import { listProjectRepositories } from "@/features/github/queries";
 import { QuickAdd } from "@/features/projects/components/quick-add.client";
 import { StatusActions } from "@/features/projects/components/status-actions.client";
 import { ProjectTeam } from "@/features/projects/components/project-team.client";
@@ -69,11 +71,12 @@ export default async function ProjectOverviewPage({ params }: PageProps<"/os/pro
     );
   }
 
-  const [ctx, planning, team, tasks] = await Promise.all([
+  const [ctx, planning, team, tasks, repositories] = await Promise.all([
     getProjectContext(project, viewer),
     getProjectPlanning(project.id),
     listProjectMembers(project.id),
     listProjectTasks(project.id),
+    listProjectRepositories(project.id),
   ]);
   const canManageTeam = can(viewer, "project.manage_members", ctx);
   // Only a manager sees the picker, so only a manager pays for the query.
@@ -269,6 +272,28 @@ export default async function ProjectOverviewPage({ params }: PageProps<"/os/pro
                   assignable={assignable}
                   canManage={canManageTeam}
                   viewerUserId={viewer.userId}
+                />
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <FolderGit2 className="size-4 text-fg-muted" aria-hidden="true" />
+                Code
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {/* Same rule as the team card: a failed read is shown as one
+                  rather than reported as "no repository connected". */}
+              {repositories.error ? (
+                <ErrorState {...describeQueryFailure(repositories.error)} />
+              ) : (
+                <RepositoryList
+                  projectId={project.id}
+                  repositories={repositories.data ?? []}
+                  canManage={can(viewer, "github.connect", ctx) && writable}
                 />
               )}
             </CardContent>

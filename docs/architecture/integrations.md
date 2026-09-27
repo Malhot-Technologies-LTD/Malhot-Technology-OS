@@ -21,13 +21,30 @@ Library: `octokit` (`@octokit/app`, `@octokit/webhooks`), well-maintained, handl
 ### Data model
 `github_installations`, `github_repositories`, `github_issues`, `github_pull_requests`, `task_github_links`, `deployments`, `webhook_events` — see `database/schema.md`.
 
+**What exists today.** Only `github_repositories`, and only the half of it a
+person can fill in by hand: a manager pastes a repository address on the project
+page and the OS records `owner/name`, which is enough to answer "where does this
+project's code live" — the question that was unanswerable before. The sync
+columns are null and the interface says "not synced yet" instead of guessing.
+
+Disconnecting is a delete of that row. It is worth being precise that this is all
+it can ever be: nothing in the OS holds a credential that could change anything
+on github.com, and the App permissions above are read-only by intent, so no
+button here can delete a repository. The confirmation dialog says so, because
+"Delete" beside a repository name does not read that way on its own.
+
+Connecting by name first is deliberate rather than a shortcut — the App turns
+`owner/name` into a synced repository, so nothing has to be re-entered when it
+lands.
+
 The OS keeps a **cache**, not a copy: enough fields to list, filter and link. Everything else links out to GitHub. Cache freshness is webhook-driven with a manual "Sync now" and a nightly reconciliation (cron, per repository: open issues/PRs pages) for missed deliveries.
 
 ### Capabilities by phase
 
 | Capability | v1 | Later |
 |---|---|---|
-| Install app, connect repo to project | ✓ | |
+| Connect repo to project by name, disconnect it | **done** | |
+| Install app | ✓ | |
 | Repository info (default branch, visibility, last push) | ✓ | |
 | Open/closed issues list | ✓ | Create issue from task |
 | PR list with state, draft, branches, author | ✓ | Review status, checks |

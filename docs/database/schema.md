@@ -410,21 +410,32 @@ Indexes: `(user_id, created_at desc)`, `(user_id) where read_at is null`.
 | suspended_at, deleted_at | timestamptz | |
 | created_at, updated_at | ts | |
 
-**github_repositories**
+**github_repositories** — built, partially (migration `20260927100000`)
+
+Connecting a repository by name shipped ahead of the GitHub App, so the columns
+a sync would fill are nullable and `installation_id` does not exist yet; the App
+migration adds it. `full_name` and `html_url` are the only facts a person can
+supply without asking GitHub, so they are the only ones required.
+
 | column | type | notes |
 |---|---|---|
 | id | id | |
 | project_id | uuid ! → projects on delete cascade | |
-| installation_id | uuid ! → github_installations | |
-| repo_id | bigint ! | GitHub numeric id |
-| full_name | text ! | owner/name |
-| default_branch | text ! | |
-| html_url | text ! | |
-| is_private | boolean ! | |
-| last_synced_at | timestamptz | |
-| created_by | uuid → profiles | |
+| full_name | text ! | owner/name, checked against `^[\w.-]+/[\w.-]+$` |
+| html_url | text ! | must start `https://` |
+| repo_id | bigint | GitHub numeric id; null until synced |
+| default_branch | text | null until synced — the interface says "not synced yet" rather than guessing `main` |
+| is_private | boolean | null until synced |
+| last_synced_at | timestamptz | null means nobody has asked GitHub |
+| created_by | uuid ! → profiles | |
 | created_at, updated_at | ts | |
-| unique (project_id, repo_id); unique (repo_id) | | one project per repo in v1 |
+| unique (lower(full_name)); unique (repo_id) where not null | | one project per repo in v1 |
+
+RLS: select to any project member; insert and delete to `can_manage_project`.
+No update policy — a connection is made or removed, never edited. Deleting a row
+disconnects the repository from the project and does nothing on github.com.
+
+**github_installations** and the tables below are designed, not built.
 
 **github_issues**
 | column | type | notes |

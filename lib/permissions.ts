@@ -87,6 +87,7 @@ export type Action =
   | "document.archive"
   | "document.delete"
   | "github.connect"
+  | "github.disconnect"
   | "github.sync"
   | "github.link"
   | "deployment.record"
@@ -253,6 +254,10 @@ export function can(
 
     // GitHub and deployments
     case "github.connect":
+    // Whoever may connect a repository may take it off again. Splitting the two
+    // would mean a manager could point a project at the wrong repository and
+    // then need someone else to undo it.
+    case "github.disconnect":
       return isManager(group);
     case "github.sync":
     case "github.link":

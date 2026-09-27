@@ -77,6 +77,63 @@ export type Database = {
           },
         ]
       }
+      github_repositories: {
+        Row: {
+          created_at: string
+          created_by: string
+          default_branch: string | null
+          full_name: string
+          html_url: string
+          id: string
+          is_private: boolean | null
+          last_synced_at: string | null
+          project_id: string
+          repo_id: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          default_branch?: string | null
+          full_name: string
+          html_url: string
+          id?: string
+          is_private?: boolean | null
+          last_synced_at?: string | null
+          project_id: string
+          repo_id?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          default_branch?: string | null
+          full_name?: string
+          html_url?: string
+          id?: string
+          is_private?: boolean | null
+          last_synced_at?: string | null
+          project_id?: string
+          repo_id?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "github_repositories_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "github_repositories_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       goals: {
         Row: {
           created_at: string

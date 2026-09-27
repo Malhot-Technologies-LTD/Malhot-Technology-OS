@@ -11,6 +11,8 @@ const UNIQUE_MESSAGES: Record<string, string> = {
   projects_organization_id_key_key: "That project key is already used by another project.",
   project_members_project_id_user_id_key: "That person is already on this project.",
   project_showcases_slug_key: "Another project on the website already uses that address.",
+  // One project per repository; see the migration's rationale on auto-linking.
+  github_repositories_full_name_key: "That repository is already connected to a project.",
 };
 
 const MALHOT_PREFIX = "MALHOT:";
