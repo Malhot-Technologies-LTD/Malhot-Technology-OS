@@ -1,20 +1,10 @@
-import {
-  Activity,
-  CheckCircle2,
-  FilePlus2,
-  Flag,
-  ListPlus,
-  PlayCircle,
-  Target,
-  ThumbsUp,
-  UserPlus,
-} from "lucide-react";
+import { Activity } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
 import { EmptyState } from "@/components/os/empty-state";
 import { ErrorState } from "@/components/os/error-state";
-import { ACTIVITY_VERB, buildActivity, type ActivityKind } from "@/features/projects/activity";
+import { activityChain, buildActivity, groupActivity, runIsComplete } from "@/features/projects/activity";
 import { projectHref } from "@/features/projects/tabs";
 import { listProjectDocuments } from "@/features/documents/queries";
 import { loadMembers, loadPlanning, loadTasks, loadWorkspace } from "@/features/projects/workspace";
@@ -23,26 +13,6 @@ import { describeQueryFailure } from "@/lib/actions/db-errors";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Activity" };
-
-const ICON: Record<ActivityKind, typeof Activity> = {
-  task_created: ListPlus,
-  task_accepted: ThumbsUp,
-  task_started: PlayCircle,
-  task_completed: CheckCircle2,
-  goal_created: Target,
-  mvp_created: Target,
-  milestone_created: Flag,
-  milestone_reached: Flag,
-  member_joined: UserPlus,
-  document_uploaded: FilePlus2,
-};
-
-const TONE: Partial<Record<ActivityKind, string>> = {
-  task_completed: "bg-status-success-bg text-status-success-fg",
-  milestone_reached: "bg-status-success-bg text-status-success-fg",
-  task_started: "bg-status-progress-bg text-status-progress-fg",
-  member_joined: "bg-brand-subtle text-brand",
-};
 
 const FILTERS = [
   { key: "all", label: "Everything", kinds: null },
@@ -58,7 +28,19 @@ const DAY_HEADING = new Intl.DateTimeFormat("en-GB", {
   timeZone: "UTC",
 });
 
-/** What has happened on the project, newest first, grouped by day. */
+/**
+ * What has happened on the project, newest first, grouped by day.
+ *
+ * A timeline rather than a stack of rows, because the feed's subject is *when*.
+ * The rail is the day; each entry hangs off it at one point. The marker fills in
+ * once a run has arrived somewhere final, which is the only thing on the page
+ * carrying colour — a scan down the rail answers "what actually landed today"
+ * without reading a word.
+ *
+ * Held to a reading column rather than the full width of the workspace. Set
+ * loose, a one-line sentence and its timestamp end up at opposite edges of a
+ * 1500px screen with nothing in between to carry the eye across.
+ */
 export default async function ProjectActivityPage({ params, searchParams }: PageProps<"/os/projects/[key]/activity">) {
   const [{ key }, query] = await Promise.all([params, searchParams]);
   const workspace = await loadWorkspace(key);
@@ -97,7 +79,7 @@ export default async function ProjectActivityPage({ params, searchParams }: Page
   const base = `${projectHref(project.key)}/activity`;
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <nav
           aria-label="Filter activity"
@@ -130,41 +112,71 @@ export default async function ProjectActivityPage({ params, searchParams }: Page
           description="Activity appears as tasks move, milestones are reached and people join."
         />
       ) : (
-        <div className="flex flex-col gap-6">
+        <div className="flex max-w-3xl flex-col gap-8">
           {[...days.entries()].map(([day, dayEvents]) => (
             <section key={day} aria-labelledby={`day-${day}`}>
-              <h2 id={`day-${day}`} className="mb-3 text-xs font-semibold tracking-[0.06em] text-fg-subtle uppercase">
+              <h2
+                id={`day-${day}`}
+                className="mb-4 text-[11px] font-semibold tracking-[0.08em] text-fg-subtle uppercase"
+              >
                 {DAY_HEADING.format(new Date(`${day}T00:00:00Z`))}
               </h2>
-              <ol className="flex flex-col divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
-                {dayEvents.map((event) => {
-                  const Icon = ICON[event.kind];
+              {/* Grouped per day, so a run can never span midnight and imply
+                  continuity across a night nobody worked through. */}
+              <ol className="flex flex-col">
+                {groupActivity(dayEvents).map((run) => {
+                  const landed = runIsComplete(run);
+                  const spans = run.from !== run.at;
                   return (
-                    <li key={event.id} className="flex items-center gap-3 px-4 py-3 text-sm">
-                      <span
-                        className={cn(
-                          "flex size-8 shrink-0 items-center justify-center rounded-full bg-bg-subtle text-fg-muted",
-                          TONE[event.kind],
-                        )}
-                      >
-                        <Icon className="size-4" aria-hidden="true" />
-                      </span>
-                      <p className="min-w-0 flex-1">
-                        <span className="font-medium">{event.actor ?? "Someone"}</span>{" "}
-                        <span className="text-fg-muted">{ACTIVITY_VERB[event.kind]}</span>{" "}
-                        {event.subject ? (
-                          event.href ? (
-                            <Link href={event.href} className="font-medium hover:underline">
-                              {event.subject}
+                    <li key={run.id} className="group relative flex gap-3.5">
+                      <div aria-hidden="true" className="relative flex w-2.5 shrink-0 justify-center">
+                        {/* Stops at the last entry: a rail running past the end
+                            would promise more below than there is. */}
+                        <span className="absolute top-4 left-1/2 h-full w-px -translate-x-1/2 bg-border group-last:hidden" />
+                        <span
+                          className={cn(
+                            "relative mt-1.5 size-2.5 rounded-full border",
+                            landed ? "border-status-success-fg bg-status-success-fg" : "border-border-strong bg-bg",
+                          )}
+                        />
+                      </div>
+
+                      <div className="min-w-0 flex-1 pb-6 group-last:pb-0">
+                        <div className="flex items-baseline justify-between gap-3">
+                          <p className="min-w-0 text-[13px] text-fg-muted">
+                            <span className="font-medium text-fg">{run.actor ?? "Someone"}</span>{" "}
+                            {activityChain(run.steps)}
+                          </p>
+                          <time
+                            dateTime={run.at}
+                            /* The range is the honest label for a run; the line
+                               shows where it got to, which is what you scan. */
+                            title={
+                              spans
+                                ? `${time.format(new Date(run.from))} – ${time.format(new Date(run.at))}`
+                                : undefined
+                            }
+                            className="shrink-0 text-xs text-fg-subtle tabular-nums"
+                          >
+                            {time.format(new Date(run.at))}
+                          </time>
+                        </div>
+                        {run.subject ? (
+                          run.href ? (
+                            <Link
+                              href={run.href}
+                              className="mt-0.5 block truncate text-sm font-medium hover:underline"
+                              title={run.subject}
+                            >
+                              {run.subject}
                             </Link>
                           ) : (
-                            <span className="font-medium">{event.subject}</span>
+                            <p className="mt-0.5 truncate text-sm font-medium" title={run.subject}>
+                              {run.subject}
+                            </p>
                           )
                         ) : null}
-                      </p>
-                      <time dateTime={event.at} className="shrink-0 text-xs text-fg-subtle tabular-nums">
-                        {time.format(new Date(event.at))}
-                      </time>
+                      </div>
                     </li>
                   );
                 })}
