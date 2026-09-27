@@ -1,7 +1,7 @@
 # HANDOFF
 
 ## Current Task
-**OS overhaul, steps 2 to 4 (2026-09-27), uncommitted.** Owner asked for: a better project list, the project split
+**OS overhaul, steps 2 to 4 (2026-09-27), pushed in 1d371a7..7d25e28.** Owner asked for: a better project list, the project split
 into many purposeful pages (documents, progress, team, timeline, MVP, detail, milestone pages and more), a proper
 Kanban, working Ctrl+K, a far bigger My Tasks with per-task pages, global Timeline/Documents, and (mid-task) a
 Documents generator for professional letterhead documents (contracts, offer letters…) with the logo.
@@ -127,6 +127,7 @@ Still open from before: the CI types-drift check is broken (pre-existing). The s
 - Next step on resume: see Status (apply migration 20260926120000, verify live). `image.png` is the owner's reference, do not commit it unless asked. Lighthouse was not run for the redesign. Then resume Phase 3 from its unchecked items.
 
 ## Recently Completed
+- 2026-09-27: Fixed Settings → Website save failing with "expected string, received array" (form sent resolver output instead of raw input); pushed in 5a22b39.
 - 2026-09-27: OS step 1: logo, stat dashboard with charts, task pages at /os/tasks/KEY-42, row-based My Tasks, mobile drawer nav.
 - 2026-09-27: Settings → Website: projects, copy and photos on the public site now come from the OS; fake case studies deleted (pending migration + live verification).
 - 2026-09-26: Home intro card replaced with an open two-column section; e2e website suite passes; pushed in 4b4c55b.
