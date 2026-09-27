@@ -1,187 +1,49 @@
-import type { DocumentType } from "@/types/domain";
-
-import {
-  formatMoney,
-  itemTotals,
-  longDate,
-  type Block,
-  type DocumentContent,
-  type Letterhead,
-  type LineItem,
-} from "./content";
+import { formatMoney, itemTotals, longDate, type Block } from "./content";
+import { CONTRACT_TEMPLATES } from "./library/contracts";
+import { FINANCE_TEMPLATES } from "./library/finance";
+import { HR_TEMPLATES } from "./library/hr";
+import { INTERNAL_TEMPLATES } from "./library/internal";
+import { PROJECT_TEMPLATES } from "./library/projects";
+import { SALES_TEMPLATES } from "./library/sales";
+import { SUPPORT_TEMPLATES } from "./library/support";
+import { TECHNICAL_TEMPLATES } from "./library/technical";
 import { ROLE_NAMES, roleProfile, type RoleProfile } from "./roles";
+import {
+  agreementDate,
+  ceoField,
+  agreementDateField,
+  common,
+  company,
+  date,
+  items,
+  lines,
+  money,
+  optional,
+  paragraphs,
+  ref,
+  sections,
+  text,
+  today,
+  type DocumentTemplate,
+  type FieldDef,
+  type TemplateContext,
+  type Values,
+} from "./template-kit";
+
+export {
+  TEMPLATE_CATEGORIES,
+  type DocumentTemplate,
+  type FieldDef,
+  type FieldValue,
+  type TemplateCategory,
+  type TemplateContext,
+  type Values,
+} from "./template-kit";
 
 /**
- * Document templates for the generator (Documents → Generate).
- *
- * Each template names the facts it needs and turns them into a
- * DocumentContent. The wording is a professional starting point written for a
- * company in Rwanda, not legal advice: contracts in particular should be
- * reviewed by a lawyer once before the template is relied on, and the page says
- * so. Nothing here invents facts — anything not filled in renders as a visible
- * [bracketed] gap rather than a plausible-looking default.
+ * The template library: the original templates below, and one file per
+ * category under library/. The building blocks are in template-kit.ts.
  */
-
-export type FieldValue = string | LineItem[];
-export type Values = Record<string, FieldValue>;
-
-type BaseField = {
-  name: string;
-  label: string;
-  required?: boolean;
-  hint?: string;
-  placeholder?: string;
-  wide?: boolean;
-};
-
-export type FieldDef =
-  | (BaseField & { type: "text" | "textarea" | "date" | "number"; default?: (context: TemplateContext) => string })
-  | (BaseField & { type: "select"; options: readonly string[]; default?: (context: TemplateContext) => string })
-  | (BaseField & { type: "items" });
-
-export type TemplateContext = {
-  letterhead: Letterhead;
-  today: string;
-  project?: { key: string; name: string; clientName: string | null } | null;
-};
-
-export type TemplateCategory = "HR & recruitment" | "Clients & legal" | "Finance" | "Projects";
-
-export type DocumentTemplate = {
-  key: string;
-  name: string;
-  category: TemplateCategory;
-  /** Where it files among uploaded documents. */
-  documentType: DocumentType;
-  summary: string;
-  /** Contracts carry a review reminder on the form (never on the printed page). */
-  legal?: boolean;
-  fields: readonly FieldDef[];
-  build: (values: Values, context: TemplateContext) => DocumentContent;
-};
-
-// Helpers ----------------------------------------------------------------------
-
-/** A text value, or a visible [gap] naming what is missing. */
-function text(values: Values, name: string, label: string): string {
-  const value = values[name];
-  return typeof value === "string" && value.trim() !== "" ? value.trim() : `[${label}]`;
-}
-
-function optional(values: Values, name: string): string | null {
-  const value = values[name];
-  return typeof value === "string" && value.trim() !== "" ? value.trim() : null;
-}
-
-function items(values: Values, name: string): LineItem[] {
-  const value = values[name];
-  return Array.isArray(value) ? value : [];
-}
-
-function money(values: Values, name: string, label: string, currency: string): string {
-  const raw = optional(values, name);
-  if (raw === null) return `[${label}]`;
-  const amount = Number(raw.replace(/[, ]/g, ""));
-  return Number.isFinite(amount) ? formatMoney(amount, currency) : raw;
-}
-
-function date(values: Values, name: string, label: string): string {
-  const raw = optional(values, name);
-  return raw ? longDate(raw) : `[${label}]`;
-}
-
-/** Splits a textarea into list items: one per line, bullets and numbering stripped. */
-function lines(values: Values, name: string): string[] {
-  const raw = optional(values, name);
-  if (!raw) return [];
-  return raw
-    .split("\n")
-    .map((line) => line.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, "").trim())
-    .filter(Boolean);
-}
-
-function paragraphs(values: Values, name: string): Block[] {
-  const raw = optional(values, name);
-  if (!raw) return [];
-  return raw
-    .split(/\n{2,}/)
-    .map((paragraph) => paragraph.trim())
-    .filter(Boolean)
-    .map((paragraph) => ({ kind: "paragraph", text: paragraph }) as const);
-}
-
-const today = (context: TemplateContext) => context.today;
-const company = (context: TemplateContext) => context.letterhead.companyName || "the Company";
-/** e.g. MAL/HR/20260927 — dated, deterministic, and easy to make unique by editing. */
-const ref = (prefix: string) => (context: TemplateContext) => `${prefix}/${context.today.replace(/-/g, "")}`;
-
-const common = {
-  reference: (prefix: string): FieldDef => ({
-    name: "reference",
-    label: "Reference",
-    type: "text",
-    default: ref(prefix),
-  }),
-  date: { name: "date", label: "Date", type: "date", default: today } satisfies FieldDef,
-  currency: {
-    name: "currency",
-    label: "Currency",
-    type: "select",
-    options: ["RWF", "USD", "EUR", "KES", "UGX", "TZS"],
-    default: () => "RWF",
-  } satisfies FieldDef,
-  signatory: {
-    name: "signatoryName",
-    label: "Signed for the company by",
-    type: "text",
-    required: true,
-  } satisfies FieldDef,
-  signatoryTitle: {
-    name: "signatoryTitle",
-    label: "Signatory title",
-    type: "text",
-    default: () => "Managing Director",
-  } satisfies FieldDef,
-  governingLaw: {
-    name: "governingLaw",
-    label: "Governing law",
-    type: "text",
-    default: () => "the laws of the Republic of Rwanda",
-  } satisfies FieldDef,
-};
-
-// Templates ------------------------------------------------------------------
-
-/**
- * Contracts follow the company's own agreement format (its developer
- * contract): title and role, AGREEMENT DATE, "entered into between" the
- * parties, CAPS numbered sections and a two-column signature block. The date
- * is left as a line to fill in by hand unless one is given.
- */
-function agreementDate(values: Values): string {
-  const raw = optional(values, "agreementDate");
-  return raw ? longDate(raw) : "";
-}
-
-/** Numbered CAPS section headings, counted in the order they are written. */
-function sections() {
-  let number = 0;
-  return (title: string): Block => ({ kind: "heading", text: `${++number}. ${title.toUpperCase()}` });
-}
-
-const agreementDateField: FieldDef = {
-  name: "agreementDate",
-  label: "Agreement date",
-  type: "date",
-  hint: "Leave empty to sign and date by hand.",
-};
-
-const ceoField: FieldDef = {
-  name: "signatoryName",
-  label: "CEO / signing for the company",
-  type: "text",
-  required: true,
-};
 
 /** The role picker shared by offers and employment agreements (see roles.ts). */
 const roleField: FieldDef = {
@@ -298,7 +160,7 @@ function employmentClauses(
 const offerLetter: DocumentTemplate = {
   key: "offer_letter",
   name: "Offer of employment",
-  category: "HR & recruitment",
+  category: "HR & Recruitment",
   documentType: "other",
   summary: "A job offer in the company's agreement format, worded for the role: duties, pay, start date, acceptance.",
   fields: [
@@ -409,7 +271,7 @@ const offerLetter: DocumentTemplate = {
 const employmentContract: DocumentTemplate = {
   key: "employment_contract",
   name: "Employment agreement",
-  category: "HR & recruitment",
+  category: "HR & Recruitment",
   documentType: "other",
   summary:
     "The company's employment agreement, worded for the role: duties, pay, confidentiality, IP, access, termination.",
@@ -468,7 +330,7 @@ const employmentContract: DocumentTemplate = {
 const internshipAgreement: DocumentTemplate = {
   key: "internship_agreement",
   name: "Internship agreement",
-  category: "HR & recruitment",
+  category: "HR & Recruitment",
   documentType: "other",
   summary: "Placement dates, supervisor, learning goals, stipend and conduct, in the company agreement format.",
   legal: true,
@@ -577,7 +439,7 @@ const internshipAgreement: DocumentTemplate = {
 const employmentCertificate: DocumentTemplate = {
   key: "employment_certificate",
   name: "Certificate of employment",
-  category: "HR & recruitment",
+  category: "HR & Recruitment",
   documentType: "other",
   summary: "Confirms someone works, or worked, at the company: role, dates and optional remarks.",
   fields: [
@@ -629,7 +491,7 @@ const employmentCertificate: DocumentTemplate = {
 const nda: DocumentTemplate = {
   key: "nda",
   name: "Non-disclosure agreement",
-  category: "Clients & legal",
+  category: "Contracts & Legal",
   documentType: "other",
   summary: "A mutual NDA to sign before sharing plans, code or data with a client or partner.",
   legal: true,
@@ -728,7 +590,7 @@ const nda: DocumentTemplate = {
 const serviceAgreement: DocumentTemplate = {
   key: "service_agreement",
   name: "Software services agreement",
-  category: "Clients & legal",
+  category: "Contracts & Legal",
   documentType: "requirements",
   summary: "The contract with a client: scope, deliverables, fees, payment schedule, IP and warranty.",
   legal: true,
@@ -860,7 +722,7 @@ const serviceAgreement: DocumentTemplate = {
 const proposal: DocumentTemplate = {
   key: "project_proposal",
   name: "Project proposal",
-  category: "Clients & legal",
+  category: "Sales & Clients",
   documentType: "project_brief",
   summary: "A proposal for a client: the problem, the approach, phases, timeline and investment.",
   fields: [
@@ -1189,7 +1051,7 @@ const handover: DocumentTemplate = {
 const letter: DocumentTemplate = {
   key: "business_letter",
   name: "Business letter",
-  category: "Clients & legal",
+  category: "Internal",
   documentType: "other",
   summary: "A plain letter on company letterhead, for anything the other templates do not cover.",
   fields: [
@@ -1250,13 +1112,14 @@ export const TEMPLATES: readonly DocumentTemplate[] = [
   billing("invoice"),
   minutes,
   handover,
-];
-
-export const TEMPLATE_CATEGORIES: readonly TemplateCategory[] = [
-  "HR & recruitment",
-  "Clients & legal",
-  "Finance",
-  "Projects",
+  ...SALES_TEMPLATES,
+  ...CONTRACT_TEMPLATES,
+  ...FINANCE_TEMPLATES,
+  ...PROJECT_TEMPLATES,
+  ...TECHNICAL_TEMPLATES,
+  ...HR_TEMPLATES,
+  ...SUPPORT_TEMPLATES,
+  ...INTERNAL_TEMPLATES,
 ];
 
 export function findTemplate(key: string | null | undefined): DocumentTemplate | null {

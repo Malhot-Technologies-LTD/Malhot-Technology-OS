@@ -4,9 +4,13 @@ import {
   AlertTriangle,
   Banknote,
   Briefcase,
+  Building2,
+  Code2,
   ChevronLeft,
   FileSignature,
   FolderKanban,
+  Handshake,
+  LifeBuoy,
   Plus,
   Save,
   Scale,
@@ -23,8 +27,10 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { saveGeneratedDocument } from "@/features/documents/actions";
+import { saveMemberDocument } from "@/features/team/actions";
 import { DocumentPaper } from "@/features/documents/components/document-paper";
-import { A4Frame, DownloadWordButton, PrintButton, PrintCopy } from "@/features/documents/components/print.client";
+import { PagedDocument } from "@/features/documents/components/paged-document.client";
+import { DownloadWordButton, PrintButton, PrintCopy } from "@/features/documents/components/print.client";
 import { LETTERHEAD_FIELDS, type Letterhead, type LineItem } from "@/features/documents/content";
 import { sanitiseLetterhead } from "@/features/documents/files";
 import {
@@ -55,13 +61,23 @@ type Props = {
   defaultLetterhead: Letterhead;
   /** False until the documents migration is applied; printing still works. */
   canSave: boolean;
+  /**
+   * Set when generating from a person's page: the document is saved to them
+   * instead of a project, their name and position are filled in, and only the
+   * templates about one person are offered.
+   */
+  person?: { userId: string; fullName: string; title: string | null; templates: readonly string[] } | null;
 };
 
 const CATEGORY_ICON: Record<TemplateCategory, typeof Users> = {
-  "HR & recruitment": Users,
-  "Clients & legal": Scale,
+  "Sales & Clients": Handshake,
+  "Contracts & Legal": Scale,
   Finance: Banknote,
   Projects: Briefcase,
+  "Software & Technical": Code2,
+  "HR & Recruitment": Users,
+  Support: LifeBuoy,
+  Internal: Building2,
 };
 
 const LETTERHEAD_STORAGE = "malhot.letterhead";
@@ -92,15 +108,21 @@ export function DocumentGenerator(props: Props) {
     );
   }
   const template = findTemplate(props.templateKey);
-  return template ? <Workspace key={template.key} {...props} template={template} /> : <Gallery />;
+  return template ? (
+    <Workspace key={template.key} {...props} template={template} />
+  ) : (
+    <Gallery only={props.person?.templates} />
+  );
 }
 
-function Gallery() {
+function Gallery({ only }: { only?: readonly string[] }) {
   const router = useRouter();
   const pathname = usePathname();
   return (
     <div className="flex flex-col gap-8">
-      {TEMPLATE_CATEGORIES.map((category) => {
+      {TEMPLATE_CATEGORIES.filter((category) =>
+        TEMPLATES.some((template) => template.category === category && (!only || only.includes(template.key))),
+      ).map((category) => {
         const Icon = CATEGORY_ICON[category];
         return (
           <section key={category} aria-labelledby={`category-${category}`} className="flex flex-col gap-3">
@@ -111,7 +133,9 @@ function Gallery() {
               <Icon className="size-4" aria-hidden="true" /> {category}
             </h2>
             <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-              {TEMPLATES.filter((template) => template.category === category).map((template) => (
+              {TEMPLATES.filter(
+                (template) => template.category === category && (!only || only.includes(template.key)),
+              ).map((template) => (
                 <li key={template.key}>
                   <button
                     type="button"
@@ -156,6 +180,7 @@ function Workspace({
   today,
   defaultLetterhead,
   canSave,
+  person,
 }: Props & { template: DocumentTemplate }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -165,7 +190,7 @@ function Workspace({
     () => seed?.letterhead ?? readStoredLetterhead(defaultLetterhead),
   );
   const [values, setValues] = useState<Values>(
-    () => seed?.values ?? initialValues(template, { letterhead, today, project }),
+    () => seed?.values ?? prefillPerson(initialValues(template, { letterhead, today, project }), template, person),
   );
   const [title, setTitle] = useState(seed?.title ?? "");
   const [pending, startTransition] = useTransition();
@@ -186,6 +211,24 @@ function Workspace({
   }
 
   function save() {
+    if (person) {
+      startTransition(async () => {
+        const result = await saveMemberDocument({
+          userId: person.userId,
+          templateKey: template.key,
+          title: title.trim() || suggestedTitle,
+          values,
+          letterhead,
+        });
+        if (!result.ok) {
+          toast.error(result.error.message);
+          return;
+        }
+        toast.success(`Saved to ${person.fullName}'s documents`);
+        router.push(`/os/team/${person.userId}/documents/${result.data.id}`);
+      });
+      return;
+    }
     if (!targetKey) {
       toast.error("Choose a project to save it to.");
       return;
@@ -219,9 +262,10 @@ function Workspace({
         <div className="flex flex-wrap items-center gap-2">
           <DownloadWordButton content={content} letterhead={letterhead} fileTitle={title.trim() || suggestedTitle} />
           <PrintButton />
-          {canSave && projects.length > 0 ? (
+          {canSave && (person || projects.length > 0) ? (
             <Button onClick={save} disabled={pending}>
-              <Save aria-hidden="true" /> {pending ? "Saving…" : "Save to project"}
+              <Save aria-hidden="true" />{" "}
+              {pending ? "Saving…" : person ? `Save to ${firstName(person.fullName)}` : "Save to project"}
             </Button>
           ) : null}
         </div>
@@ -236,7 +280,10 @@ function Workspace({
       ) : null}
       {!canSave ? (
         <p className="rounded-md border border-border bg-bg-subtle px-4 py-3 text-sm text-fg-muted">
-          Saving documents to a project needs a one-time database update. You can still print this or save it as a PDF.
+          {person
+            ? "Saving documents to a person needs a one-time database update."
+            : "Saving documents to a project needs a one-time database update."}{" "}
+          You can still print this or save it as a PDF.
         </p>
       ) : null}
 
@@ -245,9 +292,9 @@ function Workspace({
           className="flex flex-col gap-5 rounded-lg border border-border bg-surface p-5 lg:sticky lg:top-4 lg:max-h-[calc(100dvh-9rem)] lg:overflow-y-auto"
           onSubmit={(event) => event.preventDefault()}
         >
-          {canSave && projects.length > 0 ? (
+          {canSave && (person || projects.length > 0) ? (
             <div className="grid gap-4 border-b border-border pb-5">
-              {!projectKey ? (
+              {!projectKey && !person ? (
                 <div className="flex flex-col gap-1.5">
                   <span className="text-sm font-medium" aria-hidden="true">
                     Save to project
@@ -317,9 +364,7 @@ function Workspace({
         </form>
 
         <div className="min-w-0 rounded-lg bg-bg-subtle p-3 sm:p-6" aria-label="Preview">
-          <A4Frame>
-            <DocumentPaper content={content} letterhead={letterhead} id="preview" />
-          </A4Frame>
+          <PagedDocument content={content} letterhead={letterhead} id="preview" />
         </div>
       </div>
 
@@ -451,4 +496,20 @@ function FieldInput({
       {field.hint ? <span className="text-xs text-fg-subtle">{field.hint}</span> : null}
     </div>
   );
+}
+
+function firstName(fullName: string): string {
+  return fullName.split(" ")[0] || fullName;
+}
+
+/** The person's name and position, in whichever fields this template uses for them. */
+function prefillPerson(values: Values, template: DocumentTemplate, person: Props["person"]): Values {
+  if (!person) return values;
+  const next = { ...values };
+  for (const field of template.fields) {
+    if (["candidateName", "employeeName", "internName", "partyName"].includes(field.name))
+      next[field.name] = person.fullName;
+    if (field.name === "position" && person.title && !next.position) next.position = person.title;
+  }
+  return next;
 }

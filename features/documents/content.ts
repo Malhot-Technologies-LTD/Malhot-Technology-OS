@@ -25,7 +25,13 @@ export type Block =
   | { kind: "terms"; rows: readonly (readonly [string, string])[] }
   /** The parties to an agreement, side by side under an introductory sentence. */
   | { kind: "parties"; intro: string; parties: readonly { role: string; lines: readonly string[] }[] }
-  | { kind: "signatures"; parties: readonly { role: string; name: string; title?: string }[] };
+  | { kind: "signatures"; parties: readonly { role: string; name: string; title?: string }[] }
+  /**
+   * A grid with a header row: milestones, SLA severities, risks, test cases,
+   * action items. Cells are plain text ([gaps] highlighted). Rows keep
+   * together across pages; the header repeats on each printed page.
+   */
+  | { kind: "table"; columns: readonly string[]; rows: readonly (readonly string[])[] };
 
 export type DocumentContent = {
   title: string;

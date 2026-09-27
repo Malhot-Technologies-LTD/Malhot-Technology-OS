@@ -6,8 +6,9 @@ import { formatMoney, itemTotals, type Block, type DocumentContent, type Letterh
 /**
  * A generated document on company letterhead: an A4 sheet (210 × 297 mm, 18 mm
  * margins) that looks the same on screen, on paper and in the Word download
- * (features/documents/docx.ts, which mirrors this layout). On screen, wrap it
- * in A4Frame so narrow panes zoom the page rather than reflow it.
+ * (features/documents/docx.ts, which mirrors this layout). This is the single
+ * continuous flow that prints, where the browser breaks it into pages; on
+ * screen, PagedDocument shows the same pieces as separate A4 pages.
  *
  * Colours are fixed rather than theme tokens. Paper is white in dark mode too,
  * and a document printed from a dark screen must not come out grey. The navy
@@ -28,98 +29,153 @@ export function DocumentPaper({
   className?: string;
   id?: string;
 }) {
-  const contact = [letterhead.address, letterhead.phone, letterhead.email, letterhead.website].filter(Boolean);
   const contract = content.layout === "contract";
 
   return (
     <article
       id={id}
       className={cn(
-        "document-paper mx-auto flex min-h-[297mm] w-[210mm] flex-col bg-white p-[18mm] text-[10.5pt] leading-[1.55] text-[#1b2230] shadow-[0_1px_3px_rgba(15,23,42,0.12),0_12px_32px_-12px_rgba(15,23,42,0.25)] print:min-h-0 print:w-auto print:p-0 print:shadow-none",
+        PAPER_CLASS,
+        "mx-auto min-h-[297mm] print:min-h-0 print:w-auto print:p-0 print:shadow-none",
         className,
       )}
-      style={{ fontFamily: "'Inter', 'Segoe UI', Arial, sans-serif" }}
+      style={PAPER_STYLE}
     >
-      {contract ? (
-        <ContractHead content={content} letterhead={letterhead} contact={contact} markId={`paper-${id ?? "doc"}`} />
-      ) : (
-        <>
-          <header className="flex items-start justify-between gap-6 border-b-2 border-[#0b1f4b] pb-4">
-            <div className="flex items-center gap-3">
-              <LogoMark id={`paper-${id ?? "doc"}`} onLight className="h-[34px] w-[42px] shrink-0" />
-              <div className="flex flex-col leading-tight">
-                <span className="text-[15pt] font-bold tracking-[0.08em] text-[#0b1f4b] uppercase">
-                  {letterhead.companyName || "[Company name]"}
-                </span>
-                {letterhead.tagline ? (
-                  <span className="text-[7.5pt] font-medium tracking-[0.2em] text-[#5b6580] uppercase">
-                    {letterhead.tagline}
-                  </span>
-                ) : null}
-              </div>
-            </div>
-            <address className="text-right text-[8.5pt] leading-[1.5] text-[#5b6580] not-italic">
-              {contact.map((line) => (
-                <span key={line} className="block">
-                  {line}
-                </span>
-              ))}
-              {letterhead.registration ? <span className="block">{letterhead.registration}</span> : null}
-            </address>
-          </header>
+      <DocumentHead content={content} letterhead={letterhead} markId={`paper-${id ?? "doc"}`} />
 
-          <div className="mt-6 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 text-[9pt] text-[#5b6580]">
-            {content.reference ? (
-              <span>
-                Ref: <Gap>{content.reference}</Gap>
-              </span>
-            ) : (
-              <span />
-            )}
-            <span>
-              <Gap>{content.date}</Gap>
-            </span>
-          </div>
-
-          {content.recipient && content.recipient.length > 0 ? (
-            <div className="mt-5 text-[10pt]">
-              {content.recipient.map((line, index) => (
-                <span key={`${line}-${index}`} className={cn("block", index === 0 && "font-semibold")}>
-                  <Gap>{line}</Gap>
-                </span>
-              ))}
-            </div>
-          ) : null}
-
-          <div className="mt-6">
-            <h1 className="text-[17pt] leading-tight font-bold text-[#0b1f4b]">
-              <Gap>{content.title}</Gap>
-            </h1>
-            {content.subtitle ? (
-              <p className="mt-1 text-[10.5pt] font-medium text-[#1652e6]">
-                <Gap>{content.subtitle}</Gap>
-              </p>
-            ) : null}
-          </div>
-        </>
-      )}
-
-      <div className={cn("flex flex-col", contract ? "mt-6 gap-2.5" : "mt-5 gap-3")}>
+      <div className={cn(blockStackClass(contract), contract ? "mt-6" : "mt-5")}>
         {content.blocks.map((block, index) => (
           <BlockView key={index} block={block} contract={contract} />
         ))}
       </div>
 
-      <footer className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-[#d6dbe6] pt-3 text-[7.5pt] text-[#7a8399]">
-        <span>
-          {letterhead.companyName}
-          {letterhead.registration ? ` · ${letterhead.registration}` : ""}
-        </span>
-        {content.classification ? (
-          <span className="font-semibold tracking-[0.08em] uppercase">{content.classification}</span>
-        ) : null}
-      </footer>
+      <DocumentFooter content={content} letterhead={letterhead} />
     </article>
+  );
+}
+
+/** The sheet itself: A4 width, 18 mm margins, white paper with a soft shadow. Shared with PagedDocument. */
+export const PAPER_CLASS =
+  "document-paper flex w-[210mm] flex-col bg-white p-[18mm] text-[10.5pt] leading-[1.55] text-[#1b2230] shadow-[0_1px_3px_rgba(15,23,42,0.12),0_12px_32px_-12px_rgba(15,23,42,0.25)]";
+
+export const PAPER_STYLE = { fontFamily: "'Inter', 'Segoe UI', Arial, sans-serif" } as const;
+
+/** The column the blocks stack in; the top margin under the head is the caller's. */
+export function blockStackClass(contract: boolean): string {
+  return cn("flex flex-col", contract ? "gap-2.5" : "gap-3");
+}
+
+/** Letterhead, reference, date, recipient and title: everything above the first block. */
+export function DocumentHead({
+  content,
+  letterhead,
+  markId,
+}: {
+  content: DocumentContent;
+  letterhead: Letterhead;
+  /** Namespaces the logo's gradient; unique per head on the page. */
+  markId: string;
+}) {
+  const contact = [letterhead.address, letterhead.phone, letterhead.email, letterhead.website].filter(Boolean);
+  if (content.layout === "contract")
+    return <ContractHead content={content} letterhead={letterhead} contact={contact} markId={markId} />;
+
+  return (
+    <>
+      <header className="flex items-start justify-between gap-6 border-b-2 border-[#0b1f4b] pb-4">
+        <div className="flex items-center gap-3">
+          <LogoMark id={markId} onLight className="h-[34px] w-[42px] shrink-0" />
+          <div className="flex flex-col leading-tight">
+            <span className="text-[15pt] font-bold tracking-[0.08em] text-[#0b1f4b] uppercase">
+              {letterhead.companyName || "[Company name]"}
+            </span>
+            {letterhead.tagline ? (
+              <span className="text-[7.5pt] font-medium tracking-[0.2em] text-[#5b6580] uppercase">
+                {letterhead.tagline}
+              </span>
+            ) : null}
+          </div>
+        </div>
+        <address className="text-right text-[8.5pt] leading-[1.5] text-[#5b6580] not-italic">
+          {contact.map((line) => (
+            <span key={line} className="block">
+              {line}
+            </span>
+          ))}
+          {letterhead.registration ? <span className="block">{letterhead.registration}</span> : null}
+        </address>
+      </header>
+
+      <div className="mt-6 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 text-[9pt] text-[#5b6580]">
+        {content.reference ? (
+          <span>
+            Ref: <Gap>{content.reference}</Gap>
+          </span>
+        ) : (
+          <span />
+        )}
+        <span>
+          <Gap>{content.date}</Gap>
+        </span>
+      </div>
+
+      {content.recipient && content.recipient.length > 0 ? (
+        <div className="mt-5 text-[10pt]">
+          {content.recipient.map((line, index) => (
+            <span key={`${line}-${index}`} className={cn("block", index === 0 && "font-semibold")}>
+              <Gap>{line}</Gap>
+            </span>
+          ))}
+        </div>
+      ) : null}
+
+      <div className="mt-6">
+        <h1 className="text-[17pt] leading-tight font-bold text-[#0b1f4b]">
+          <Gap>{content.title}</Gap>
+        </h1>
+        {content.subtitle ? (
+          <p className="mt-1 text-[10.5pt] font-medium text-[#1652e6]">
+            <Gap>{content.subtitle}</Gap>
+          </p>
+        ) : null}
+      </div>
+    </>
+  );
+}
+
+/**
+ * Company and registration on the left; the classification, and on screen the
+ * page number, on the right. Printing leaves the number out: the browser
+ * paginates the print copy itself and does not know where its pages break.
+ */
+export function DocumentFooter({
+  content,
+  letterhead,
+  page,
+}: {
+  content: DocumentContent;
+  letterhead: Letterhead;
+  page?: { number: number; total: number };
+}) {
+  return (
+    <footer className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-[#d6dbe6] pt-3 text-[7.5pt] text-[#7a8399]">
+      <span>
+        {letterhead.companyName}
+        {letterhead.registration ? ` · ${letterhead.registration}` : ""}
+      </span>
+      {content.classification || page ? (
+        <span className="flex items-center gap-3">
+          {content.classification ? (
+            <span className="font-semibold tracking-[0.08em] uppercase">{content.classification}</span>
+          ) : null}
+          {page ? (
+            <span className="tabular-nums">
+              Page {page.number} of {page.total}
+            </span>
+          ) : null}
+        </span>
+      ) : null}
+    </footer>
   );
 }
 
@@ -192,7 +248,23 @@ function ContractHead({
   );
 }
 
-function BlockView({ block, contract = false }: { block: Block; contract?: boolean }) {
+/**
+ * One block of the body. `slice` draws only rows [from, to) of a list, facts,
+ * items, terms or table block: the part of it that falls on one page of a
+ * PagedDocument. Numbering, table headers and invoice totals stay those of the
+ * whole block.
+ */
+export function BlockView({
+  block,
+  contract = false,
+  slice,
+}: {
+  block: Block;
+  contract?: boolean;
+  slice?: readonly [from: number, to: number];
+}) {
+  const from = slice?.[0] ?? 0;
+  const part = <T,>(rows: readonly T[]) => (slice ? rows.slice(slice[0], slice[1]) : rows);
   switch (block.kind) {
     case "heading":
       if (contract)
@@ -216,10 +288,11 @@ function BlockView({ block, contract = false }: { block: Block; contract?: boole
       const Tag = block.ordered ? "ol" : "ul";
       return (
         <Tag
+          start={block.ordered && from > 0 ? from + 1 : undefined}
           className={cn("flex flex-col gap-1 pl-5", block.ordered ? "list-decimal" : "list-disc marker:text-[#1652e6]")}
         >
-          {block.items.map((item, index) => (
-            <li key={index}>
+          {part(block.items).map((item, index) => (
+            <li key={from + index}>
               <Gap>{item}</Gap>
             </li>
           ))}
@@ -230,7 +303,7 @@ function BlockView({ block, contract = false }: { block: Block; contract?: boole
       return (
         <table className="w-full border-collapse [break-inside:avoid] text-[10pt]">
           <tbody>
-            {block.rows.map(([label, value]) => (
+            {part(block.rows).map(([label, value]) => (
               <tr key={label} className="border-b border-[#e3e7ef]">
                 <th
                   scope="row"
@@ -249,6 +322,7 @@ function BlockView({ block, contract = false }: { block: Block; contract?: boole
     case "items": {
       const rows = block.items.filter((item) => item.description.trim() !== "" || item.unitPrice > 0);
       const totals = itemTotals(rows, block.taxRate);
+      const last = !slice || slice[1] >= rows.length;
       return (
         <table className="w-full border-collapse [break-inside:avoid] text-[9.5pt]">
           <thead>
@@ -275,8 +349,8 @@ function BlockView({ block, contract = false }: { block: Block; contract?: boole
                 </td>
               </tr>
             ) : (
-              rows.map((item, index) => (
-                <tr key={index} className="border-b border-[#e3e7ef]">
+              part(rows).map((item, index) => (
+                <tr key={from + index} className="border-b border-[#e3e7ef]">
                   <td className="px-3 py-2">{item.description}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{item.quantity}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{formatMoney(item.unitPrice, block.currency)}</td>
@@ -287,39 +361,41 @@ function BlockView({ block, contract = false }: { block: Block; contract?: boole
               ))
             )}
           </tbody>
-          <tfoot className="tabular-nums">
-            {block.taxLabel ? (
-              <>
-                <tr>
-                  <td colSpan={3} className="px-3 pt-2 text-right text-[#5b6580]">
-                    Subtotal
-                  </td>
-                  <td className="px-3 pt-2 text-right">{formatMoney(totals.subtotal, block.currency)}</td>
-                </tr>
-                <tr>
-                  <td colSpan={3} className="px-3 text-right text-[#5b6580]">
-                    {block.taxLabel}
-                  </td>
-                  <td className="px-3 text-right">{formatMoney(totals.tax, block.currency)}</td>
-                </tr>
-              </>
-            ) : null}
-            <tr>
-              <td colSpan={3} className="px-3 pt-2 text-right font-bold text-[#0b1f4b]">
-                Total
-              </td>
-              <td className="px-3 pt-2 text-right font-bold text-[#0b1f4b]">
-                {formatMoney(totals.total, block.currency)}
-              </td>
-            </tr>
-          </tfoot>
+          {last ? (
+            <tfoot className="tabular-nums">
+              {block.taxLabel ? (
+                <>
+                  <tr>
+                    <td colSpan={3} className="px-3 pt-2 text-right text-[#5b6580]">
+                      Subtotal
+                    </td>
+                    <td className="px-3 pt-2 text-right">{formatMoney(totals.subtotal, block.currency)}</td>
+                  </tr>
+                  <tr>
+                    <td colSpan={3} className="px-3 text-right text-[#5b6580]">
+                      {block.taxLabel}
+                    </td>
+                    <td className="px-3 text-right">{formatMoney(totals.tax, block.currency)}</td>
+                  </tr>
+                </>
+              ) : null}
+              <tr>
+                <td colSpan={3} className="px-3 pt-2 text-right font-bold text-[#0b1f4b]">
+                  Total
+                </td>
+                <td className="px-3 pt-2 text-right font-bold text-[#0b1f4b]">
+                  {formatMoney(totals.total, block.currency)}
+                </td>
+              </tr>
+            </tfoot>
+          ) : null}
         </table>
       );
     }
     case "terms":
       return (
         <dl className="flex flex-col gap-1">
-          {block.rows.map(([label, value]) => (
+          {part(block.rows).map(([label, value]) => (
             <div key={label}>
               <dt className="inline font-semibold text-[#0b1f4b]">{label}:</dt>{" "}
               <dd className="inline">
@@ -351,6 +427,38 @@ function BlockView({ block, contract = false }: { block: Block; contract?: boole
             ))}
           </div>
         </div>
+      );
+    case "table":
+      return (
+        <table className="w-full border-collapse text-[9.5pt]">
+          <thead className="[display:table-header-group]">
+            <tr className="bg-[#0b1f4b] text-left text-white">
+              {block.columns.map((column) => (
+                <th key={column} scope="col" className="px-3 py-2 align-bottom font-semibold">
+                  {column}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {part(block.rows).map((row, index) => (
+              // Striped by position in the whole table, so a continued table keeps its rhythm.
+              <tr
+                key={from + index}
+                className={cn(
+                  "[break-inside:avoid] border-b border-[#e3e7ef]",
+                  (from + index) % 2 === 1 && "bg-[#f8f9fc]",
+                )}
+              >
+                {block.columns.map((column, cellIndex) => (
+                  <td key={column} className="px-3 py-2 align-top">
+                    <Gap>{row[cellIndex] ?? ""}</Gap>
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       );
     case "note":
       return (

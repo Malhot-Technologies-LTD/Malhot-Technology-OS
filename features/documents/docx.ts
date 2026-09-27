@@ -407,6 +407,36 @@ function blockToDocx(block: Block, contract: boolean, listIndex: number): (Parag
         new Paragraph({ spacing: { after: 60 }, children: [] }),
       ];
     }
+    case "table": {
+      const width = CONTENT_WIDTH / Math.max(block.columns.length, 1);
+      const header = new TableRow({
+        tableHeader: true,
+        children: block.columns.map((column) =>
+          cell([para(column, { bold: true, color: "FFFFFF" }, { spacing: { after: 0 } })], {
+            shading: { type: ShadingType.CLEAR, color: "auto", fill: NAVY },
+          }),
+        ),
+      });
+      const body = block.rows.map(
+        (row, rowIndex) =>
+          new TableRow({
+            cantSplit: true,
+            children: block.columns.map((_, cellIndex) =>
+              cell([para(row[cellIndex] ?? "", {}, { spacing: { after: 0 } })], {
+                ...(rowIndex % 2 === 1 ? { shading: { type: ShadingType.CLEAR, color: "auto", fill: "F8F9FC" } } : {}),
+              }),
+            ),
+          }),
+      );
+      return [
+        table(
+          [header, ...body],
+          block.columns.map(() => width),
+          { ...NO_BORDERS, insideHorizontal: line("E3E7EF"), bottom: line("E3E7EF") },
+        ),
+        new Paragraph({ spacing: { after: 60 }, children: [] }),
+      ];
+    }
     case "note":
       return [
         para(

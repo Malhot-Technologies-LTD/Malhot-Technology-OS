@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, ChevronRight, PanelLeftClose, PanelLeftOpen, Plus, Settings } from "lucide-react";
+import { Bell, ChevronRight, PanelLeftClose, PanelLeftOpen, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
@@ -22,6 +22,8 @@ import { cn } from "@/lib/utils";
 import type { OrgRole } from "@/types/domain";
 
 export type SidebarUser = {
+  /** Links "My page" in the account menu to /os/team/<id>. */
+  userId?: string;
   fullName: string;
   email: string | null;
   avatarUrl: string | null;
@@ -55,7 +57,6 @@ export function AppSidebar({ collapsed, onToggle, user, audience, notificationBa
   const pathname = usePathname();
   // Sections this person has something to read; see nav-audience.ts.
   const groups = visibleGroups(audience);
-  const canStartProjects = user.orgRole === "owner" || user.orgRole === "admin";
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
 
@@ -122,37 +123,11 @@ export function AppSidebar({ collapsed, onToggle, user, audience, notificationBa
           </Button>
         </div>
 
-        {/*
-         * The one action worth a coloured button in the chrome. Everything in
-         * the OS hangs off a project, so starting one is the only true entry
-         * point; a second accent would cancel this one out.
-         *
-         * Organisation admins only. A developer seeing "New project" above the
-         * work they were assigned is being invited to start something that is
-         * not theirs to start.
-         */}
-        <div className={cn("shrink-0 px-2.5 pb-3", !canStartProjects && "hidden")}>
-          <Link
-            href="/os/projects/new"
-            aria-label="New project"
-            className={cn(
-              "flex h-11 items-center rounded-full bg-brand-solid text-[15px] font-medium text-brand-solid-fg transition-[background-color,padding] duration-[200ms] ease-standard hover:bg-brand-solid-hover",
-              open ? "justify-start gap-2.5 px-4" : "justify-center px-0",
-            )}
-          >
-            <Plus className="size-5 shrink-0" aria-hidden="true" />
-            <span
-              className={cn(
-                "truncate whitespace-nowrap transition-opacity duration-[160ms]",
-                open ? "opacity-100" : "sr-only opacity-0",
-              )}
-            >
-              New project
-            </span>
-          </Link>
-        </div>
-
-        <nav aria-label="Sections" className="flex flex-1 flex-col gap-5 overflow-x-hidden overflow-y-auto px-3 pb-5">
+        {/* Scrolls when the list outgrows the screen, without a bar: the chrome stays quiet. */}
+        <nav
+          aria-label="Sections"
+          className="flex flex-1 [scrollbar-width:none] flex-col gap-5 overflow-x-hidden overflow-y-auto px-3 pb-5 [&::-webkit-scrollbar]:hidden"
+        >
           {groups.map((group, index) => (
             <div key={group.label} className="flex flex-col gap-0.5">
               {open ? (

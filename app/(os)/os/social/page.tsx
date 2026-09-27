@@ -69,7 +69,7 @@ export default async function SocialOverviewPage() {
 
   return (
     <div className="flex flex-col gap-10">
-      <SocialOverview posts={posts.data} accounts={accounts.data} now={now} timeZone={timeZone} />
+      {/* What the audience did comes first; what the team planned follows. */}
       {connectedIds.length > 0 ? (
         <InstagramOverview
           accounts={accounts.data}
@@ -80,6 +80,14 @@ export default async function SocialOverviewPage() {
           timeZone={timeZone}
         />
       ) : null}
+      <section aria-labelledby={connectedIds.length > 0 ? "plan-heading" : undefined} className="flex flex-col gap-5">
+        {connectedIds.length > 0 ? (
+          <h2 id="plan-heading" className="text-lg font-semibold tracking-tight">
+            Content plan
+          </h2>
+        ) : null}
+        <SocialOverview posts={posts.data} accounts={accounts.data} now={now} timeZone={timeZone} />
+      </section>
     </div>
   );
 }

@@ -1,5 +1,13 @@
 # HANDOFF
 
+## Current Task (2026-09-27, cut off by usage limit — nothing committed)
+Uncommitted: favicon + sidebar changes, Instagram error details, Social overview order, Team member pages (typecheck/lint
+clean, not visually verified; migration 20260927190000_member_records.sql verified in PGlite, not applied live), and the
+document library refactor (template-kit.ts, table block, 8 categories, library/*.ts). Background agents were writing the
+new templates into library/*.ts and an A4 pagination component (paged-document.client.tsx). On resume: review their
+files, delete the old proposal/minutes/handover in templates.ts where replaced with the same keys, run tests/typecheck/
+lint/build, switch the team document page to PagedDocument, wire project data into TemplateContext.project.
+
 ## Current Task
 **Instagram connection for Social (2026-09-27, not committed yet).** Owner created a Meta developer app and put
 INSTAGRAM_APP_ID / INSTAGRAM_APP_SECRET in .env.local; asked to track Instagram from the dashboard.

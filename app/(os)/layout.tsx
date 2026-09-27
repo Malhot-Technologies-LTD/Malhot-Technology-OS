@@ -45,6 +45,7 @@ export default async function OsLayout({ children }: LayoutProps<"/">) {
         bell={<NotificationBell userId={viewer.userId} organizationId={viewer.organizationId} />}
         notificationBadge={<NotificationCount userId={viewer.userId} organizationId={viewer.organizationId} />}
         user={{
+          userId: viewer.userId,
           fullName: viewer.profile.fullName,
           email: viewer.email,
           avatarUrl: viewer.profile.avatarUrl,

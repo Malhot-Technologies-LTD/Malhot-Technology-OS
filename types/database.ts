@@ -339,6 +339,75 @@ export type Database = {
           },
         ]
       }
+      member_documents: {
+        Row: {
+          created_at: string
+          created_by: string
+          fields: Json | null
+          file_name: string | null
+          id: string
+          kind: string
+          mime_type: string | null
+          organization_id: string
+          size_bytes: number | null
+          source: string
+          storage_path: string | null
+          template_key: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          fields?: Json | null
+          file_name?: string | null
+          id?: string
+          kind?: string
+          mime_type?: string | null
+          organization_id: string
+          size_bytes?: number | null
+          source: string
+          storage_path?: string | null
+          template_key?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          fields?: Json | null
+          file_name?: string | null
+          id?: string
+          kind?: string
+          mime_type?: string | null
+          organization_id?: string
+          size_bytes?: number | null
+          source?: string
+          storage_path?: string | null
+          template_key?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_documents_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_documents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       member_duties: {
         Row: {
           created_at: string
@@ -362,6 +431,75 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      member_records: {
+        Row: {
+          created_at: string
+          department: string | null
+          emergency_contact: string | null
+          employment_type: string | null
+          end_date: string | null
+          notes: string | null
+          organization_id: string
+          position: string | null
+          reports_to: string | null
+          start_date: string | null
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+          work_location: string | null
+          work_phone: string | null
+        }
+        Insert: {
+          created_at?: string
+          department?: string | null
+          emergency_contact?: string | null
+          employment_type?: string | null
+          end_date?: string | null
+          notes?: string | null
+          organization_id: string
+          position?: string | null
+          reports_to?: string | null
+          start_date?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          user_id: string
+          work_location?: string | null
+          work_phone?: string | null
+        }
+        Update: {
+          created_at?: string
+          department?: string | null
+          emergency_contact?: string | null
+          employment_type?: string | null
+          end_date?: string | null
+          notes?: string | null
+          organization_id?: string
+          position?: string | null
+          reports_to?: string | null
+          start_date?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string
+          work_location?: string | null
+          work_phone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_records_reports_to_fkey"
+            columns: ["reports_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_records_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       milestones: {
         Row: {
@@ -1367,6 +1505,7 @@ export type Database = {
       can_manage_site_media: { Args: { object_name: string }; Returns: boolean }
       has_duty: { Args: { org: string; wanted: string }; Returns: boolean }
       is_org_admin: { Args: { org: string }; Returns: boolean }
+      member_file_segment: { Args: { n: number; object_name: string }; Returns: string }
       is_org_member: { Args: { org: string }; Returns: boolean }
       is_org_owner: { Args: { org: string }; Returns: boolean }
       is_project_member: { Args: { project: string }; Returns: boolean }

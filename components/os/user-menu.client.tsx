@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronsUpDown, LogOut, Palette, UserRound } from "lucide-react";
+import { ChevronsUpDown, IdCard, LogOut, Palette, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useTransition } from "react";
 import { toast } from "sonner";
@@ -59,6 +59,13 @@ export function UserMenu({ user, collapsed }: { user: SidebarUser; collapsed: bo
           </span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        {user.userId ? (
+          <DropdownMenuItem asChild>
+            <Link href={`/os/team/${user.userId}`}>
+              <IdCard aria-hidden="true" /> My page
+            </Link>
+          </DropdownMenuItem>
+        ) : null}
         <DropdownMenuItem asChild>
           <Link href="/os/settings/profile">
             <UserRound aria-hidden="true" /> Profile

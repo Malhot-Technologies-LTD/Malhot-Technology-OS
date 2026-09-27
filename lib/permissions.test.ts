@@ -147,6 +147,7 @@ describe("organisation actions", () => {
     "org.reports",
     "org.inquiries",
     "org.website",
+    "member.records",
   ] as const) {
     it(`restricts ${action} to org admins`, () => {
       expect(can({ userId: ME, organizationId: "org-1", orgRole: "owner" }, action)).toBe(true);

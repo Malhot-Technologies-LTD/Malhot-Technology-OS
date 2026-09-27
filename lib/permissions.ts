@@ -99,7 +99,8 @@ export type Action =
   | "org.reports"
   | "org.inquiries"
   | "org.website"
-  | "social.manage";
+  | "social.manage"
+  | "member.records";
 
 const ORG_ACTIONS = new Set<Action>([
   "project.create",
@@ -110,6 +111,7 @@ const ORG_ACTIONS = new Set<Action>([
   "org.inquiries",
   "org.website",
   "social.manage",
+  "member.records",
 ]);
 
 /** Everything that writes. Archived projects are read-only unless you are an org admin. */
@@ -294,6 +296,8 @@ function canOrgAction(viewer: PermissionViewer, action: Action): boolean {
     case "org.reports":
     case "org.inquiries":
     case "org.website":
+    // Employment details and personal paperwork; matched by member_records/member_documents RLS.
+    case "member.records":
       return isOrgAdmin(viewer);
     case "social.manage":
       // Matched by can_manage_social() in 20260927150000_social_media.sql.

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-4 -14.5 110 110">
+  <defs>
+    <linearGradient id="g" x1="0" y1="79" x2="102" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1652e6"/>
+      <stop offset="55%" stop-color="#2b6cff"/>
+      <stop offset="100%" stop-color="#78a7ff"/>
+    </linearGradient>
+    <style>@media (prefers-color-scheme: dark) { .arrow { fill: #ffffff; } }</style>
+  </defs>
+  <path d="M0 0 L40 31 L40 47 L18 31 L18 65 L0 79 Z" fill="url(#g)"/>
+  <path d="M102 0 L62 31 L62 47 L84 31 L84 65 L102 79 Z" fill="url(#g)"/>
+  <path d="M22 8 L51 20 L78 8 L56 30 L58 38 L58 72 L51 81 L42 72 L42 38 L46 30 Z" fill="#081f5c" class="arrow"/>
+</svg>

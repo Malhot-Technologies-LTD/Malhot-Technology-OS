@@ -64,15 +64,16 @@ export function TeamDirectory({ people, projects, projectsFailed, canAssign, vie
             key={person.userId}
             className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-5 transition-colors duration-[160ms] hover:border-border-strong"
           >
+            {/* The name opens their page; the card's own buttons stay clickable beside it. */}
             <div className="flex items-start gap-3">
               <UserAvatar name={person.fullName} avatarUrl={person.avatarUrl} />
               <div className="flex min-w-0 flex-1 flex-col">
-                <span className="truncate text-[15px] font-medium">
+                <Link href={`/os/team/${person.userId}`} className="truncate text-[15px] font-medium hover:underline">
                   {person.fullName}
                   {person.userId === viewerUserId ? (
                     <span className="ml-2 text-sm font-normal text-fg-subtle">you</span>
                   ) : null}
-                </span>
+                </Link>
                 <span className="truncate text-sm text-fg-muted">{person.title || person.orgRole}</span>
               </div>
             </div>
