@@ -54,24 +54,46 @@ describe("templates", () => {
   it("prefills from the project", () => {
     const nda = findTemplate("nda")!;
     expect(initialValues(nda, context).partyName).toBe("Umoja Ltd");
-    expect(initialValues(nda, context).reference).toBe("MAL/LEGAL/20260927");
+    expect(initialValues(findTemplate("invoice")!, context).reference).toBe("INV/20260927");
   });
 
-  it("fills an employment contract with the facts given", () => {
+  it("follows the company agreement format for the employment contract", () => {
     const contract = findTemplate("employment_contract")!;
     const values = {
       ...initialValues(contract, context),
       employeeName: "Aline Uwase",
-      position: "Backend Developer",
-      startDate: "2026-10-01",
-      salary: "1200000",
+      position: "Developer",
+      compensation: "14.295% of salary base",
       signatoryName: "J. Habimana",
     };
-    const text = JSON.stringify(contract.build(values, context));
-    expect(text).toContain("Aline Uwase");
-    expect(text).toContain("1 October 2026");
-    expect(text).toContain("RWF 1,200,000");
+    const content = contract.build(values, context);
+    expect(content.layout).toBe("contract");
+    expect(content.title).toBe("Employment Agreement");
+    expect(content.subtitle).toBe("Developer / Technical Role");
+    // No date given: left as a line to sign by hand.
+    expect(content.date).toBe("");
+    const headings = content.blocks.flatMap((block) => (block.kind === "heading" ? [block.text] : []));
+    expect(headings).toEqual([
+      "1. POSITION & RESPONSIBILITIES",
+      "2. COMPENSATION",
+      "3. CONFIDENTIALITY",
+      "4. SOURCE CODE & IP OWNERSHIP",
+      "5. ACCESS & SECURITY",
+      "6. TERMINATION",
+      "7. GOVERNING LAW",
+    ]);
+    const text = JSON.stringify(content);
+    expect(text).toContain("Compensation");
+    expect(text).toContain("14.295% of salary base");
+    expect(text).toContain("The Employee is hired as a Developer");
+    expect(text).toContain("no longer wishes to be part of Malhot Technologies");
     expect(missingFields(contract, values)).toEqual([]);
+    expect(contract.build({ ...values, agreementDate: "2026-10-01" }, context).date).toBe("1 October 2026");
+  });
+
+  it("uses the contract layout for every legal template", () => {
+    for (const template of TEMPLATES.filter((candidate) => candidate.legal))
+      expect(template.build(initialValues(template, context), context).layout).toBe("contract");
   });
 
   it("keeps only declared fields with the right shapes from stored JSON", () => {

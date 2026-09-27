@@ -248,138 +248,161 @@ const offerLetter: DocumentTemplate = {
   },
 };
 
+/**
+ * Contracts follow the company's own agreement format (its developer
+ * contract): title and role, AGREEMENT DATE, "entered into between" the
+ * parties, CAPS numbered sections and a two-column signature block. The date
+ * is left as a line to fill in by hand unless one is given.
+ */
+function agreementDate(values: Values): string {
+  const raw = optional(values, "agreementDate");
+  return raw ? longDate(raw) : "";
+}
+
+/** Numbered CAPS section headings, counted in the order they are written. */
+function sections() {
+  let number = 0;
+  return (title: string): Block => ({ kind: "heading", text: `${++number}. ${title.toUpperCase()}` });
+}
+
+const agreementDateField: FieldDef = {
+  name: "agreementDate",
+  label: "Agreement date",
+  type: "date",
+  hint: "Leave empty to sign and date by hand.",
+};
+
+const ceoField: FieldDef = {
+  name: "signatoryName",
+  label: "CEO / signing for the company",
+  type: "text",
+  required: true,
+};
+
 const employmentContract: DocumentTemplate = {
   key: "employment_contract",
-  name: "Employment contract",
+  name: "Employment agreement",
   category: "HR & recruitment",
   documentType: "other",
-  summary: "The full contract: duties, pay, hours, leave, confidentiality, IP and termination.",
+  summary: "The company's employment agreement: role, compensation, confidentiality, IP, access, termination.",
   legal: true,
   fields: [
-    common.reference("MAL/HR"),
-    common.date,
+    agreementDateField,
+    { name: "role", label: "Role type (subtitle)", type: "text", default: () => "Developer / Technical Role" },
     { name: "employeeName", label: "Employee's full name", type: "text", required: true },
-    { name: "employeeId", label: "National ID / passport no.", type: "text" },
-    { name: "employeeAddress", label: "Employee's address", type: "text" },
-    { name: "position", label: "Job title", type: "text", required: true },
+    { name: "position", label: "Position", type: "text", required: true, placeholder: "e.g. Developer" },
     {
-      name: "duties",
-      label: "Main duties (one per line)",
+      name: "responsibilities",
+      label: "Responsibilities include",
       type: "textarea",
       wide: true,
-      placeholder:
-        "Build and maintain client web applications\nReview teammates' code\nEstimate and report on assigned work",
+      default: () =>
+        "software development, coding, technical architecture, quality assurance, testing, documentation, and other duties as assigned by management",
     },
-    { name: "startDate", label: "Start date", type: "date", required: true },
     {
-      name: "term",
-      label: "Term",
-      type: "select",
-      options: ["Indefinite duration", "Fixed term"],
-      default: () => "Indefinite duration",
-    },
-    { name: "endDate", label: "End date (fixed term only)", type: "date" },
-    { name: "location", label: "Place of work", type: "text", default: () => "Kigali, Rwanda" },
-    {
-      name: "hours",
-      label: "Working hours",
+      name: "compensation",
+      label: "Compensation",
       type: "text",
-      default: () => "40 hours per week, Monday to Friday, 08:00 to 17:00",
+      required: true,
+      placeholder: "e.g. 14.295% of salary base, or RWF 800,000 per month",
     },
-    common.currency,
-    { name: "salary", label: "Gross monthly salary", type: "number", required: true },
-    { name: "payDay", label: "Pay day", type: "text", default: () => "the last working day of each month" },
-    { name: "probation", label: "Probation period", type: "text", default: () => "three (3) months" },
-    { name: "leave", label: "Annual leave", type: "text", default: () => "eighteen (18) working days per year" },
-    { name: "notice", label: "Notice period", type: "text", default: () => "thirty (30) days" },
-    common.governingLaw,
-    common.signatory,
-    common.signatoryTitle,
+    {
+      name: "paymentSchedule",
+      label: "Payment schedule",
+      type: "textarea",
+      wide: true,
+      default: () =>
+        "Per project basis. Payment is received upon successful completion and delivery of project milestones.",
+    },
+    {
+      name: "confidential",
+      label: "Kept confidential (one per line)",
+      type: "textarea",
+      wide: true,
+      default: () =>
+        "Source code and technical systems\nClient information and contracts\nBusiness plans and strategies\nFinancial information\nAny proprietary information",
+    },
+    {
+      name: "termination",
+      label: "Terminated when (one per line)",
+      type: "textarea",
+      wide: true,
+      default: (context) =>
+        `The Employee chooses to leave or no longer wishes to be part of ${company(context)}\nThe Employee fails to meet performance expectations or deliver quality work\nThe Employee violates company policies, confidentiality agreements, or professional standards`,
+    },
+    { name: "governingLaw", label: "Governing law", type: "text", default: () => "the laws of Rwanda" },
+    ceoField,
+    { name: "reference", label: "Reference (optional)", type: "text" },
   ],
   build(values, context) {
-    const currency = text(values, "currency", "Currency");
-    const employee = text(values, "employeeName", "Employee's full name");
     const employer = company(context);
-    const fixed = optional(values, "term") === "Fixed term";
-    const duties = lines(values, "duties");
-    let clause = 0;
-    const heading = (title: string): Block => ({ kind: "heading", text: `${++clause}. ${title}` });
+    const employee = text(values, "employeeName", "Employee's full name");
+    const position = text(values, "position", "Position");
+    const section = sections();
     return {
-      title: "Employment Contract",
+      layout: "contract",
+      title: "Employment Agreement",
+      subtitle: optional(values, "role") ?? undefined,
+      dateLabel: "Agreement date",
+      date: agreementDate(values),
       reference: optional(values, "reference") ?? undefined,
-      date: date(values, "date", "Date"),
       classification: "Confidential",
       blocks: [
         {
-          kind: "paragraph",
-          text: `This Employment Contract is made between ${employer}${context.letterhead.address ? `, of ${context.letterhead.address}` : ""} (the "Employer"), and ${employee}${optional(values, "employeeId") ? `, holder of identification number ${optional(values, "employeeId")}` : ""}${optional(values, "employeeAddress") ? `, of ${optional(values, "employeeAddress")}` : ""} (the "Employee").`,
+          kind: "parties",
+          intro: 'This Employment Agreement ("Agreement") is entered into between:',
+          parties: [
+            { role: "Employer", lines: [employer, context.letterhead.address].filter(Boolean) },
+            { role: "Employee", lines: [employee, `Position: ${position}`] },
+          ],
         },
-        heading("Position and duties"),
+        section("Position & responsibilities"),
         {
           kind: "paragraph",
-          text: `The Employer employs the Employee as ${text(values, "position", "Job title")}. The Employee shall perform the duties of the position diligently and to the best of their ability, and any other reasonable duties the Employer assigns in line with their skills.`,
+          text: `The Employee is hired as a ${position} with responsibilities including ${text(values, "responsibilities", "Responsibilities")}.`,
         },
-        ...(duties.length > 0 ? ([{ kind: "list", items: duties }] as const) : []),
-        heading("Commencement and term"),
+        section("Compensation"),
+        {
+          kind: "terms",
+          rows: [
+            ["Compensation", text(values, "compensation", "Compensation")],
+            ["Payment Schedule", text(values, "paymentSchedule", "Payment schedule")],
+          ],
+        },
+        section("Confidentiality"),
+        { kind: "paragraph", text: "The Employee agrees to maintain strict confidentiality regarding:" },
+        {
+          kind: "list",
+          items:
+            lines(values, "confidential").length > 0 ? lines(values, "confidential") : ["[Confidential information]"],
+        },
+        section("Source code & IP ownership"),
         {
           kind: "paragraph",
-          text: fixed
-            ? `Employment begins on ${date(values, "startDate", "Start date")} and ends on ${date(values, "endDate", "End date")}, unless terminated earlier in accordance with this contract.`
-            : `Employment begins on ${date(values, "startDate", "Start date")} and continues for an indefinite duration until terminated in accordance with this contract.`,
+          text: `All work produced by the Employee, including source code, designs, and documentation, is the property of ${employer}. The Employee has no personal ownership rights to company intellectual property.`,
         },
+        section("Access & security"),
         {
           kind: "paragraph",
-          text: `The first ${text(values, "probation", "Probation period")} are a probationary period, during which either party may end the contract with the shorter notice permitted by law.`,
+          text: "The Employee receives access to company systems, repositories, and credentials as required by their role. This access must be protected and used only for authorized work.",
         },
-        heading("Place and hours of work"),
+        section("Termination"),
+        { kind: "paragraph", text: "This agreement is terminated under the following conditions:" },
         {
-          kind: "paragraph",
-          text: `The Employee will work at ${text(values, "location", "Place of work")}, or remotely where agreed. Normal working hours are ${text(values, "hours", "Working hours")}.`,
-        },
-        heading("Remuneration"),
-        {
-          kind: "paragraph",
-          text: `The Employer shall pay the Employee a gross monthly salary of ${money(values, "salary", "Gross monthly salary", currency)}, payable on ${text(values, "payDay", "Pay day")} by bank transfer. The Employer shall deduct income tax, social security contributions and any other deductions required by law.`,
-        },
-        heading("Leave"),
-        {
-          kind: "paragraph",
-          text: `The Employee is entitled to ${text(values, "leave", "Annual leave")} of paid annual leave, public holidays, and sick, maternity and other leave as provided by the applicable labour law. Leave dates are agreed with the Employer in advance.`,
-        },
-        heading("Confidentiality"),
-        {
-          kind: "paragraph",
-          text: "During and after employment, the Employee shall not disclose any confidential information of the Employer or its clients, including source code, designs, business plans, client data and credentials, except as required to perform their duties or by law.",
-        },
-        heading("Intellectual property"),
-        {
-          kind: "paragraph",
-          text: "All work produced by the Employee in the course of employment, including software, designs and documentation, belongs to the Employer. The Employee assigns to the Employer any rights in such work to the extent permitted by law.",
-        },
-        heading("Termination"),
-        {
-          kind: "paragraph",
-          text: `After probation, either party may terminate this contract by giving ${text(values, "notice", "Notice period")} written notice, or payment in lieu of notice, subject to the applicable labour law. The Employer may terminate without notice for serious misconduct as defined by law.`,
+          kind: "list",
+          items: lines(values, "termination").length > 0 ? lines(values, "termination") : ["[Conditions]"],
         },
         {
           kind: "paragraph",
-          text: "On leaving, the Employee shall return all property of the Employer, including equipment, documents and access credentials.",
+          text: "Upon termination, all company property, credentials, and access must be returned immediately.",
         },
-        heading("Governing law"),
-        {
-          kind: "paragraph",
-          text: `This contract is governed by ${text(values, "governingLaw", "Governing law")}. Matters not covered here are governed by the applicable labour law and the Employer's internal rules.`,
-        },
-        { kind: "paragraph", text: "Signed in two original copies, one for each party." },
+        section("Governing law"),
+        { kind: "paragraph", text: `This agreement is governed by ${text(values, "governingLaw", "Governing law")}.` },
         {
           kind: "signatures",
           parties: [
-            {
-              role: "For the Employer",
-              name: text(values, "signatoryName", "Signatory"),
-              title: optional(values, "signatoryTitle") ?? undefined,
-            },
-            { role: "The Employee", name: employee },
+            { role: "Employee signature", name: employee },
+            { role: "CEO signature", name: text(values, "signatoryName", "CEO") },
           ],
         },
       ],
@@ -392,91 +415,103 @@ const internshipAgreement: DocumentTemplate = {
   name: "Internship agreement",
   category: "HR & recruitment",
   documentType: "other",
-  summary: "Placement dates, supervisor, learning goals, stipend and conduct for an intern.",
+  summary: "Placement dates, supervisor, learning goals, stipend and conduct, in the company agreement format.",
   legal: true,
   fields: [
-    common.reference("MAL/HR"),
-    common.date,
+    agreementDateField,
+    { name: "role", label: "Role type (subtitle)", type: "text", default: () => "Internship / Learning Placement" },
     { name: "internName", label: "Intern's full name", type: "text", required: true },
-    { name: "institution", label: "School / university", type: "text" },
     {
-      name: "role",
+      name: "position",
       label: "Internship role",
       type: "text",
       required: true,
       placeholder: "e.g. Software Engineering Intern",
     },
+    { name: "institution", label: "School / university", type: "text" },
     { name: "supervisor", label: "Supervisor", type: "text", required: true },
     { name: "startDate", label: "Start date", type: "date", required: true },
     { name: "endDate", label: "End date", type: "date", required: true },
     { name: "objectives", label: "Learning objectives (one per line)", type: "textarea", wide: true },
-    common.currency,
-    { name: "stipend", label: "Monthly stipend (leave empty if unpaid)", type: "number" },
-    common.signatory,
-    common.signatoryTitle,
+    {
+      name: "stipend",
+      label: "Stipend (leave empty if unpaid)",
+      type: "text",
+      placeholder: "e.g. RWF 100,000 per month",
+    },
+    { name: "governingLaw", label: "Governing law", type: "text", default: () => "the laws of Rwanda" },
+    ceoField,
+    { name: "reference", label: "Reference (optional)", type: "text" },
   ],
   build(values, context) {
+    const employer = company(context);
     const intern = text(values, "internName", "Intern's full name");
     const objectives = lines(values, "objectives");
-    const stipend = optional(values, "stipend");
+    const section = sections();
     return {
+      layout: "contract",
       title: "Internship Agreement",
+      subtitle: optional(values, "role") ?? undefined,
+      dateLabel: "Agreement date",
+      date: agreementDate(values),
       reference: optional(values, "reference") ?? undefined,
-      date: date(values, "date", "Date"),
       blocks: [
         {
-          kind: "paragraph",
-          text: `This agreement is between ${company(context)} (the "Company") and ${intern}${optional(values, "institution") ? `, a student of ${optional(values, "institution")}` : ""} (the "Intern").`,
-        },
-        {
-          kind: "facts",
-          rows: [
-            ["Role", text(values, "role", "Internship role")],
-            ["Supervisor", text(values, "supervisor", "Supervisor")],
-            ["Period", `${date(values, "startDate", "Start date")} to ${date(values, "endDate", "End date")}`],
-            [
-              "Stipend",
-              stipend
-                ? `${money(values, "stipend", "Stipend", text(values, "currency", "Currency"))} per month`
-                : "Unpaid",
-            ],
+          kind: "parties",
+          intro: 'This Internship Agreement ("Agreement") is entered into between:',
+          parties: [
+            { role: "Company", lines: [employer, context.letterhead.address].filter(Boolean) },
+            {
+              role: "Intern",
+              lines: [
+                intern,
+                `Role: ${text(values, "position", "Internship role")}`,
+                ...(optional(values, "institution") ? [`Student of ${optional(values, "institution")}`] : []),
+              ],
+            },
           ],
         },
-        { kind: "heading", text: "Purpose" },
+        section("Placement"),
+        {
+          kind: "terms",
+          rows: [
+            ["Period", `${date(values, "startDate", "Start date")} to ${date(values, "endDate", "End date")}`],
+            ["Supervisor", text(values, "supervisor", "Supervisor")],
+            ["Stipend", optional(values, "stipend") ?? "Unpaid"],
+          ],
+        },
         {
           kind: "paragraph",
           text: "The internship gives the Intern practical experience under supervision. It is a learning placement and does not create a contract of employment.",
         },
         ...(objectives.length > 0
-          ? ([
-              { kind: "heading", text: "Learning objectives" },
-              { kind: "list", items: objectives },
-            ] as const)
+          ? ([section("Learning objectives"), { kind: "list", items: objectives }] as const)
           : []),
-        { kind: "heading", text: "Obligations" },
+        section("Obligations"),
         {
           kind: "list",
           items: [
             "The Company provides supervision, a workspace, the equipment the work needs and regular feedback.",
             "The Intern follows the Company's working hours, instructions and policies, and reports absences in advance.",
-            "The Intern keeps confidential all information about the Company and its clients, during and after the internship.",
-            "Work produced during the internship belongs to the Company.",
           ],
         },
-        { kind: "heading", text: "Ending the internship" },
+        section("Confidentiality & IP"),
         {
           kind: "paragraph",
-          text: "Either party may end the internship early with one week's written notice, or immediately for serious misconduct. On completion, the Company will provide a certificate of internship on request.",
+          text: `The Intern keeps confidential all information about ${employer} and its clients, during and after the internship. All work produced during the internship, including source code, designs and documentation, is the property of ${employer}.`,
         },
+        section("Termination"),
+        {
+          kind: "paragraph",
+          text: "Either party may end the internship early with one week's written notice, or immediately for serious misconduct. Upon termination, all company property, credentials, and access must be returned immediately.",
+        },
+        section("Governing law"),
+        { kind: "paragraph", text: `This agreement is governed by ${text(values, "governingLaw", "Governing law")}.` },
         {
           kind: "signatures",
           parties: [
-            {
-              role: "For the Company",
-              name: text(values, "signatoryName", "Signatory"),
-              title: optional(values, "signatoryTitle") ?? undefined,
-            },
-            { role: "The Intern", name: intern },
+            { role: "Intern signature", name: intern },
+            { role: "CEO signature", name: text(values, "signatoryName", "CEO") },
           ],
         },
       ],
@@ -544,8 +579,7 @@ const nda: DocumentTemplate = {
   summary: "A mutual NDA to sign before sharing plans, code or data with a client or partner.",
   legal: true,
   fields: [
-    common.reference("MAL/LEGAL"),
-    common.date,
+    agreementDateField,
     {
       name: "partyName",
       label: "Other party (company or person)",
@@ -563,62 +597,72 @@ const nda: DocumentTemplate = {
       default: (context) => (context.project ? `Discussing and delivering the ${context.project.name} project.` : ""),
     },
     { name: "years", label: "Confidentiality lasts (years)", type: "number", default: () => "3" },
-    common.governingLaw,
-    common.signatory,
-    common.signatoryTitle,
+    { name: "governingLaw", label: "Governing law", type: "text", default: () => "the laws of Rwanda" },
+    ceoField,
     { name: "partySignatory", label: "Signed for the other party by", type: "text" },
+    { name: "reference", label: "Reference (optional)", type: "text" },
   ],
   build(values, context) {
     const party = text(values, "partyName", "Other party");
+    const section = sections();
     return {
-      title: "Mutual Non-Disclosure Agreement",
+      layout: "contract",
+      title: "Non-Disclosure Agreement",
+      subtitle: "Mutual Confidentiality",
+      dateLabel: "Agreement date",
+      date: agreementDate(values),
       reference: optional(values, "reference") ?? undefined,
-      date: date(values, "date", "Date"),
       classification: "Confidential",
       blocks: [
         {
-          kind: "paragraph",
-          text: `This agreement is made between ${company(context)}${context.letterhead.address ? `, of ${context.letterhead.address}` : ""}, and ${party}${optional(values, "partyAddress") ? `, of ${optional(values, "partyAddress")}` : ""} (each a "Party").`,
+          kind: "parties",
+          intro: 'This Non-Disclosure Agreement ("Agreement") is entered into between:',
+          parties: [
+            { role: "Party A", lines: [company(context), context.letterhead.address].filter(Boolean) },
+            {
+              role: "Party B",
+              lines: [party, ...(optional(values, "partyAddress") ? [optional(values, "partyAddress")!] : [])],
+            },
+          ],
         },
-        { kind: "heading", text: "1. Purpose" },
+        section("Purpose"),
         {
           kind: "paragraph",
           text: `The Parties wish to share confidential information for the following purpose: ${text(values, "purpose", "Purpose")}`,
         },
-        { kind: "heading", text: "2. Confidential information" },
+        section("Confidential information"),
         {
           kind: "paragraph",
           text: "Confidential information means any non-public information disclosed by one Party to the other, in any form, including business plans, designs, source code, data, credentials and pricing. It does not include information that is public through no fault of the receiving Party, was already lawfully known to it, or is independently developed.",
         },
-        { kind: "heading", text: "3. Obligations" },
+        section("Obligations"),
+        { kind: "paragraph", text: "Each Party agrees to:" },
         {
           kind: "list",
           items: [
-            "Use confidential information only for the purpose above.",
-            "Share it only with employees and advisers who need it and are bound by similar obligations.",
-            "Protect it with at least the care used for one's own confidential information.",
-            "Return or destroy it on written request.",
+            "Use confidential information only for the purpose above",
+            "Share it only with employees and advisers who need it and are bound by similar obligations",
+            "Protect it with at least the care used for its own confidential information",
+            "Return or destroy it on written request",
           ],
         },
-        { kind: "heading", text: "4. Duration" },
+        section("Duration"),
         {
           kind: "paragraph",
           text: `These obligations continue for ${text(values, "years", "Years")} years from the date of this agreement.`,
         },
-        { kind: "heading", text: "5. General" },
+        section("Ownership"),
+        { kind: "paragraph", text: "No licence or ownership of any information is transferred by this agreement." },
+        section("Governing law"),
         {
           kind: "paragraph",
-          text: `No licence or ownership is transferred by this agreement. It is governed by ${text(values, "governingLaw", "Governing law")}, and any dispute shall first be settled amicably before being referred to the competent courts.`,
+          text: `This agreement is governed by ${text(values, "governingLaw", "Governing law")}. Any dispute shall first be settled amicably before being referred to the competent courts.`,
         },
         {
           kind: "signatures",
           parties: [
-            {
-              role: `For ${company(context)}`,
-              name: text(values, "signatoryName", "Signatory"),
-              title: optional(values, "signatoryTitle") ?? undefined,
-            },
-            { role: `For ${party}`, name: optional(values, "partySignatory") ?? "" },
+            { role: `${company(context)} — CEO signature`, name: text(values, "signatoryName", "CEO") },
+            { role: `${party} — signature`, name: optional(values, "partySignatory") ?? "" },
           ],
         },
       ],
@@ -634,8 +678,7 @@ const serviceAgreement: DocumentTemplate = {
   summary: "The contract with a client: scope, deliverables, fees, payment schedule, IP and warranty.",
   legal: true,
   fields: [
-    common.reference("MAL/CLIENT"),
-    common.date,
+    agreementDateField,
     {
       name: "clientName",
       label: "Client",
@@ -665,83 +708,93 @@ const serviceAgreement: DocumentTemplate = {
       default: () => "40% on signing\n40% on delivery of the beta\n20% on final acceptance",
     },
     { name: "warranty", label: "Warranty period", type: "text", default: () => "ninety (90) days after acceptance" },
-    common.governingLaw,
-    common.signatory,
-    common.signatoryTitle,
+    { name: "governingLaw", label: "Governing law", type: "text", default: () => "the laws of Rwanda" },
+    ceoField,
     { name: "clientSignatory", label: "Signed for the client by", type: "text" },
+    { name: "reference", label: "Reference (optional)", type: "text" },
   ],
   build(values, context) {
     const client = text(values, "clientName", "Client");
     const currency = text(values, "currency", "Currency");
     const deliverables = lines(values, "deliverables");
     const schedule = lines(values, "schedule");
+    const section = sections();
     return {
-      title: "Software Development Services Agreement",
-      subtitle: text(values, "projectName", "Project"),
+      layout: "contract",
+      title: "Services Agreement",
+      subtitle: `Software Development — ${text(values, "projectName", "Project")}`,
+      dateLabel: "Agreement date",
+      date: agreementDate(values),
       reference: optional(values, "reference") ?? undefined,
-      date: date(values, "date", "Date"),
       classification: "Confidential",
       blocks: [
         {
-          kind: "paragraph",
-          text: `This agreement is between ${company(context)} (the "Provider") and ${client}${optional(values, "clientAddress") ? `, of ${optional(values, "clientAddress")}` : ""} (the "Client").`,
+          kind: "parties",
+          intro: 'This Services Agreement ("Agreement") is entered into between:',
+          parties: [
+            { role: "Provider", lines: [company(context), context.letterhead.address].filter(Boolean) },
+            {
+              role: "Client",
+              lines: [client, ...(optional(values, "clientAddress") ? [optional(values, "clientAddress")!] : [])],
+            },
+          ],
         },
-        { kind: "heading", text: "1. Scope of work" },
-        ...paragraphs(values, "scope"),
-        ...(deliverables.length > 0
-          ? ([
-              { kind: "heading", text: "2. Deliverables" },
-              { kind: "list", items: deliverables },
-            ] as const)
-          : []),
-        { kind: "heading", text: deliverables.length > 0 ? "3. Timeline" : "2. Timeline" },
+        section("Scope of work"),
+        ...(paragraphs(values, "scope").length > 0
+          ? paragraphs(values, "scope")
+          : [{ kind: "paragraph", text: "[Scope of work]" } as const]),
+        ...(deliverables.length > 0 ? ([section("Deliverables"), { kind: "list", items: deliverables }] as const) : []),
+        section("Timeline"),
+        {
+          kind: "terms",
+          rows: [
+            ["Start date", date(values, "startDate", "Start date")],
+            ["Target delivery", date(values, "deliveryDate", "Target delivery")],
+          ],
+        },
         {
           kind: "paragraph",
-          text: `Work starts on ${date(values, "startDate", "Start date")} with a target delivery of ${date(values, "deliveryDate", "Target delivery")}. Dates depend on the Client providing content, access and feedback on time; delays on either side move the dates accordingly.`,
+          text: "Dates depend on the Client providing content, access and feedback on time; delays on either side move the dates accordingly.",
         },
-        { kind: "heading", text: "Fees and payment" },
-        { kind: "facts", rows: [["Total fee", money(values, "fee", "Total fee", currency)]] },
+        section("Fees & payment"),
+        { kind: "terms", rows: [["Total fee", money(values, "fee", "Total fee", currency)]] },
         ...(schedule.length > 0 ? ([{ kind: "list", items: schedule }] as const) : []),
         {
           kind: "paragraph",
           text: "Invoices are payable within fourteen (14) days. Fees exclude taxes, which are added where applicable. Work outside the agreed scope is quoted separately and starts only on written approval.",
         },
-        { kind: "heading", text: "Acceptance" },
+        section("Acceptance"),
         {
           kind: "paragraph",
           text: "The Client reviews each deliverable within ten (10) working days and either accepts it or lists the defects in writing. A deliverable not rejected in writing within that time is deemed accepted.",
         },
-        { kind: "heading", text: "Intellectual property" },
+        section("Source code & IP ownership"),
         {
           kind: "paragraph",
           text: "On full payment, ownership of the custom work produced for the Client passes to the Client. The Provider keeps ownership of its pre-existing tools, libraries and know-how, and grants the Client a perpetual licence to use them as part of the deliverables. Third-party and open-source components remain under their own licences.",
         },
-        { kind: "heading", text: "Warranty and support" },
+        section("Warranty & support"),
         {
           kind: "paragraph",
-          text: `The Provider corrects defects reported within ${text(values, "warranty", "Warranty period")} at no cost. Ongoing hosting, maintenance and new features are covered by a separate support agreement.`,
+          text: `The Provider corrects defects reported within ${text(values, "warranty", "Warranty period")} at no cost. Hosting, maintenance and new features are covered by a separate support agreement.`,
         },
-        { kind: "heading", text: "Confidentiality and data" },
+        section("Confidentiality"),
         {
           kind: "paragraph",
           text: "Each party keeps the other's confidential information confidential. The Provider processes any personal data only on the Client's instructions and for the purpose of this agreement.",
         },
-        { kind: "heading", text: "Liability and termination" },
+        section("Termination"),
         {
           kind: "paragraph",
-          text: "Each party's total liability under this agreement is limited to the fees paid under it, except for fraud or wilful misconduct. Either party may terminate on thirty (30) days' written notice; the Client pays for work performed up to termination.",
+          text: "Either party may terminate on thirty (30) days' written notice; the Client pays for work performed up to termination. Each party's total liability is limited to the fees paid under this agreement, except for fraud or wilful misconduct.",
         },
-        { kind: "heading", text: "Governing law" },
+        section("Governing law"),
         { kind: "paragraph", text: `This agreement is governed by ${text(values, "governingLaw", "Governing law")}.` },
         {
           kind: "signatures",
           parties: [
-            {
-              role: "For the Provider",
-              name: text(values, "signatoryName", "Signatory"),
-              title: optional(values, "signatoryTitle") ?? undefined,
-            },
-            { role: "For the Client", name: optional(values, "clientSignatory") ?? "" },
+            { role: "Client signature", name: optional(values, "clientSignatory") ?? "" },
+            { role: "CEO signature", name: text(values, "signatoryName", "CEO") },
           ],
         },
       ],

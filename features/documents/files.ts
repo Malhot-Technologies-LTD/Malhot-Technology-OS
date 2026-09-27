@@ -61,13 +61,15 @@ export function formatBytes(bytes: number): string {
 }
 
 /**
- * The letterhead's starting values, from the website's company details. Those
- * are marked unconfirmed in content/site.ts, so every one stays editable on the
- * generator and the edits are remembered per browser.
+ * The letterhead's starting values. Name and tagline match the company's own
+ * contracts; contact details come from the website, where they are marked
+ * unconfirmed, so every one stays editable on the generator and the edits are
+ * remembered per browser.
  */
 export const DEFAULT_LETTERHEAD: Letterhead = {
-  companyName: site.legalName,
-  tagline: "Build · Innovate · Grow",
+  // As on the company's own contracts (the developer employment agreement).
+  companyName: "Malhot Tech",
+  tagline: "Your Vision. Our Technology. Real Solutions.",
   address: site.location,
   email: site.email,
   phone: site.phone,

@@ -21,6 +21,10 @@ export type Block =
       taxLabel: string;
     }
   | { kind: "note"; text: string }
+  /** "Label: value" lines, label bold, as in "Compensation: 14.295% of salary base". */
+  | { kind: "terms"; rows: readonly (readonly [string, string])[] }
+  /** The parties to an agreement, side by side under an introductory sentence. */
+  | { kind: "parties"; intro: string; parties: readonly { role: string; lines: readonly string[] }[] }
   | { kind: "signatures"; parties: readonly { role: string; name: string; title?: string }[] };
 
 export type DocumentContent = {
@@ -33,6 +37,15 @@ export type DocumentContent = {
   blocks: readonly Block[];
   /** Printed in the footer of every page, e.g. "Confidential". */
   classification?: string;
+  /**
+   * "letter" (default) sets reference and date at the top like correspondence.
+   * "contract" follows the company's agreement format: centred title and role,
+   * an AGREEMENT DATE line left blank for signing when no date is given,
+   * CAPS numbered sections and a two-column signature block.
+   */
+  layout?: "letter" | "contract";
+  /** Label for the date line in the contract layout, e.g. "AGREEMENT DATE". */
+  dateLabel?: string;
 };
 
 export type Letterhead = {

@@ -127,6 +127,7 @@ Still open from before: the CI types-drift check is broken (pre-existing). The s
 - Next step on resume: see Status (apply migration 20260926120000, verify live). `image.png` is the owner's reference, do not commit it unless asked. Lighthouse was not run for the redesign. Then resume Phase 3 from its unchecked items.
 
 ## Recently Completed
+- 2026-09-27: Contracts now follow the company agreement format from the owner's developer contract (01_ISHIMWE_KENY_KELVIN_Developer_Contract.docx, kept out of git): `layout: "contract"` in the paper renderer; employment, internship, NDA and services templates use it; letterhead default "Malhot Tech" + tagline.
 - 2026-09-27: Fixed Settings → Website save failing with "expected string, received array" (form sent resolver output instead of raw input); pushed in 5a22b39.
 - 2026-09-27: OS step 1: logo, stat dashboard with charts, task pages at /os/tasks/KEY-42, row-based My Tasks, mobile drawer nav.
 - 2026-09-27: Settings → Website: projects, copy and photos on the public site now come from the OS; fake case studies deleted (pending migration + live verification).
