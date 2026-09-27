@@ -339,6 +339,30 @@ export type Database = {
           },
         ]
       }
+      member_duties: {
+        Row: {
+          created_at: string
+          duty: string
+          granted_by: string | null
+          organization_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duty: string
+          granted_by?: string | null
+          organization_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duty?: string
+          granted_by?: string | null
+          organization_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       milestones: {
         Row: {
           completed_at: string | null
@@ -845,6 +869,160 @@ export type Database = {
           },
         ]
       }
+      social_accounts: {
+        Row: {
+          created_at: string
+          created_by: string
+          followers: number | null
+          followers_updated_at: string | null
+          handle: string
+          id: string
+          notes: string | null
+          organization_id: string
+          owner_id: string | null
+          platform: string
+          profile_url: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          followers?: number | null
+          followers_updated_at?: string | null
+          handle: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          owner_id?: string | null
+          platform: string
+          profile_url?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          followers?: number | null
+          followers_updated_at?: string | null
+          handle?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          owner_id?: string | null
+          platform?: string
+          profile_url?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_accounts_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_post_channels: {
+        Row: {
+          account_id: string
+          organization_id: string
+          post_id: string
+          published_url: string | null
+        }
+        Insert: {
+          account_id: string
+          organization_id: string
+          post_id: string
+          published_url?: string | null
+        }
+        Update: {
+          account_id?: string
+          organization_id?: string
+          post_id?: string
+          published_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_post_channels_account_id_organization_id_fkey"
+            columns: ["account_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "social_accounts"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "social_post_channels_post_id_organization_id_fkey"
+            columns: ["post_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "social_posts"
+            referencedColumns: ["id", "organization_id"]
+          },
+        ]
+      }
+      social_posts: {
+        Row: {
+          asset_url: string | null
+          caption: string | null
+          created_at: string
+          created_by: string
+          format: string
+          id: string
+          notes: string | null
+          organization_id: string
+          owner_id: string | null
+          pillar: string | null
+          published_at: string | null
+          scheduled_at: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          asset_url?: string | null
+          caption?: string | null
+          created_at?: string
+          created_by: string
+          format?: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          owner_id?: string | null
+          pillar?: string | null
+          published_at?: string | null
+          scheduled_at?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          asset_url?: string | null
+          caption?: string | null
+          created_at?: string
+          created_by?: string
+          format?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          owner_id?: string | null
+          pillar?: string | null
+          published_at?: string | null
+          scheduled_at?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_posts_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           accepted_at: string | null
@@ -1008,7 +1186,9 @@ export type Database = {
       auth_uid: { Args: never; Returns: string }
       can_contribute: { Args: { project: string }; Returns: boolean }
       can_manage_project: { Args: { project: string }; Returns: boolean }
+      can_manage_social: { Args: { org: string }; Returns: boolean }
       can_manage_site_media: { Args: { object_name: string }; Returns: boolean }
+      has_duty: { Args: { org: string; wanted: string }; Returns: boolean }
       is_org_admin: { Args: { org: string }; Returns: boolean }
       is_org_member: { Args: { org: string }; Returns: boolean }
       is_org_owner: { Args: { org: string }; Returns: boolean }

@@ -89,6 +89,24 @@ export const ROLE_PROFILES: readonly RoleProfile[] = [
     access: "the company's CRM, email, social media accounts, marketing tools, and credentials",
   },
   {
+    name: "Social Media Manager",
+    subtitle: "Social Media Manager / Marketing Role",
+    responsibilities:
+      "planning the social media content calendar, writing and preparing posts, managing the company's accounts on all platforms, publishing and scheduling content, engaging with followers and responding to messages and comments, tracking performance and reporting on growth, and other duties as assigned by management",
+    confidential: [
+      "Login details and access to company social media accounts",
+      "Unpublished posts, campaigns and content plans",
+      "Client information, work and assets not yet approved for publication",
+      "Audience data, messages and analytics",
+      "Any proprietary information",
+    ],
+    ipHeading: "Content & account ownership",
+    workProduct:
+      "posts, captions, graphics, videos, content calendars, and the company's social media accounts and their followers",
+    access:
+      "the company's social media accounts on every platform, scheduling and design tools, and credentials, which remain the property of the company and must be handed over on request",
+  },
+  {
     name: "Operations / Administration",
     subtitle: "Operations / Administrative Role",
     responsibilities:

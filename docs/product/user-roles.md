@@ -37,10 +37,21 @@ A sidebar of nine sections shown to everyone taught a new member that most of th
 | Timeline, Documents | anyone on a project | Reads from projects you are on |
 | Testing | QA, managers, org admins | QA signs off; managers chase the queue |
 | Team, Reports, Activity | managers, org admins | These exist to watch people |
+| Social | org admins, members with the `social_media` duty | The social media manager's own workspace |
 
 Two facts decide it: organisation role, and every project role the person holds anywhere. A `member` on no project and a `member` running two are not the same person. The roles ride along in `getAuthState`'s existing query batch, so this costs no extra round trip.
 
 **Hiding is a courtesy, not a control.** Every page still checks its own permissions and RLS still decides what any query returns; a hidden link is still a URL someone can type. `components/os/nav-audience.test.ts` pins the table above.
+
+### Duties (`member_duties`)
+
+Some jobs are neither an organisation role nor a project role: the **social media manager** runs the company's accounts, which belong to no project, yet is not an admin. A duty is a grant on top of the organisation role, given by an org admin on Settings → Members.
+
+| Duty | Grants | Enforced by |
+|---|---|---|
+| `social_media` | Read and write everything under Social (accounts, posts, channels) | `can_manage_social()` in `20260927150000_social_media.sql`, `social.manage` in `lib/permissions.ts` |
+
+Org admins hold every duty implicitly. Duties live in their own table rather than as a column on `organization_members`, so a deploy that lands before its migration reads "no duties" instead of failing the membership query every OS page depends on. Removing someone from the organisation removes their duties (foreign key, cascade).
 
 ### Project roles (`project_role`)
 

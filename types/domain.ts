@@ -20,6 +20,12 @@ export type ProjectShowcase = Tables<"project_showcases">;
 export type ProjectShowcaseImage = Tables<"project_showcase_images">;
 
 export type OrgRole = Enums<"org_role">;
+/**
+ * A grant on top of an organisation role (docs/product/user-roles.md#duties):
+ * a member who runs the company's social media is still a member everywhere else.
+ */
+export const DUTIES = ["social_media"] as const;
+export type Duty = (typeof DUTIES)[number];
 export type ProjectRole = Enums<"project_role">;
 export type ProjectStatus = Enums<"project_status">;
 export type ProjectKind = Enums<"project_kind">;

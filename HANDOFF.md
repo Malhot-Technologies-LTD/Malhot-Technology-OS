@@ -1,10 +1,23 @@
 # HANDOFF
 
 ## Current Task
-**OS overhaul, steps 2 to 4 (2026-09-27), pushed in 1d371a7..7d25e28.** Owner asked for: a better project list, the project split
-into many purposeful pages (documents, progress, team, timeline, MVP, detail, milestone pages and more), a proper
-Kanban, working Ctrl+K, a far bigger My Tasks with per-task pages, global Timeline/Documents, and (mid-task) a
-Documents generator for professional letterhead documents (contracts, offer letters…) with the logo.
+**Social media section for the social media manager (2026-09-27, not committed yet).** Owner: "we have a social
+media manager role: plan posts, manage the Malhot accounts on all platforms, and make a social media dashboard for them."
+Decisions (asked): access = org admins + members given a "Social media manager" duty on Settings → Members; plan &
+track only (no auto-publishing through platform APIs); the owner runs the SQL themselves.
+
+## Social media — status
+**Built and verified locally; waiting on the migration.** `supabase/migrations/20260927150000_social_media.sql`
+(tables `member_duties`, `social_accounts`, `social_posts`, `social_post_channels`; functions `has_duty`,
+`can_manage_social`; RLS) is **not applied**. Until it is, Social pages show "needs a one-time database update", the
+Members switch is hidden, and everyone has no duties (the viewer query tolerates the missing table). After applying:
+regenerate `types/database.ts` (hand-edited for the four tables and two functions), then do a live pass as a member with
+the duty (add account, plan post, publish, paste link) — **saving has not been tested against the real database.**
+Verified: migration + RLS in PGlite with stub auth (applies twice; member cannot self-grant; developer sees/writes
+nothing; schedule needs a time; cross-org channel refused; revoke/leave removes access); dashboard, post editor, account
+form screenshotted with fixtures at 1440/1280/390 and a Tokyo browser clock; 566 unit tests, lint, typecheck, build.
+Docs: `docs/features/social.md`, duties section in `docs/product/user-roles.md`. Also added a "Social Media Manager"
+role preset for offers/agreements (`features/documents/roles.ts`).
 
 ## Status
 **Built and verified; waiting on one migration.** Everything except saving/uploading documents works on the current
@@ -127,7 +140,7 @@ Still open from before: the CI types-drift check is broken (pre-existing). The s
 - Next step on resume: see Status (apply migration 20260926120000, verify live). `image.png` is the owner's reference, do not commit it unless asked. Lighthouse was not run for the redesign. Then resume Phase 3 from its unchecked items.
 
 ## Recently Completed
-- 2026-09-27 (uncommitted): Offer of employment now uses the company agreement layout (numbered CAPS sections, parties, two-column signatures) with role presets in `features/documents/roles.ts` (Developer, Designer, PM, Sales & Marketing, Operations) shared with the employment agreement; empty duties/confidentiality fall back to the role's. Every generated document is true A4 on screen (`A4Frame` zooms, never reflows), prints at 18 mm margins, and downloads as a styled A4 Word file (`features/documents/docx.ts`, `docx` package lazy-loaded, logo from `public/brand-mark.png`). Verified: screenshots at 1100/520px, print PDF (offer = 2 pages), .docx rendered via docx-preview; 545 unit tests, lint, typecheck, build pass. Not checked in real Microsoft Word (none installed) — open one download in Word before relying on it. Saved offers from before this change lose the old salary/currency fields (now free-text Compensation).
+- 2026-09-27 (pushed in 8769f66): Offer of employment now uses the company agreement layout (numbered CAPS sections, parties, two-column signatures) with role presets in `features/documents/roles.ts` (Developer, Designer, PM, Sales & Marketing, Operations) shared with the employment agreement; empty duties/confidentiality fall back to the role's. Every generated document is true A4 on screen (`A4Frame` zooms, never reflows), prints at 18 mm margins, and downloads as a styled A4 Word file (`features/documents/docx.ts`, `docx` package lazy-loaded, logo from `public/brand-mark.png`). Verified: screenshots at 1100/520px, print PDF (offer = 2 pages), .docx rendered via docx-preview; 545 unit tests, lint, typecheck, build pass. Not checked in real Microsoft Word (none installed) — open one download in Word before relying on it. Saved offers from before this change lose the old salary/currency fields (now free-text Compensation).
 - 2026-09-27: Contracts now follow the company agreement format from the owner's developer contract (01_ISHIMWE_KENY_KELVIN_Developer_Contract.docx, kept out of git): `layout: "contract"` in the paper renderer; employment, internship, NDA and services templates use it; letterhead default "Malhot Tech" + tagline.
 - 2026-09-27: Fixed Settings → Website save failing with "expected string, received array" (form sent resolver output instead of raw input); pushed in 5a22b39.
 - 2026-09-27: OS step 1: logo, stat dashboard with charts, task pages at /os/tasks/KEY-42, row-based My Tasks, mobile drawer nav.

@@ -41,7 +41,7 @@ export default async function OsLayout({ children }: LayoutProps<"/">) {
     <ThemeProvider>
       <OsShell
         defaultCollapsed={defaultCollapsed}
-        audience={{ orgRole: viewer.orgRole, projectRoles: viewer.projectRoles }}
+        audience={{ orgRole: viewer.orgRole, projectRoles: viewer.projectRoles, duties: viewer.duties }}
         bell={<NotificationBell userId={viewer.userId} organizationId={viewer.organizationId} />}
         notificationBadge={<NotificationCount userId={viewer.userId} organizationId={viewer.organizationId} />}
         user={{

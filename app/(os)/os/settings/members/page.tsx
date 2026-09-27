@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { AccessRequests } from "@/features/organization/components/access-requests.client";
 import { MemberList } from "@/features/organization/components/member-list.client";
 import { listMembers } from "@/features/organization/queries";
+import { listSocialManagers } from "@/features/social/queries";
 import { listProjectOptions } from "@/features/projects/queries";
 import { requireViewer } from "@/lib/auth/context";
 import { can } from "@/lib/permissions";
@@ -22,10 +23,11 @@ export default async function MembersSettingsPage() {
   const viewer = await requireViewer();
   if (!can(viewer, "org.invite")) notFound();
 
-  const [members, requests, projects] = await Promise.all([
+  const [members, requests, projects, socialManagers] = await Promise.all([
     listMembers(viewer.organizationId),
     listAccessRequests(viewer.userId, viewer.organizationId),
     listProjectOptions(viewer.organizationId),
+    listSocialManagers(viewer.organizationId),
   ]);
   if (members.error) throw new Error(`Could not load members: ${members.error.message}`);
   /*
@@ -68,6 +70,7 @@ export default async function MembersSettingsPage() {
           viewerRole={viewer.orgRole}
           projects={projectOptions}
           projectsFailed={Boolean(projects.error)}
+          socialManagers={socialManagers}
         />
       </section>
     </div>

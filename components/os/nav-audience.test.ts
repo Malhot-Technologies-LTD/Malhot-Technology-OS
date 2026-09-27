@@ -8,6 +8,7 @@ import {
   hasAnyProject,
   oversees,
   ownsTesting,
+  runsSocial,
   type NavAudience,
 } from "./nav-audience";
 
@@ -133,6 +134,17 @@ describe("what each person sees in the sidebar", () => {
     // Reports and Activity; a newcomer oversees nothing.
     expect(groups.map((group) => group.label)).not.toContain("Quality");
     expect(groups.map((group) => group.label)).not.toContain("Company");
+  });
+
+  it("gives Social to org admins and the social media manager only", () => {
+    const socialManager: NavAudience = { orgRole: "member", projectRoles: ["marketer"], duties: ["social_media"] };
+    expect(runsSocial(socialManager)).toBe(true);
+    expect(hrefs(visibleNavItems(socialManager))).toContain("/os/social");
+    for (const person of [OWNER, ADMIN]) expect(hrefs(visibleNavItems(person))).toContain("/os/social");
+    // A marketer on a project is not the social media manager until an admin says so.
+    for (const person of [audience("member", "marketer"), MANAGER, DEVELOPER, NEWCOMER]) {
+      expect(hrefs(visibleNavItems(person))).not.toContain("/os/social");
+    }
   });
 
   it("leaves an unknown href visible rather than silently hiding it", () => {

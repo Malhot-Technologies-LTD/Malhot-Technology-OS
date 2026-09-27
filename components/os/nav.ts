@@ -7,6 +7,7 @@ import {
   FlaskConical,
   FolderKanban,
   Home,
+  Megaphone,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -45,6 +46,7 @@ export const PRIMARY_NAV: readonly NavItem[] = [
   { label: "Team", href: "/os/team", icon: Users },
   { label: "Reports", href: "/os/reports", icon: BarChart3 },
   { label: "Activity", href: "/os/activity", icon: Activity },
+  { label: "Social", href: "/os/social", icon: Megaphone },
 ];
 
 /** Settings lives in the sidebar footer, but carries the same disclosure as the rest. */
@@ -106,6 +108,7 @@ export const GROUP_HREFS: readonly { label: string; hrefs: readonly NavItem["hre
   { label: "Delivery", hrefs: ["/os/projects", "/os/my-tasks", "/os/timeline"] },
   { label: "Quality", hrefs: ["/os/documents", "/os/testing"] },
   { label: "Company", hrefs: ["/os/team", "/os/reports", "/os/activity"] },
+  { label: "Marketing", hrefs: ["/os/social"] },
 ];
 
 export const NAV_GROUPS: readonly NavGroup[] = GROUP_HREFS.map((group) => ({

@@ -8,6 +8,7 @@ import { formatDate } from "@/components/os/data-display";
 import { StatusPill } from "@/components/os/status-badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { changeMemberRole, removeMember } from "@/features/organization/actions";
 import {
   AssignToProjectDialog,
@@ -15,6 +16,7 @@ import {
   type AssignTarget,
 } from "@/features/organization/components/assign-to-project-dialog.client";
 import type { MemberRow } from "@/features/organization/queries";
+import { setSocialManager } from "@/features/social/actions";
 import type { OrgRole } from "@/types/domain";
 
 const ROLE_HELP: Record<OrgRole, string> = {
@@ -29,6 +31,8 @@ type Props = {
   viewerRole: OrgRole;
   projects: readonly AssignableProject[];
   projectsFailed?: boolean;
+  /** Members holding the social media duty; null until that migration is applied. */
+  socialManagers: ReadonlySet<string> | null;
 };
 
 /**
@@ -40,7 +44,7 @@ type Props = {
  * not the only one — people join projects later, and the prompt at approval can
  * be skipped — so the same control lives here, reachable at any time.
  */
-export function MemberList({ members, viewerUserId, viewerRole, projects, projectsFailed }: Props) {
+export function MemberList({ members, viewerUserId, viewerRole, projects, projectsFailed, socialManagers }: Props) {
   const canManage = viewerRole === "owner" || viewerRole === "admin";
   const [assigning, setAssigning] = useState<AssignTarget | null>(null);
 
@@ -55,6 +59,7 @@ export function MemberList({ members, viewerUserId, viewerRole, projects, projec
             canManage={canManage}
             viewerRole={viewerRole}
             onAssign={setAssigning}
+            socialManager={socialManagers ? socialManagers.has(member.user_id) : null}
           />
         ))}
       </ul>
@@ -75,12 +80,14 @@ function MemberRowItem({
   canManage,
   viewerRole,
   onAssign,
+  socialManager,
 }: {
   member: MemberRow;
   isSelf: boolean;
   canManage: boolean;
   viewerRole: OrgRole;
   onAssign: (person: AssignTarget) => void;
+  socialManager: boolean | null;
 }) {
   const [pending, startTransition] = useTransition();
   const name = member.profile?.full_name || "Unnamed";
@@ -93,6 +100,15 @@ function MemberRowItem({
     startTransition(async () => {
       const result = await changeMemberRole({ userId: member.user_id, role });
       if (result.ok) toast.success(`${name} is now ${role}`);
+      else toast.error(result.error.message);
+    });
+  }
+
+  function setSocial(enabled: boolean) {
+    startTransition(async () => {
+      const result = await setSocialManager({ userId: member.user_id, enabled });
+      if (result.ok)
+        toast.success(enabled ? `${name} can now run social media` : `${name} no longer runs social media`);
       else toast.error(result.error.message);
     });
   }
@@ -116,6 +132,17 @@ function MemberRowItem({
           {member.profile?.title || ROLE_HELP[member.role]} · joined {formatDate(member.joined_at)}
         </span>
       </div>
+
+      {/*
+       * A duty on top of the role. Admins already reach Social, so the switch
+       * is only for members; it stays hidden until the migration is applied.
+       */}
+      {canManage && socialManager !== null && member.role === "member" ? (
+        <label className="flex items-center gap-2 text-sm text-fg-muted">
+          <Switch checked={socialManager} onCheckedChange={setSocial} disabled={pending} />
+          Social media manager
+        </label>
+      ) : null}
 
       {/*
        * Offered for anyone an admin manages, including themselves: putting

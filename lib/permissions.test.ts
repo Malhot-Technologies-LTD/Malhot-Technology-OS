@@ -155,6 +155,15 @@ describe("organisation actions", () => {
     });
   }
 
+  it("lets org admins and social media managers run social media", () => {
+    const member = { userId: ME, organizationId: "org-1", orgRole: "member" as const };
+    expect(can({ ...member, orgRole: "admin" }, "social.manage")).toBe(true);
+    expect(can({ ...member, orgRole: "owner" }, "social.manage")).toBe(true);
+    expect(can(member, "social.manage")).toBe(false);
+    expect(can({ ...member, duties: [] }, "social.manage")).toBe(false);
+    expect(can({ ...member, duties: ["social_media"] }, "social.manage")).toBe(true);
+  });
+
   it("denies project actions when no project context is given", () => {
     expect(can(viewerFor("admin"), "project.edit", null)).toBe(false);
   });

@@ -9,7 +9,7 @@
  * `permissions.test.ts` enumerates the matrix row by row. If the matrix in the
  * docs changes, the tests fail until both are updated.
  */
-import type { OrgRole, ProjectRole, ProjectStatus } from "@/types/domain";
+import type { Duty, OrgRole, ProjectRole, ProjectStatus } from "@/types/domain";
 
 export type PermissionGroup = "admin" | "manager" | "contributor" | "qa" | "viewer" | "none";
 
@@ -18,6 +18,8 @@ export type PermissionViewer = {
   userId: string;
   organizationId: string;
   orgRole: OrgRole;
+  /** Grants beyond the organisation role; absent means none. */
+  duties?: readonly Duty[];
 };
 
 export type ProjectContext = {
@@ -96,7 +98,8 @@ export type Action =
   | "org.integrations"
   | "org.reports"
   | "org.inquiries"
-  | "org.website";
+  | "org.website"
+  | "social.manage";
 
 const ORG_ACTIONS = new Set<Action>([
   "project.create",
@@ -106,6 +109,7 @@ const ORG_ACTIONS = new Set<Action>([
   "org.reports",
   "org.inquiries",
   "org.website",
+  "social.manage",
 ]);
 
 /** Everything that writes. Archived projects are read-only unless you are an org admin. */
@@ -291,6 +295,9 @@ function canOrgAction(viewer: PermissionViewer, action: Action): boolean {
     case "org.inquiries":
     case "org.website":
       return isOrgAdmin(viewer);
+    case "social.manage":
+      // Matched by can_manage_social() in 20260927150000_social_media.sql.
+      return isOrgAdmin(viewer) || (viewer.duties?.includes("social_media") ?? false);
     default:
       return false;
   }

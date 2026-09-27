@@ -1,4 +1,4 @@
-import type { OrgRole, ProjectRole } from "@/types/domain";
+import type { Duty, OrgRole, ProjectRole } from "@/types/domain";
 
 /**
  * Who is looking, in the only terms navigation cares about
@@ -14,6 +14,8 @@ export type NavAudience = {
   orgRole: OrgRole;
   /** Every project role this person holds, across all their projects. */
   projectRoles: readonly ProjectRole[];
+  /** Grants beyond the organisation role; absent means none. */
+  duties?: readonly Duty[];
 };
 
 export function isOrgAdmin(audience: NavAudience): boolean {
@@ -53,6 +55,11 @@ export function ownsTesting(audience: NavAudience): boolean {
   return isOrgAdmin(audience) || audience.projectRoles.some((role) => role === "qa" || role === "manager");
 }
 
+/** Runs the company's social media: an org admin, or a member given the duty. */
+export function runsSocial(audience: NavAudience): boolean {
+  return isOrgAdmin(audience) || (audience.duties?.includes("social_media") ?? false);
+}
+
 /**
  * Visibility rules, one per section, quoting the capability matrix they come
  * from. Hiding a section is a courtesy, never a control: every page still
@@ -73,6 +80,9 @@ export const NAV_VISIBILITY: Record<string, { test: (audience: NavAudience) => b
   "/os/team": { test: oversees, because: "A directory of people you manage" },
   "/os/reports": { test: oversees, because: "How the company is doing, not how you are" },
   "/os/activity": { test: oversees, because: "Watching what everyone did" },
+
+  // A duty, not a project role: the social media manager's own workspace.
+  "/os/social": { test: runsSocial, because: "Admins and the social media manager" },
 
   // Testing authority sits with QA, and with managers who chase the queue.
   "/os/testing": { test: ownsTesting, because: "QA signs off; managers oversee" },

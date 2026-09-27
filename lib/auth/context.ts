@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { cache } from "react";
 
 import { createClient } from "@/lib/supabase/server";
-import type { OrgRole, ProjectRole } from "@/types/domain";
+import { DUTIES, type Duty, type OrgRole, type ProjectRole } from "@/types/domain";
 
 /**
  * Viewer context, resolved once per request (docs/architecture/authorization.md#viewer-context).
@@ -25,6 +25,12 @@ export type Viewer = {
    * page in the OS. The sidebar uses it to decide which sections to show.
    */
   projectRoles: readonly ProjectRole[];
+  /**
+   * Grants beyond the organisation role, e.g. running social media. Read in the
+   * same batch, from their own table: if that read fails (or the table does not
+   * exist yet) the person simply has no duties, and every other page still works.
+   */
+  duties: readonly Duty[];
 };
 
 export type AuthState =
@@ -43,7 +49,7 @@ export const getAuthState = cache(async (): Promise<AuthState> => {
   const userId = claims.sub;
   const email = typeof claims.email === "string" ? claims.email : null;
 
-  const [profileResult, membershipResult, projectRolesResult] = await Promise.all([
+  const [profileResult, membershipResult, projectRolesResult, dutiesResult] = await Promise.all([
     supabase.from("profiles").select("full_name, avatar_url, title, timezone").eq("id", userId).maybeSingle(),
     supabase
       .from("organization_members")
@@ -53,6 +59,7 @@ export const getAuthState = cache(async (): Promise<AuthState> => {
       .limit(1)
       .maybeSingle(),
     supabase.from("project_members").select("role").eq("user_id", userId),
+    supabase.from("member_duties").select("organization_id, duty").eq("user_id", userId),
   ]);
 
   const membership = membershipResult.data;
@@ -75,6 +82,10 @@ export const getAuthState = cache(async (): Promise<AuthState> => {
       },
       // A failed read costs two optional sidebar sections, never the page.
       projectRoles: (projectRolesResult.data ?? []).map((row) => row.role as ProjectRole),
+      duties: (dutiesResult.data ?? [])
+        .filter((row) => row.organization_id === membership.organization.id)
+        .map((row) => row.duty)
+        .filter((duty): duty is Duty => (DUTIES as readonly string[]).includes(duty)),
     },
   };
 });
