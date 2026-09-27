@@ -11,7 +11,7 @@ Where a document can be saved:
 
 | Where | Table | Who sees it |
 |---|---|---|
-| A company folder (the Documents explorer, `/os/documents`) | `company_files` in `file_folders` | Everyone in the organisation; admins-only folders only admins |
+| A folder in Files (`/os/files`, its own sidebar link) | `company_files` in `file_folders` | Everyone in the organisation; admins-only folders only admins |
 | A project (`/os/projects/KEY/documents`) | `project_documents` | Everyone on the project |
 | A person (`/os/team/<id>`) | `member_documents` | Admins and the person |
 
@@ -23,7 +23,8 @@ inherits that (a trigger restricts subfolders and anything moved in) and lifting
 Uploads go to the private `company-files` bucket as `<org>/<uuid>-<name>` and are read through the file's row, so a
 restricted folder's bytes cannot be fetched by path. The creator of a row can never be changed. The explorer
 uploads files dropped from the desktop straight into the open folder and moves rows dragged onto a folder or a crumb.
-Project paperwork appears in the explorer as a read-only Projects entry (`/os/documents/projects`).
+Documents (`/os/documents`) stays the template library and the list of project paperwork; "New document" in a
+folder opens the generator with that folder chosen, and outside a project the generator saves to Files by default.
 
 ## Purpose
 Produce and manage professional project documentation, generated from structured project data and finished by people. Documents are deliverables (briefs, specs, reports) with a review/approval lifecycle and version history.

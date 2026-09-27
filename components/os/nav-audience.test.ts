@@ -74,12 +74,13 @@ describe("what each person sees in the sidebar", () => {
   });
 
   it("shows a newly approved member only what is not empty", () => {
-    expect(hrefs(visibleNavItems(NEWCOMER))).toEqual(["/os", "/os/projects", "/os/my-tasks", "/os/documents"]);
+    expect(hrefs(visibleNavItems(NEWCOMER))).toEqual(["/os", "/os/projects", "/os/my-tasks", "/os/files"]);
   });
 
   it("opens the work views once a member is on a project", () => {
     const seen = hrefs(visibleNavItems(DESIGNER));
     expect(seen).toContain("/os/timeline");
+    expect(seen).toContain("/os/documents");
   });
 
   it("keeps the oversight pages out of a contributor's sidebar", () => {
@@ -129,12 +130,10 @@ describe("what each person sees in the sidebar", () => {
   it("drops a group entirely when nothing in it survives", () => {
     const groups = visibleGroups(NEWCOMER);
     expect(groups.every((group) => group.items.length > 0)).toBe(true);
-    // Quality is Testing, which a newcomer does not do. Company keeps only the
-    // shared Documents: Team, Reports and Activity are for people who oversee.
+    // Quality is Documents + Testing; a newcomer has neither. Company keeps only
+    // the shared Files: Team, Reports and Activity are for people who oversee.
     expect(groups.map((group) => group.label)).not.toContain("Quality");
-    expect(groups.find((group) => group.label === "Company")?.items.map((item) => item.href)).toEqual([
-      "/os/documents",
-    ]);
+    expect(groups.find((group) => group.label === "Company")?.items.map((item) => item.href)).toEqual(["/os/files"]);
   });
 
   it("gives Social to org admins and the social media manager only", () => {

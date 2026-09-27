@@ -280,8 +280,8 @@ function Workspace({
           toast.error(result.error.message);
           return;
         }
-        toast.success(`Saved to ${folders?.find((candidate) => candidate.id === folder)?.path ?? "Documents"}`);
-        router.push(`/os/documents/files/${result.data.id}`);
+        toast.success(`Saved to ${folders?.find((candidate) => candidate.id === folder)?.path ?? "Files"}`);
+        router.push(`/os/files/documents/${result.data.id}`);
       });
       return;
     }
@@ -377,8 +377,8 @@ function Workspace({
                     <SelectContent>
                       {offerFolders ? (
                         <SelectGroup>
-                          <SelectLabel>Company folders</SelectLabel>
-                          <SelectItem value="folder:">Documents (top level)</SelectItem>
+                          <SelectLabel>Files</SelectLabel>
+                          <SelectItem value="folder:">Files (top level)</SelectItem>
                           {folders.map((folder) => (
                             <SelectItem key={folder.id} value={`folder:${folder.id}`}>
                               {folder.path}

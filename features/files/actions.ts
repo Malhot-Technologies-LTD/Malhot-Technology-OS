@@ -43,7 +43,7 @@ function refused(error: PostgrestError) {
 }
 
 function done() {
-  revalidatePath("/os/documents", "layout");
+  revalidatePath("/os/files", "layout");
 }
 
 const folderId = z.uuid().nullable();

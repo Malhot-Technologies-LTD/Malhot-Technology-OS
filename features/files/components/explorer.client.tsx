@@ -10,7 +10,6 @@ import {
   FileText,
   Folder,
   FolderInput,
-  FolderKanban,
   FolderPlus,
   Lock,
   LockOpen,
@@ -77,8 +76,6 @@ type Props = {
   /** Files directly in each folder ("" = top level). */
   fileCounts: Readonly<Record<string, number>>;
   files: readonly FileRow[];
-  /** The Projects entry at the top level: how many project documents the viewer can see. */
-  projectDocuments?: number | null;
 };
 
 const DATE = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" });
@@ -117,16 +114,7 @@ function titleFromFileName(name: string): string {
  * move there. What the viewer may change follows the migration's rules (admin
  * or creator), and the server checks again.
  */
-export function FileExplorer({
-  organizationId,
-  viewer,
-  folder,
-  trail,
-  folders,
-  fileCounts,
-  files,
-  projectDocuments,
-}: Props) {
+export function FileExplorer({ organizationId, viewer, folder, trail, folders, fileCounts, files }: Props) {
   const router = useRouter();
   const currentId = folder?.id ?? null;
   const [query, setQuery] = useState("");
@@ -274,7 +262,7 @@ export function FileExplorer({
     };
   }
 
-  const empty = children.length === 0 && files.length === 0 && projectDocuments == null;
+  const empty = children.length === 0 && files.length === 0;
 
   return (
     <div className="flex flex-col gap-4">
@@ -291,7 +279,7 @@ export function FileExplorer({
                   dropTarget === "top" && "bg-brand-subtle text-brand ring-2 ring-brand",
                 )}
               >
-                Documents
+                Files
               </Link>
             </li>
             {trail.map((crumb) => (
@@ -388,7 +376,7 @@ export function FileExplorer({
       >
         {desktopDrag ? (
           <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-brand-subtle/80 text-sm font-semibold text-brand">
-            <Upload className="mr-2 size-4" aria-hidden="true" /> Drop to upload to {folder?.name ?? "Documents"}
+            <Upload className="mr-2 size-4" aria-hidden="true" /> Drop to upload to {folder?.name ?? "Files"}
           </div>
         ) : null}
 
@@ -415,7 +403,7 @@ export function FileExplorer({
         ) : (
           <table className="w-full table-fixed text-sm">
             <caption className="sr-only">
-              Contents of {folder?.name ?? "Documents"}: folders first, then files, newest first.
+              Contents of {folder?.name ?? "Files"}: folders first, then files, newest first.
             </caption>
             <thead className="border-b border-border bg-bg-subtle text-left text-xs text-fg-muted">
               <tr>
@@ -440,24 +428,6 @@ export function FileExplorer({
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {projectDocuments != null && !needle ? (
-                <tr className="hover:bg-bg-subtle">
-                  <td className="px-4 py-2.5">
-                    <Link href="/os/documents/projects" className="flex items-center gap-3 font-medium hover:underline">
-                      <FolderKanban className="size-5 shrink-0 text-brand" aria-hidden="true" />
-                      Projects
-                    </Link>
-                  </td>
-                  <td className="hidden px-3 py-2.5 text-fg-muted md:table-cell">
-                    {projectDocuments} project {projectDocuments === 1 ? "document" : "documents"}
-                  </td>
-                  <td className="hidden px-3 py-2.5 lg:table-cell" />
-                  <td className="hidden px-3 py-2.5 sm:table-cell" />
-                  <td className="hidden px-3 py-2.5 md:table-cell" />
-                  <td />
-                </tr>
-              ) : null}
-
               {shownFolders.map((row) => {
                 const manage = canManageItem(viewer, row);
                 const count = itemsIn(row.id);

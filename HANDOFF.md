@@ -1,10 +1,13 @@
 # HANDOFF
 
-## Current Task (2026-09-27): company file explorer, uncommitted
-Owner: "not all documents get saved to documents... make a file system like file explorer, folders, save documents in
-them". Documents (`/os/documents`) is now an explorer: nested folders, upload (button or drop from desktop, several at
-once), generate a document into a folder ("Save to" lists company folders and projects), rename / move (menu or drag
-onto a folder or crumb) / delete, admins-only folders. Project paperwork moved to `/os/documents/projects`.
+## Current Task (2026-09-27): company file explorer ("Files"), uncommitted rename
+Owner wanted a file system: a sidebar link **Files** (`/os/files`, everyone, Company nav group) where people create
+folders and store documents instead of in projects. Built first inside Documents (a682ba7), then moved: explorer at
+`/os/files`, folders `/os/files/folders/<id>`, generated docs `/os/files/documents/<id>` (+ `/download`). Documents
+(`/os/documents`) is back to the template library + project paperwork list (page restored from 9f20146, Quality group,
+visible with a project). Generator outside a project saves to Files by default ("Save to": Files folders, then Projects).
+Explorer: nested folders, upload (button or drop from desktop, several at once), generate into a folder, rename / move
+(menu or drag onto a folder or crumb) / delete, admins-only folders.
 Code: `supabase/migrations/20260927210000_company_files.sql` (file_folders, company_files, bucket company-files),
 `features/files/` (tree.ts pure + tests, queries, actions, explorer + dialogs), pages under `app/(os)/os/documents/`.
 Types hand-added in `types/database.ts`. Documents now shows for everyone and sits in the Company nav group.

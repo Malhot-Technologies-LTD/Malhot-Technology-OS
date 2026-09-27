@@ -22,7 +22,7 @@ export const metadata: Metadata = { title: "Document" };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** A generated document in a company folder, re-rendered from the facts it was saved with. Uploads open directly. */
-export default async function CompanyFilePage({ params }: PageProps<"/os/documents/files/[id]">) {
+export default async function CompanyFilePage({ params }: PageProps<"/os/files/documents/[id]">) {
   const { id } = await params;
   if (!UUID.test(id)) notFound();
   const viewer = await requireViewer();
@@ -31,7 +31,7 @@ export default async function CompanyFilePage({ params }: PageProps<"/os/documen
     listFolders(viewer.organizationId),
   ]);
   if (!file.data) notFound();
-  if (file.data.source === "upload") redirect(`/os/documents/files/${id}/download`);
+  if (file.data.source === "upload") redirect(`/os/files/documents/${id}/download`);
 
   const template = findTemplate(file.data.template_key);
   if (!template) notFound();
@@ -53,11 +53,11 @@ export default async function CompanyFilePage({ params }: PageProps<"/os/documen
             href={folderHref(back?.id ?? null)}
             className="inline-flex w-fit items-center gap-1 text-sm text-fg-muted hover:text-fg hover:underline"
           >
-            <ChevronLeft className="size-4" aria-hidden="true" /> {back?.name ?? "Documents"}
+            <ChevronLeft className="size-4" aria-hidden="true" /> {back?.name ?? "Files"}
           </Link>
           <h1 className="truncate text-2xl font-semibold tracking-tight">{file.data.title}</h1>
           <p className="text-[13px] text-fg-subtle">
-            {template.name} · in {["Documents", ...path.map((folder) => folder.name)].join(" / ")} · saved
+            {template.name} · in {["Files", ...path.map((folder) => folder.name)].join(" / ")} · saved
             {file.data.creator ? ` by ${file.data.creator.full_name}` : ""} on {formatDate(file.data.created_at)}
           </p>
         </div>

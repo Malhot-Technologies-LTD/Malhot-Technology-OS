@@ -6,6 +6,7 @@ import {
   FileText,
   FlaskConical,
   FolderKanban,
+  FolderOpen,
   Home,
   Megaphone,
   Users,
@@ -42,6 +43,7 @@ export const PRIMARY_NAV: readonly NavItem[] = [
   { label: "My Tasks", href: "/os/my-tasks", icon: CheckSquare },
   { label: "Timeline", href: "/os/timeline", icon: CalendarRange },
   { label: "Documents", href: "/os/documents", icon: FileText },
+  { label: "Files", href: "/os/files", icon: FolderOpen },
   { label: "Testing", href: "/os/testing", icon: FlaskConical },
   { label: "Team", href: "/os/team", icon: Users },
   { label: "Reports", href: "/os/reports", icon: BarChart3 },
@@ -106,8 +108,8 @@ export type NavGroup = { label: string; items: readonly NavItem[] };
 export const GROUP_HREFS: readonly { label: string; hrefs: readonly NavItem["href"][] }[] = [
   { label: "Overview", hrefs: ["/os"] },
   { label: "Delivery", hrefs: ["/os/projects", "/os/my-tasks", "/os/timeline"] },
-  { label: "Quality", hrefs: ["/os/testing"] },
-  { label: "Company", hrefs: ["/os/documents", "/os/team", "/os/reports", "/os/activity"] },
+  { label: "Quality", hrefs: ["/os/documents", "/os/testing"] },
+  { label: "Company", hrefs: ["/os/files", "/os/team", "/os/reports", "/os/activity"] },
   { label: "Marketing", hrefs: ["/os/social"] },
 ];
 

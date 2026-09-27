@@ -259,7 +259,7 @@ function MoveForm({
       ) : null}
       <fieldset className="flex max-h-72 flex-col gap-0.5 overflow-y-auto rounded-md border border-border p-1.5">
         <legend className="sr-only">Destination</legend>
-        {targets.top && !needle ? option(TOP, "Documents (top level)", 0, false) : null}
+        {targets.top && !needle ? option(TOP, "Files (top level)", 0, false) : null}
         {shown.map((path) =>
           option(
             path.id,

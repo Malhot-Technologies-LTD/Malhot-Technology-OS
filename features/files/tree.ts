@@ -153,9 +153,9 @@ export function isCompanyFilePath(path: string, organizationId: string): boolean
 }
 
 export function folderHref(id: string | null): string {
-  return id ? `/os/documents/folders/${id}` : "/os/documents";
+  return id ? `/os/files/folders/${id}` : "/os/files";
 }
 
 export function fileHref(file: Pick<FileRow, "id" | "source">): string {
-  return file.source === "generated" ? `/os/documents/files/${file.id}` : `/os/documents/files/${file.id}/download`;
+  return file.source === "generated" ? `/os/files/documents/${file.id}` : `/os/files/documents/${file.id}/download`;
 }

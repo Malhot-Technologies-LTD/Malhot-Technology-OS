@@ -35,11 +35,10 @@ const ITEM_LABELS: Record<string, string> = {
   milestones: "Milestone",
   documents: "Document",
   folders: "Folder",
-  files: "File",
 };
 
-/** Collections with no page of their own: /os/documents/folders/<id> reads "Documents / Folder". */
-const HIDDEN_UNDER: Record<string, readonly string[]> = { documents: ["folders", "files"] };
+/** Collections with no page of their own: /os/files/folders/<id> reads "Files / Folder". */
+const HIDDEN_UNDER: Record<string, readonly string[]> = { files: ["folders", "documents"] };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function labelFor(segment: string, previous?: string): string {

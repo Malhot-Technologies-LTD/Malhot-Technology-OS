@@ -10,7 +10,7 @@ import { describeQueryFailure } from "@/lib/actions/db-errors";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export async function generateMetadata({ params }: PageProps<"/os/documents/folders/[id]">): Promise<Metadata> {
+export async function generateMetadata({ params }: PageProps<"/os/files/folders/[id]">): Promise<Metadata> {
   const { id } = await params;
   if (!UUID.test(id)) return { title: "Folder" };
   const explorer = await loadExplorer(id);
@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: PageProps<"/os/documents/fold
 }
 
 /** One company folder. A restricted folder a member opens by link is a 404, as if it did not exist. */
-export default async function FolderPage({ params }: PageProps<"/os/documents/folders/[id]">) {
+export default async function FolderPage({ params }: PageProps<"/os/files/folders/[id]">) {
   const { id } = await params;
   if (!UUID.test(id)) notFound();
   const explorer = await loadExplorer(id);

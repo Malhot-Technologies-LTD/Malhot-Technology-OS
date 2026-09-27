@@ -9,9 +9,8 @@ export function FilesNotReady() {
     >
       <Database className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
       <p>
-        Company folders need a one-time database update (migration{" "}
-        <code className="font-mono">20260927210000_company_files</code>). Until then you can still generate documents
-        and save them to a project, and project paperwork is under Projects below.
+        Files need a one-time database update (migration <code className="font-mono">20260927210000_company_files</code>
+        ). Until then you can still generate documents and save them to a project from Documents.
       </p>
     </div>
   );

@@ -14,7 +14,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  * file's row, so a file in a folder the viewer cannot see is a 404.
  * `?download=1` asks for a download rather than opening it in the browser.
  */
-export async function GET(request: NextRequest, context: RouteContext<"/os/documents/files/[id]/download">) {
+export async function GET(request: NextRequest, context: RouteContext<"/os/files/documents/[id]/download">) {
   const { id } = await context.params;
   if (!UUID.test(id)) return new NextResponse("Not found", { status: 404 });
 
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest, context: RouteContext<"/os/docum
   const file = await getCompanyFile(viewer.organizationId, id);
   if (!file.data) return new NextResponse("Not found", { status: 404 });
   if (file.data.source !== "upload" || !file.data.storage_path) {
-    return NextResponse.redirect(new URL(`/os/documents/files/${id}`, request.url));
+    return NextResponse.redirect(new URL(`/os/files/documents/${id}`, request.url));
   }
 
   const supabase = await createClient();
