@@ -4,7 +4,13 @@ import type { PostgrestError } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { ACCEPTED_MIME_TYPES, DOCUMENT_TYPES, MAX_FILE_BYTES, sanitiseLetterhead } from "@/features/documents/files";
+import {
+  ACCEPTED_MIME_TYPES,
+  DOCUMENT_TYPES,
+  MAX_FILE_BYTES,
+  formatBytes,
+  sanitiseLetterhead,
+} from "@/features/documents/files";
 import { findTemplate, sanitiseValues } from "@/features/documents/templates";
 import { isSchemaDrift, mapDbError } from "@/lib/actions/db-errors";
 import { fail, ok, type ActionResult } from "@/lib/actions/result";
@@ -15,6 +21,7 @@ import { logger } from "@/lib/logger";
 import { createClient } from "@/lib/supabase/server";
 import type { Json } from "@/types/database";
 
+import { ARCHIVE_MAX_BYTES, ARCHIVE_MAX_FILES, planArchive, type ArchiveFile } from "./archive";
 import { COMPANY_FILES_BUCKET, canManageItem, checkFolderName, descendantIds, isCompanyFilePath } from "./tree";
 
 /**
@@ -359,3 +366,93 @@ export const deleteFile = withAction("files.deleteFile", async (input: unknown):
   done();
   return ok(undefined);
 });
+
+// Download a folder as a ZIP -------------------------------------------------------
+
+export type ArchiveManifest = {
+  name: string;
+  directories: string[];
+  entries: (
+    | { path: string; kind: "upload"; url: string }
+    | { path: string; kind: "generated"; templateKey: string; fields: unknown }
+  )[];
+};
+
+/**
+ * Everything the browser needs to build a folder's ZIP: its layout, a signed
+ * link (10 minutes) for each upload, and each generated document's facts so it
+ * can be rendered to Word there. Built on the viewer's own session, so an
+ * admins-only subfolder is simply absent for a member. The ZIP is assembled in
+ * the browser because a server response cannot carry hundreds of megabytes.
+ */
+export const folderArchive = withAction(
+  "files.archive",
+  async (input: unknown): Promise<ActionResult<ArchiveManifest>> => {
+    const parsed = z.object({ folderId }).safeParse(input);
+    if (!parsed.success) return validationFail(parsed.error);
+    const { viewer, supabase } = await context();
+
+    const [folders, files] = await Promise.all([
+      supabase
+        .from("file_folders")
+        .select("id, parent_id, name, restricted, created_by, created_at, updated_at")
+        .eq("organization_id", viewer.organizationId)
+        .limit(5000),
+      supabase
+        .from("company_files")
+        .select("id, folder_id, title, source, file_name, size_bytes, storage_path, template_key, fields")
+        .eq("organization_id", viewer.organizationId)
+        .limit(10000),
+    ]);
+    if (folders.error) return refused(folders.error);
+    if (files.error) return refused(files.error);
+    if (parsed.data.folderId && !folders.data.some((folder) => folder.id === parsed.data.folderId))
+      return fail("not_found", "That folder does not exist.");
+
+    const rows = files.data as (ArchiveFile & {
+      storage_path: string | null;
+      template_key: string | null;
+      fields: unknown;
+    })[];
+    const plan = planArchive(folders.data, parsed.data.folderId, rows);
+    const byId = new Map(rows.map((row) => [row.id, row]));
+    const chosen = plan.entries.map((entry) => ({ ...entry, row: byId.get(entry.fileId)! }));
+
+    const bytes = chosen.reduce((sum, entry) => sum + (entry.row.size_bytes ?? 0), 0);
+    if (chosen.length > ARCHIVE_MAX_FILES || bytes > ARCHIVE_MAX_BYTES)
+      return fail(
+        "validation",
+        `This folder holds ${chosen.length} files (${formatBytes(bytes)}), more than a browser can zip at once (${ARCHIVE_MAX_FILES} files or ${formatBytes(ARCHIVE_MAX_BYTES)}). Download its subfolders one at a time.`,
+      );
+
+    const uploads = chosen.filter((entry) => entry.row.source === "upload" && entry.row.storage_path);
+    const signed = uploads.length
+      ? await supabase.storage.from(COMPANY_FILES_BUCKET).createSignedUrls(
+          uploads.map((entry) => entry.row.storage_path!),
+          600,
+        )
+      : { data: [], error: null };
+    if (signed.error) {
+      logger.warn("files.archive_sign_failed", { message: signed.error.message });
+      return fail("unexpected", "The files could not be prepared for download. Try again.");
+    }
+    const urls = new Map(
+      (signed.data ?? []).flatMap((item) => (item.signedUrl && item.path ? [[item.path, item.signedUrl]] : [])),
+    );
+
+    const entries: ArchiveManifest["entries"] = [];
+    for (const entry of chosen) {
+      if (entry.row.source === "generated" && entry.row.template_key)
+        entries.push({
+          path: entry.path,
+          kind: "generated",
+          templateKey: entry.row.template_key,
+          fields: entry.row.fields,
+        });
+      else if (entry.row.storage_path && urls.has(entry.row.storage_path))
+        entries.push({ path: entry.path, kind: "upload", url: urls.get(entry.row.storage_path)! });
+    }
+    logger.info("files.archived", { files: entries.length, bytes });
+    return ok({ name: plan.name, directories: plan.directories, entries });
+  },
+);

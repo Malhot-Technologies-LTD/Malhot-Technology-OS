@@ -9,6 +9,7 @@ import {
   FileSpreadsheet,
   FileText,
   Folder,
+  FolderDown,
   FolderInput,
   FolderPlus,
   Lock,
@@ -61,6 +62,7 @@ import {
   type FolderRow,
 } from "../tree";
 import { MoveDialog, NameDialog, type MoveSubject } from "./dialogs.client";
+import { downloadFolderZip, type ZipProgress } from "../zip.client";
 
 type Viewer = { userId: string; isAdmin: boolean };
 
@@ -127,6 +129,7 @@ export function FileExplorer({ organizationId, viewer, folder, trail, folders, f
   const [dropTarget, setDropTarget] = useState<string | null>(null);
   const [desktopDrag, setDesktopDrag] = useState(false);
   const [uploading, setUploading] = useState<{ done: number; total: number } | null>(null);
+  const [zipping, setZipping] = useState<ZipProgress | null>(null);
   const [pending, startTransition] = useTransition();
   const picker = useRef<HTMLInputElement>(null);
 
@@ -154,6 +157,23 @@ export function FileExplorer({ organizationId, viewer, folder, trail, folders, f
       }
       toast.success(success);
     });
+  }
+
+  async function zipFolder(id: string | null) {
+    setZipping({ done: 0, total: 0 });
+    try {
+      const result = await downloadFolderZip(id, setZipping);
+      if (!result.ok) toast.error(result.message);
+      else if (result.failed.length > 0)
+        toast.warning(`${result.name}.zip is missing ${result.failed.length} file(s) that could not be fetched`, {
+          description: result.failed.slice(0, 5).join(", "),
+        });
+      else toast.success(`${result.name}.zip downloaded (${result.files} file${result.files === 1 ? "" : "s"})`);
+    } catch {
+      toast.error("The ZIP could not be made. Check your connection and try again.");
+    } finally {
+      setZipping(null);
+    }
   }
 
   function moveItem(item: DragItem, to: string | null) {
@@ -329,6 +349,22 @@ export function FileExplorer({ organizationId, viewer, folder, trail, folders, f
           <Button variant="outline" onClick={() => picker.current?.click()} disabled={uploading !== null}>
             <Upload aria-hidden="true" /> {uploading ? `Uploading ${uploading.done}/${uploading.total}…` : "Upload"}
           </Button>
+          <Button
+            variant="outline"
+            onClick={() => void zipFolder(currentId)}
+            disabled={zipping !== null}
+            aria-live="polite"
+            title={folder ? `Download ${folder.name} and everything in it as a ZIP` : "Download all of Files as a ZIP"}
+          >
+            <FolderDown aria-hidden="true" />{" "}
+            {zipping
+              ? zipping.total > 0
+                ? `Zipping ${zipping.done}/${zipping.total}…`
+                : "Preparing…"
+              : folder
+                ? "Download ZIP"
+                : "Download all"}
+          </Button>
           <input
             ref={picker}
             type="file"
@@ -466,36 +502,44 @@ export function FileExplorer({ organizationId, viewer, folder, trail, folders, f
                     </td>
                     <td className="hidden px-3 py-2.5 md:table-cell" />
                     <td className="px-2 py-1.5 text-right">
-                      {manage ? (
-                        <RowMenu label={row.name}>
-                          <DropdownMenuItem onSelect={() => setNaming({ mode: "rename", folder: row })}>
-                            <Pencil aria-hidden="true" /> Rename
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onSelect={() => setMoving({ kind: "folder", id: row.id, name: row.name })}>
-                            <FolderInput aria-hidden="true" /> Move to…
-                          </DropdownMenuItem>
-                          {viewer.isAdmin && !restrictedHere ? (
-                            <DropdownMenuItem
-                              onSelect={() =>
-                                run(
-                                  () => setFolderRestricted({ id: row.id, restricted: !row.restricted }),
-                                  row.restricted ? `${row.name} is open to everyone` : `${row.name} is admins only`,
-                                )
-                              }
-                            >
-                              {row.restricted ? <LockOpen aria-hidden="true" /> : <Lock aria-hidden="true" />}
-                              {row.restricted ? "Open to everyone" : "Make admins only"}
+                      <RowMenu label={row.name}>
+                        <DropdownMenuItem disabled={zipping !== null} onSelect={() => void zipFolder(row.id)}>
+                          <FolderDown aria-hidden="true" /> Download as ZIP
+                        </DropdownMenuItem>
+                        {manage ? (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onSelect={() => setNaming({ mode: "rename", folder: row })}>
+                              <Pencil aria-hidden="true" /> Rename
                             </DropdownMenuItem>
-                          ) : null}
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            variant="destructive"
-                            onSelect={() => setDeleting({ kind: "folder", folder: row })}
-                          >
-                            <Trash2 aria-hidden="true" /> Delete
-                          </DropdownMenuItem>
-                        </RowMenu>
-                      ) : null}
+                            <DropdownMenuItem
+                              onSelect={() => setMoving({ kind: "folder", id: row.id, name: row.name })}
+                            >
+                              <FolderInput aria-hidden="true" /> Move to…
+                            </DropdownMenuItem>
+                            {viewer.isAdmin && !restrictedHere ? (
+                              <DropdownMenuItem
+                                onSelect={() =>
+                                  run(
+                                    () => setFolderRestricted({ id: row.id, restricted: !row.restricted }),
+                                    row.restricted ? `${row.name} is open to everyone` : `${row.name} is admins only`,
+                                  )
+                                }
+                              >
+                                {row.restricted ? <LockOpen aria-hidden="true" /> : <Lock aria-hidden="true" />}
+                                {row.restricted ? "Open to everyone" : "Make admins only"}
+                              </DropdownMenuItem>
+                            ) : null}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              variant="destructive"
+                              onSelect={() => setDeleting({ kind: "folder", folder: row })}
+                            >
+                              <Trash2 aria-hidden="true" /> Delete
+                            </DropdownMenuItem>
+                          </>
+                        ) : null}
+                      </RowMenu>
                     </td>
                   </tr>
                 );

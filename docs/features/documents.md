@@ -23,6 +23,12 @@ inherits that (a trigger restricts subfolders and anything moved in) and lifting
 Uploads go to the private `company-files` bucket as `<org>/<uuid>-<name>` and are read through the file's row, so a
 restricted folder's bytes cannot be fetched by path. The creator of a row can never be changed. The explorer
 uploads files dropped from the desktop straight into the open folder and moves rows dragged onto a folder or a crumb.
+**Download as ZIP** (a folder's menu, or the toolbar for the open folder or all of Files): the server action
+`folderArchive` plans the layout (`features/files/archive.ts`) and signs a 10-minute link per upload on the viewer's
+session, so admins-only subfolders are absent for members; the browser (`zip.client.ts`, jszip) fetches uploads,
+renders generated documents to Word and saves the ZIP, because a server response cannot carry hundreds of MB. Capped
+at 2000 files / 500 MB; a file that cannot be fetched is left out and named.
+
 Documents (`/os/documents`) stays the template library and the list of project paperwork; "New document" in a
 folder opens the generator with that folder chosen, and outside a project the generator saves to Files by default.
 
