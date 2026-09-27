@@ -7,6 +7,7 @@ import { ErrorState } from "@/components/os/error-state";
 import { StatRow, StatTile } from "@/components/os/metrics";
 import { PageBody, PageHeader } from "@/components/os/page-header";
 import { Button } from "@/components/ui/button";
+import { ClientJourney } from "@/features/documents/components/client-journey";
 import { DocumentList } from "@/features/documents/components/document-list.client";
 import { listOrganizationDocuments } from "@/features/documents/queries";
 import { TEMPLATES, TEMPLATE_CATEGORIES } from "@/features/documents/templates";
@@ -113,9 +114,11 @@ export default async function DocumentsPage() {
         />
       </StatRow>
 
+      <ClientJourney basePath="/os/documents/new" />
+
       <section aria-labelledby="templates-heading" className="flex flex-col gap-3">
         <h2 id="templates-heading" className="text-base font-semibold">
-          Start from a template
+          All templates by category
         </h2>
         <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {TEMPLATE_CATEGORIES.map((category) => (

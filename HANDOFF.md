@@ -11,6 +11,10 @@ Verified: 737 unit tests, lint, typecheck, format, build; paged screenshots of S
 handover. Not verified: generator in a signed-in browser with a real project. Saved proposals/minutes/handovers made
 with the old templates re-render with the new field set (old fields dropped). Next: commit; optionally prefill the
 global /os/documents/new page too (it passes only key/name/client per project).
+Then (uncommitted): "Client work" panel, the 31 client-facing templates in 6 lifecycle stages (Win the work → Agree
+terms → Kick off and build → Deliver → Get paid → Support), defined in `features/documents/client-journey.ts`, shown
+on /os/documents and at the top of the generator gallery (not on a person's page). Templates keep their own category.
+Project Documents quick picks are now SOW, minutes, status report, change request, invoice.
 
 ## Current Task
 **Instagram connection for Social (2026-09-27, not committed yet).** Owner created a Meta developer app and put

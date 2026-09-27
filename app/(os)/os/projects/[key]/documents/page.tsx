@@ -17,7 +17,7 @@ import { describeQueryFailure } from "@/lib/actions/db-errors";
 
 export const metadata: Metadata = { title: "Documents" };
 
-const FEATURED = ["offer_letter", "employment_contract", "service_agreement", "invoice", "meeting_minutes"];
+const FEATURED = ["statement_of_work", "meeting_minutes", "project_status_report", "change_request", "invoice"];
 
 /**
  * Everything written down for this project in one place: files people upload

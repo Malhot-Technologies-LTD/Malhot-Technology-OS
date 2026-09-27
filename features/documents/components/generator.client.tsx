@@ -29,6 +29,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { saveGeneratedDocument } from "@/features/documents/actions";
 import { saveMemberDocument } from "@/features/team/actions";
 import { DocumentPaper } from "@/features/documents/components/document-paper";
+import { ClientJourney } from "@/features/documents/components/client-journey";
 import { PagedDocument } from "@/features/documents/components/paged-document.client";
 import { DownloadWordButton, PrintButton, PrintCopy } from "@/features/documents/components/print.client";
 import { LETTERHEAD_FIELDS, type Letterhead, type LineItem } from "@/features/documents/content";
@@ -121,6 +122,7 @@ function Gallery({ only }: { only?: readonly string[] }) {
   const pathname = usePathname();
   return (
     <div className="flex flex-col gap-8">
+      {only ? null : <ClientJourney basePath={pathname} />}
       {TEMPLATE_CATEGORIES.filter((category) =>
         TEMPLATES.some((template) => template.category === category && (!only || only.includes(template.key))),
       ).map((category) => {
