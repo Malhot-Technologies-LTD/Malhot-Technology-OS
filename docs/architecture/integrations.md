@@ -86,3 +86,6 @@ No external service. HTML render + print CSS. Roadmap: server-side PDF (`@react-
 | Google Workspace SSO | If the company standardises on Workspace |
 | Calendar (milestones → ICS feed) | Cheap; consider in v1.x — a signed ICS URL per user |
 | AI drafting for documents | After templates prove out; AI proposes text into the editor, never writes to project tables |
+
+## Instagram (2026-09)
+The second external integration, for the Social section: Instagram API with Instagram Login, read-only, one connection per company Instagram account. Unlike GitHub it has no app-level credential, so it stores a per-account OAuth token — encrypted (AES-256-GCM, `SOCIAL_TOKEN_KEY`), in a column browser roles cannot read, written only through `lib/supabase/elevated/social-connections.ts`. Synced daily by Vercel Cron (`/api/cron/social-sync`). Details: `features/social.md#connected-accounts-instagram`.

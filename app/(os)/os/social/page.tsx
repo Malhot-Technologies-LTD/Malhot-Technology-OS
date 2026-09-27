@@ -7,7 +7,14 @@ import { ErrorState } from "@/components/os/error-state";
 import { Button } from "@/components/ui/button";
 import { SocialOverview } from "@/features/social/components/overview";
 import { SocialSetupNotice } from "@/features/social/components/setup-notice";
-import { listSocialAccounts, listSocialPosts } from "@/features/social/queries";
+import { InstagramOverview } from "@/features/social/components/instagram-overview";
+import {
+  listConnections,
+  listMediaStats,
+  listSnapshots,
+  listSocialAccounts,
+  listSocialPosts,
+} from "@/features/social/queries";
 import { describeQueryFailure } from "@/lib/actions/db-errors";
 import { requireViewer } from "@/lib/auth/context";
 import { requestTime } from "@/lib/request-time";
@@ -47,12 +54,32 @@ export default async function SocialOverviewPage() {
     );
   }
 
+  const now = requestTime();
+  const timeZone = viewer.profile.timezone || "UTC";
+  // Synced figures, when any account is connected. Missing tables read as "none connected".
+  const connections = await listConnections(viewer.organizationId);
+  const connectedIds = connections.data.map((row) => row.account_id);
+  const [snapshots, media] =
+    connectedIds.length > 0
+      ? await Promise.all([
+          listSnapshots(viewer.organizationId, new Date(now - 31 * 86_400_000).toISOString().slice(0, 10)),
+          listMediaStats(viewer.organizationId, new Date(now - 30 * 86_400_000).toISOString()),
+        ])
+      : [null, null];
+
   return (
-    <SocialOverview
-      posts={posts.data}
-      accounts={accounts.data}
-      now={requestTime()}
-      timeZone={viewer.profile.timezone || "UTC"}
-    />
+    <div className="flex flex-col gap-10">
+      <SocialOverview posts={posts.data} accounts={accounts.data} now={now} timeZone={timeZone} />
+      {connectedIds.length > 0 ? (
+        <InstagramOverview
+          accounts={accounts.data}
+          connectedIds={connectedIds}
+          snapshots={snapshots?.data ?? []}
+          media={media?.data ?? []}
+          now={now}
+          timeZone={timeZone}
+        />
+      ) : null}
+    </div>
   );
 }

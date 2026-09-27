@@ -20,6 +20,9 @@ The Supabase project uses the **new key format** (`sb_publishable_…` / `sb_sec
 | `GITHUB_STATE_SECRET`                   | server       | prod/staging  | Signs the `state` param in the install flow                                                                  |
 | `CRON_SECRET`                           | server       | prod          | Bearer token Vercel Cron sends                                                                               |
 | `INQUIRY_IP_SALT`                       | server       | yes           | Base salt for hashing enquiry IPs (daily-derived)                                                            |
+| `INSTAGRAM_APP_ID`                      | server       | for Instagram | Instagram app ID from the Meta app (API setup with Instagram login), not the Meta App ID                    |
+| `INSTAGRAM_APP_SECRET`                  | server       | for Instagram | Instagram app secret from the same page                                                                      |
+| `SOCIAL_TOKEN_KEY`                      | server       | for Instagram | 32 random bytes, base64; encrypts platform tokens at rest (`lib/crypto/secret-box.ts`). Changing it means reconnecting every account |
 | `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN` | both         | optional      | Error reporting                                                                                              |
 | `SENTRY_AUTH_TOKEN`                     | build        | optional      | Source map upload                                                                                            |
 | `SENTRY_ENVIRONMENT`                    | server       | optional      | `production` / `preview` / `development`                                                                     |
@@ -46,6 +49,8 @@ Set in Vercel → Project → Settings → Environment Variables. Scope column: 
 | `GITHUB_STATE_SECRET`                                       | ✓   | ✓   |     | Random 32+ bytes (`openssl rand -base64 32`); mark Sensitive                                                                                                          |
 | `CRON_SECRET`                                               | ✓   |     |     | Random 32+ bytes; mark Sensitive. Vercel Cron sends it automatically when the variable exists.                                                                        |
 | `INQUIRY_IP_SALT`                                           | ✓   | ✓   | ✓   | Random 32+ bytes; mark Sensitive                                                                                                                                      |
+| `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET`                  | ✓   |     |     | Meta app → Use cases → Instagram → API setup with Instagram login; secret marked Sensitive. Production only: the redirect URI is registered for the production domain |
+| `SOCIAL_TOKEN_KEY`                                          | ✓   |     |     | `openssl rand -base64 32`; mark Sensitive. Keep it stable: tokens sealed with one key cannot be opened with another                                                   |
 | `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_AUTH_TOKEN` | ✓   | ✓   |     | Sentry project (when added)                                                                                                                                           |
 
 Until a staging Supabase project exists, Preview and Production point at the same Supabase project (single project provided). This is acceptable while the team is the only user base and no client data exists; create a staging project before onboarding real client work (`engineering/deployment.md`).

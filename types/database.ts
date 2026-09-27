@@ -869,6 +869,56 @@ export type Database = {
           },
         ]
       }
+      social_account_snapshots: {
+        Row: {
+          account_id: string
+          accounts_engaged: number | null
+          captured_at: string
+          day: string
+          followers: number | null
+          follows: number | null
+          interactions: number | null
+          media_count: number | null
+          organization_id: string
+          reach: number | null
+          views: number | null
+        }
+        Insert: {
+          account_id: string
+          accounts_engaged?: number | null
+          captured_at?: string
+          day: string
+          followers?: number | null
+          follows?: number | null
+          interactions?: number | null
+          media_count?: number | null
+          organization_id: string
+          reach?: number | null
+          views?: number | null
+        }
+        Update: {
+          account_id?: string
+          accounts_engaged?: number | null
+          captured_at?: string
+          day?: string
+          followers?: number | null
+          follows?: number | null
+          interactions?: number | null
+          media_count?: number | null
+          organization_id?: string
+          reach?: number | null
+          views?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_account_snapshots_account_id_organization_id_fkey"
+            columns: ["account_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "social_accounts"
+            referencedColumns: ["id", "organization_id"]
+          },
+        ]
+      }
       social_accounts: {
         Row: {
           created_at: string
@@ -922,6 +972,133 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_connections: {
+        Row: {
+          account_id: string
+          connected_at: string
+          connected_by: string | null
+          external_user_id: string
+          id: string
+          last_sync_error: string | null
+          last_synced_at: string | null
+          organization_id: string
+          provider: string
+          scopes: string[]
+          token_ciphertext: string
+          token_expires_at: string | null
+          token_issued_at: string
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          account_id: string
+          connected_at?: string
+          connected_by?: string | null
+          external_user_id: string
+          id?: string
+          last_sync_error?: string | null
+          last_synced_at?: string | null
+          organization_id: string
+          provider: string
+          scopes?: string[]
+          token_ciphertext: string
+          token_expires_at?: string | null
+          token_issued_at?: string
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          account_id?: string
+          connected_at?: string
+          connected_by?: string | null
+          external_user_id?: string
+          id?: string
+          last_sync_error?: string | null
+          last_synced_at?: string | null
+          organization_id?: string
+          provider?: string
+          scopes?: string[]
+          token_ciphertext?: string
+          token_expires_at?: string | null
+          token_issued_at?: string
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_connections_account_id_organization_id_fkey"
+            columns: ["account_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "social_accounts"
+            referencedColumns: ["id", "organization_id"]
+          },
+        ]
+      }
+      social_media_stats: {
+        Row: {
+          account_id: string
+          caption: string | null
+          comments: number | null
+          external_id: string
+          interactions: number | null
+          likes: number | null
+          media_type: string | null
+          organization_id: string
+          permalink: string | null
+          posted_at: string | null
+          product_type: string | null
+          reach: number | null
+          saves: number | null
+          shares: number | null
+          synced_at: string
+          views: number | null
+        }
+        Insert: {
+          account_id: string
+          caption?: string | null
+          comments?: number | null
+          external_id: string
+          interactions?: number | null
+          likes?: number | null
+          media_type?: string | null
+          organization_id: string
+          permalink?: string | null
+          posted_at?: string | null
+          product_type?: string | null
+          reach?: number | null
+          saves?: number | null
+          shares?: number | null
+          synced_at?: string
+          views?: number | null
+        }
+        Update: {
+          account_id?: string
+          caption?: string | null
+          comments?: number | null
+          external_id?: string
+          interactions?: number | null
+          likes?: number | null
+          media_type?: string | null
+          organization_id?: string
+          permalink?: string | null
+          posted_at?: string | null
+          product_type?: string | null
+          reach?: number | null
+          saves?: number | null
+          shares?: number | null
+          synced_at?: string
+          views?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_media_stats_account_id_organization_id_fkey"
+            columns: ["account_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "social_accounts"
+            referencedColumns: ["id", "organization_id"]
           },
         ]
       }

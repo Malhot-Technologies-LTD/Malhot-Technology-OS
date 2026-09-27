@@ -29,5 +29,14 @@ The OS does not post to the platforms. The manager publishes on each app, marks 
 - **Caption limits** (X 280, Threads 500, Instagram/TikTok 2,200, LinkedIn 3,000…) warn in the editor for the channels picked; they do not block saving.
 - All dashboard maths is pure and tested: `features/social/stats.ts`.
 
+## Connected accounts (Instagram)
+An Instagram account listed under Accounts can be connected with **Connect Instagram** (Instagram API with Instagram Login, API v25.0, read-only scopes `instagram_business_basic` and `instagram_business_manage_insights`). The account must be Professional (Business or Creator); while the Meta app is in development mode it must also be an Instagram Tester on the app.
+
+- **Flow:** `/api/integrations/instagram/connect` (checks `social.manage`, sets a one-time state cookie) → Instagram → `/api/integrations/instagram/callback` (verifies state, code → 1-hour token → 60-day token, stores it, runs the first sync). The callback URL must be registered in the Meta app exactly: `https://<production domain>/api/integrations/instagram/callback`.
+- **Tokens** are sealed with AES-256-GCM (`SOCIAL_TOKEN_KEY`) and stored in `social_connections.token_ciphertext`, a column no browser-facing role may read. All writes go through `lib/supabase/elevated/social-connections.ts`. Tokens renew automatically in their last 14 days.
+- **Sync** (`features/social/instagram/sync.ts`): daily by Vercel Cron (`/api/cron/social-sync`, 03:00 UTC, `CRON_SECRET`) and on "Sync now". Writes today's followers, yesterday's reach/views/engaged/interactions (`social_account_snapshots`), and the latest 50 posts with likes, comments, saves, shares, reach, views (`social_media_stats`, insights for posts under 90 days old). A figure Instagram declines stays empty; a lost login marks the connection "reconnect".
+- **Where it shows:** the Overview's Instagram section (followers, gained in 30 days, reach, engagement, reach per day, best posts), the account page (status, recent posts), and a planned post's page once its live link matches a synced post (matched by shortcode).
+- **Disconnect** forgets the token; figures stay. The app remains listed in Instagram's Apps and websites until removed there.
+
 ## Not built yet (candidates)
-Follower history and growth charts, image uploads, approval by a second person, per-platform caption variants, auto-publishing through the platforms' APIs.
+LinkedIn/TikTok/X connections, image uploads, approval by a second person, per-platform caption variants, auto-publishing through the platforms' APIs.

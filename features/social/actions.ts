@@ -11,6 +11,9 @@ import { requireViewer, type Viewer } from "@/lib/auth/context";
 import { can } from "@/lib/permissions";
 import { createClient } from "@/lib/supabase/server";
 
+import { deleteConnection, getConnection } from "@/lib/supabase/elevated/social-connections";
+
+import { syncInstagram } from "./instagram/sync";
 import { accountSchema, postSchema, POST_STATUSES, publishedLinkSchema } from "./schemas";
 
 /**
@@ -319,5 +322,52 @@ export const setSocialManager = withAction("social.setManager", async (input: un
   revalidatePath("/os/settings/members");
   // The sidebar of the person concerned changes on their next navigation.
   revalidatePath("/os", "layout");
+  return ok(undefined);
+});
+
+/** The account exists in the viewer's organisation and they may manage it (RLS decides). */
+async function ownAccount(viewer: Viewer, accountId: string): Promise<boolean> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("social_accounts")
+    .select("id")
+    .eq("organization_id", viewer.organizationId)
+    .eq("id", accountId)
+    .maybeSingle();
+  return Boolean(data);
+}
+
+/** "Sync now" on a connected account, instead of waiting for the daily run. */
+export const syncSocialAccountNow = withAction(
+  "social.syncNow",
+  async (id: unknown): Promise<ActionResult<{ posts: number }>> => {
+    const accountId = z.uuid().safeParse(id);
+    if (!accountId.success) return fail("validation", "Unknown account.");
+    const viewer = await socialViewer();
+    if (!viewer) return fail("forbidden", NOT_ALLOWED);
+    if (!(await ownAccount(viewer, accountId.data))) return fail("not_found", "That account no longer exists.");
+
+    const connection = await getConnection(viewer.organizationId, accountId.data);
+    if (!connection) return fail("not_found", "This account is not connected.");
+    const outcome = await syncInstagram(connection);
+    refresh();
+    return outcome.ok ? ok({ posts: outcome.posts }) : fail("external", outcome.message);
+  },
+);
+
+/**
+ * Forgets the stored token and stops syncing. Figures already synced stay.
+ * Instagram keeps listing the app under the account's "Apps and websites"
+ * until someone removes it there.
+ */
+export const disconnectSocialAccount = withAction("social.disconnect", async (id: unknown): Promise<ActionResult> => {
+  const accountId = z.uuid().safeParse(id);
+  if (!accountId.success) return fail("validation", "Unknown account.");
+  const viewer = await socialViewer();
+  if (!viewer) return fail("forbidden", NOT_ALLOWED);
+  if (!(await ownAccount(viewer, accountId.data))) return fail("not_found", "That account no longer exists.");
+  if (!(await deleteConnection(viewer.organizationId, accountId.data)))
+    return fail("unexpected", "The connection could not be removed. Try again.");
+  refresh();
   return ok(undefined);
 });

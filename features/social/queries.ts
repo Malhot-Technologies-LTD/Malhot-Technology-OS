@@ -104,3 +104,83 @@ export async function listSocialManagers(organizationId: string): Promise<Set<st
   }
   return new Set((data ?? []).map((row) => row.user_id));
 }
+
+export type ConnectionStatus = {
+  account_id: string;
+  provider: "instagram";
+  username: string | null;
+  token_expires_at: string | null;
+  connected_at: string;
+  last_synced_at: string | null;
+  last_sync_error: string | null;
+};
+
+// Every column but the token, which the database will not give this client anyway.
+const CONNECTION_COLUMNS =
+  "account_id, provider, username, token_expires_at, connected_at, last_synced_at, last_sync_error";
+
+export async function listConnections(organizationId: string): Promise<SocialResult<ConnectionStatus[]>> {
+  const supabase = await createClient();
+  const result = await supabase
+    .from("social_connections")
+    .select(CONNECTION_COLUMNS)
+    .eq("organization_id", organizationId)
+    .returns<ConnectionStatus[]>();
+  return settle(result, []);
+}
+
+export type SnapshotRow = {
+  account_id: string;
+  day: string;
+  followers: number | null;
+  reach: number | null;
+  views: number | null;
+  accounts_engaged: number | null;
+  interactions: number | null;
+};
+
+/** Daily figures from `sinceDay` ("YYYY-MM-DD") on, oldest first. */
+export async function listSnapshots(organizationId: string, sinceDay: string): Promise<SocialResult<SnapshotRow[]>> {
+  const supabase = await createClient();
+  const result = await supabase
+    .from("social_account_snapshots")
+    .select("account_id, day, followers, reach, views, accounts_engaged, interactions")
+    .eq("organization_id", organizationId)
+    .gte("day", sinceDay)
+    .order("day")
+    .returns<SnapshotRow[]>();
+  return settle(result, []);
+}
+
+export type MediaStat = {
+  account_id: string;
+  external_id: string;
+  permalink: string | null;
+  caption: string | null;
+  media_type: string | null;
+  product_type: string | null;
+  posted_at: string | null;
+  likes: number | null;
+  comments: number | null;
+  saves: number | null;
+  shares: number | null;
+  reach: number | null;
+  views: number | null;
+  interactions: number | null;
+  synced_at: string;
+};
+
+export async function listMediaStats(organizationId: string, sinceIso: string): Promise<SocialResult<MediaStat[]>> {
+  const supabase = await createClient();
+  const result = await supabase
+    .from("social_media_stats")
+    .select(
+      "account_id, external_id, permalink, caption, media_type, product_type, posted_at, likes, comments, saves, shares, reach, views, interactions, synced_at",
+    )
+    .eq("organization_id", organizationId)
+    .gte("posted_at", sinceIso)
+    .order("posted_at", { ascending: false })
+    .limit(200)
+    .returns<MediaStat[]>();
+  return settle(result, []);
+}

@@ -27,6 +27,11 @@ export type ColumnDatum = {
   label: string;
   /** Shown instead of `label` on narrow screens, where columns are ~35px apart. */
   shortLabel?: string;
+  /**
+   * Replaces `label` under the column, "" for none. For dense charts (30 days)
+   * that label every few columns; the hidden table still gets the full label.
+   */
+  axisLabel?: string;
   value: number;
   tooltip: string;
 };
@@ -39,12 +44,14 @@ export function ColumnChart({
   data,
   caption,
   valueHeading,
+  labelHeading = "Week",
   height = 180,
 }: {
   data: readonly ColumnDatum[];
   /** Names the chart for assistive technology and heads the hidden table. */
   caption: string;
   valueHeading: string;
+  labelHeading?: string;
   height?: number;
 }) {
   const max = niceMax(Math.max(0, ...data.map((datum) => datum.value)));
@@ -117,14 +124,27 @@ export function ColumnChart({
         <span className="invisible text-xs tabular-nums">{max}</span>
         <div className="flex flex-1 justify-around gap-1">
           {data.map((datum) => (
-            <span key={datum.key} className="flex-1 truncate text-center text-xs text-fg-subtle">
-              <span className={datum.shortLabel ? "max-sm:hidden" : undefined}>{datum.label}</span>
-              {datum.shortLabel ? <span className="sm:hidden">{datum.shortLabel}</span> : null}
+            <span
+              key={datum.key}
+              className={cn(
+                "min-w-0 flex-1 text-center text-xs text-fg-subtle",
+                // A sparse label may spill into the unlabelled columns beside it.
+                datum.axisLabel !== undefined ? "whitespace-nowrap" : "truncate",
+              )}
+            >
+              {datum.axisLabel !== undefined ? (
+                datum.axisLabel
+              ) : (
+                <>
+                  <span className={datum.shortLabel ? "max-sm:hidden" : undefined}>{datum.label}</span>
+                  {datum.shortLabel ? <span className="sm:hidden">{datum.shortLabel}</span> : null}
+                </>
+              )}
             </span>
           ))}
         </div>
       </div>
-      <DataTable caption={caption} labelHeading="Week" valueHeading={valueHeading} rows={data} />
+      <DataTable caption={caption} labelHeading={labelHeading} valueHeading={valueHeading} rows={data} />
     </figure>
   );
 }

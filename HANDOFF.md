@@ -1,10 +1,23 @@
 # HANDOFF
 
 ## Current Task
-**Social media section for the social media manager (2026-09-27, not committed yet).** Owner: "we have a social
-media manager role: plan posts, manage the Malhot accounts on all platforms, and make a social media dashboard for them."
-Decisions (asked): access = org admins + members given a "Social media manager" duty on Settings → Members; plan &
-track only (no auto-publishing through platform APIs); the owner runs the SQL themselves.
+**Instagram connection for Social (2026-09-27, not committed yet).** Owner created a Meta developer app and put
+INSTAGRAM_APP_ID / INSTAGRAM_APP_SECRET in .env.local; asked to track Instagram from the dashboard.
+
+## Instagram — status
+**Built and verified locally; never run against real Instagram.** Needs, in order:
+1. Both migrations applied: `20260927150000_social_media.sql`, then `20260927170000_social_connections.sql`.
+2. Vercel production env: INSTAGRAM_APP_ID, INSTAGRAM_APP_SECRET, SOCIAL_TOKEN_KEY, CRON_SECRET (the last two were
+   generated into .env.local on 2026-09-27; copy the same values), and NEXT_PUBLIC_SITE_URL = production domain.
+3. Meta app → Instagram → API setup with Instagram login → Business login settings: redirect URL
+   `https://<production domain>/api/integrations/instagram/callback` (exact). Domain not yet confirmed by the owner.
+4. Deploy, then Social → Accounts → the Instagram account → Connect Instagram. Local http://localhost is not expected to
+   work as a redirect URI. Then check first sync, Overview's Instagram section, and a post's "How it did" panel.
+Verified: migration privileges in PGlite (token column unreadable by authenticated even for admins; writes service-role
+only; cascade), route guards via curl (connect → login when signed out; forged state → expired; cron 401 without/with
+wrong secret, 200 with it), panels screenshotted with fixtures, 592 unit tests, lint, typecheck, build.
+Design: `docs/features/social.md#connected-accounts-instagram`, `docs/architecture/integrations.md#instagram-2026-09`.
+Types for the three new tables are hand-written in `types/database.ts`.
 
 ## Social media — status
 **Built and verified locally; waiting on the migration.** `supabase/migrations/20260927150000_social_media.sql`
