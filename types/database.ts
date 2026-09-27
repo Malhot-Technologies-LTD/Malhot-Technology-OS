@@ -568,6 +568,75 @@ export type Database = {
         }
         Relationships: []
       }
+      project_documents: {
+        Row: {
+          created_at: string
+          description: string | null
+          fields: Json | null
+          file_name: string | null
+          id: string
+          mime_type: string | null
+          project_id: string
+          size_bytes: number | null
+          source: string
+          storage_path: string | null
+          template_key: string | null
+          title: string
+          type: Database["public"]["Enums"]["document_type"]
+          updated_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          fields?: Json | null
+          file_name?: string | null
+          id?: string
+          mime_type?: string | null
+          project_id: string
+          size_bytes?: number | null
+          source: string
+          storage_path?: string | null
+          template_key?: string | null
+          title: string
+          type?: Database["public"]["Enums"]["document_type"]
+          updated_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          fields?: Json | null
+          file_name?: string | null
+          id?: string
+          mime_type?: string | null
+          project_id?: string
+          size_bytes?: number | null
+          source?: string
+          storage_path?: string | null
+          template_key?: string | null
+          title?: string
+          type?: Database["public"]["Enums"]["document_type"]
+          updated_at?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_documents_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_members: {
         Row: {
           added_by: string | null
@@ -947,6 +1016,7 @@ export type Database = {
       next_project_sequence: { Args: { kind: string; project: string }; Returns: number }
       project_group_of: { Args: { project: string }; Returns: string }
       project_is_writable: { Args: { project: string }; Returns: boolean }
+      project_file_project: { Args: { object_name: string }; Returns: string }
       project_org: { Args: { project: string }; Returns: string }
       project_role_of: {
         Args: { project: string }

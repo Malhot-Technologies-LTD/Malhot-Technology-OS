@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { PLANNED_SECTIONS, PRIMARY_NAV } from "@/components/os/nav";
+import { PROJECT_TAB_LABELS } from "@/features/projects/tabs";
 
 /**
  * Where-am-I trail in the topbar.
@@ -17,6 +18,7 @@ import { PLANNED_SECTIONS, PRIMARY_NAV } from "@/components/os/nav";
 const SECTION_LABELS: Record<string, string> = {
   ...Object.fromEntries(PRIMARY_NAV.map((item) => [item.href.replace("/os/", ""), item.label])),
   ...Object.fromEntries(Object.entries(PLANNED_SECTIONS).map(([slug, meta]) => [slug, meta.label])),
+  ...PROJECT_TAB_LABELS,
   settings: "Settings",
   profile: "Profile",
   password: "Password",
@@ -28,7 +30,13 @@ const SECTION_LABELS: Record<string, string> = {
   tokens: "Tokens",
 };
 
-function labelFor(segment: string): string {
+/** What an id stands for, named by the collection it sits in: /milestones/<uuid> is "Milestone". */
+const ITEM_LABELS: Record<string, string> = { milestones: "Milestone", documents: "Document" };
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function labelFor(segment: string, previous?: string): string {
+  if (UUID.test(segment)) return (previous && ITEM_LABELS[previous]) ?? "Details";
+  if (segment === "new" && previous === "documents") return "Generate";
   if (SECTION_LABELS[segment]) return SECTION_LABELS[segment];
   // Project keys are 2-6 upper-case letters, task references KEY-42; anything else gets title-cased.
   if (/^[A-Za-z]{2,6}$/.test(segment) && segment === segment.toUpperCase()) return segment;
@@ -56,17 +64,20 @@ export function Breadcrumbs() {
           const href = `/os/${segments.slice(0, index + 1).join("/")}`;
           const last = index === segments.length - 1;
           return (
-            <li key={href} className="flex min-w-0 items-center gap-1.5">
+            <li
+              key={href}
+              className={last ? "flex min-w-0 items-center gap-1.5" : "flex shrink-0 items-center gap-1.5"}
+            >
               <span aria-hidden="true" className="text-fg-subtle">
                 /
               </span>
               {last ? (
                 <span aria-current="page" className="truncate font-medium">
-                  {labelFor(segment)}
+                  {labelFor(segment, segments[index - 1])}
                 </span>
               ) : (
                 <Link href={href} className="truncate text-fg-muted hover:text-fg hover:underline">
-                  {labelFor(segment)}
+                  {labelFor(segment, segments[index - 1])}
                 </Link>
               )}
             </li>

@@ -71,27 +71,22 @@ export function ProjectListSkeleton() {
   );
 }
 
-export function ProjectOverviewSkeleton() {
+/** A project tab: the tile row and two panels, inside the project layout's padding. */
+export function ProjectTabSkeleton() {
   return (
-    <PageBody>
-      <HeaderSkeleton />
-      <div className="flex gap-2">
-        <Skeleton className="h-7 w-16 rounded-full" />
-        <Skeleton className="h-7 w-24 rounded-full" />
-        <Skeleton className="h-7 w-20 rounded-full" />
+    <div className="flex flex-col gap-6">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-5">
+        {Array.from({ length: 5 }, (_, i) => (
+          <Skeleton key={i} className="h-[118px] rounded-lg" />
+        ))}
       </div>
-      <div className="grid gap-7 lg:grid-cols-3">
-        <div className="flex flex-col gap-7 lg:col-span-2">
-          <CardSkeleton lines={5} />
-          <CardSkeleton lines={2} />
-          <CardSkeleton lines={2} />
+      <div className="grid gap-5 xl:grid-cols-3">
+        <div className="xl:col-span-2">
+          <CardSkeleton lines={6} />
         </div>
-        <div className="flex flex-col gap-7">
-          <CardSkeleton lines={3} />
-          <CardSkeleton lines={2} />
-        </div>
+        <CardSkeleton lines={4} />
       </div>
-    </PageBody>
+    </div>
   );
 }
 

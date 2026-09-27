@@ -117,8 +117,6 @@ export const NAV_GROUPS: readonly NavGroup[] = GROUP_HREFS.map((group) => ({
 
 /** Sections whose pages are delivered in later phases; the placeholder route renders for these only. */
 export const PLANNED_SECTIONS: Readonly<Record<string, { label: string; phase: number }>> = {
-  timeline: { label: "Timeline", phase: 5 },
-  documents: { label: "Documents", phase: 7 },
   testing: { label: "Testing", phase: 6 },
   reports: { label: "Reports", phase: 9 },
   activity: { label: "Activity", phase: 4 },

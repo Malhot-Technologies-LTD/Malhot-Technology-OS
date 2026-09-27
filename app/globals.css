@@ -293,3 +293,37 @@
     display: none;
   }
 }
+
+/*
+ * Printing generated documents (features/documents/components/print.client.tsx).
+ *
+ * The document is portalled into #print-root, a direct child of <body>, and
+ * everything else is hidden. Printing the page in place would not work: the OS
+ * shell is a fixed-height frame with scrolling panes, and a browser prints a
+ * scrolling pane as the one screenful it can see.
+ */
+#print-root {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 16mm 16mm 18mm;
+  }
+
+  html,
+  body {
+    height: auto !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+  }
+
+  body > *:not(#print-root) {
+    display: none !important;
+  }
+
+  #print-root {
+    display: block;
+  }
+}

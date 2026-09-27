@@ -2,7 +2,7 @@
 
 import { Circle, CircleCheck, Search } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState, useSyncExternalStore, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { EmptyState } from "@/components/os/empty-state";
@@ -15,27 +15,11 @@ import { TaskAcceptButton } from "@/features/tasks/components/task-accept-button
 import { groupTasks, type MyTask } from "@/features/tasks/due-groups";
 import { taskHref, taskRef } from "@/features/tasks/links";
 import { TASK_STATUSES, TASK_STATUS_META } from "@/features/tasks/schemas";
+import { useNow } from "@/features/tasks/use-now";
 import { cn } from "@/lib/utils";
 
 const dateFormat = new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short" });
 const timeFormat = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit" });
-
-// The clock as an external store: null during server render and hydration,
-// the real time once the browser takes over. Re-read every minute.
-function subscribe(callback: () => void) {
-  const timer = setInterval(callback, 60_000);
-  return () => clearInterval(timer);
-}
-let cachedMinute = 0;
-let cachedNow: Date | null = null;
-function getNow(): Date {
-  const minute = Math.floor(Date.now() / 60_000);
-  if (minute !== cachedMinute || !cachedNow) {
-    cachedMinute = minute;
-    cachedNow = new Date();
-  }
-  return cachedNow;
-}
 
 /**
  * What the reader owes, grouped by when it is due, with search and filters.
@@ -43,7 +27,7 @@ function getNow(): Date {
  * own page.
  */
 export function MyTaskList({ tasks }: { tasks: readonly MyTask[] }) {
-  const now = useSyncExternalStore(subscribe, getNow, () => null);
+  const now = useNow();
   const [query, setQuery] = useState("");
   const [project, setProject] = useState("all");
   const [status, setStatus] = useState("all");
@@ -65,31 +49,9 @@ export function MyTaskList({ tasks }: { tasks: readonly MyTask[] }) {
   });
 
   const groups = now ? groupTasks(filtered, now) : [{ key: "all", label: "", tasks: filtered }];
-  const counts = now ? Object.fromEntries(groupTasks(tasks, now).map((group) => [group.key, group.tasks.length])) : {};
 
   return (
     <div className="flex flex-col gap-5">
-      <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Summary label="Open" value={tasks.length} />
-        <Summary
-          label="Overdue"
-          value={counts.overdue ?? 0}
-          tone={counts.overdue ? "danger" : undefined}
-          ready={Boolean(now)}
-        />
-        <Summary
-          label="Due today"
-          value={counts.today ?? 0}
-          tone={counts.today ? "warning" : undefined}
-          ready={Boolean(now)}
-        />
-        <Summary
-          label="Not accepted"
-          value={tasks.filter((task) => !task.acceptedAt).length}
-          tone={tasks.some((task) => !task.acceptedAt) ? "warning" : undefined}
-        />
-      </dl>
-
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative min-w-56 flex-1 max-sm:basis-full">
           <Search
@@ -241,39 +203,12 @@ function TaskRow({ task }: { task: MyTask }) {
 
 /** The deadline in the reader's timezone, filled after hydration like the countdown beside it. */
 function DueLabel({ iso }: { iso: string }) {
-  const now = useSyncExternalStore(subscribe, getNow, () => null);
+  const now = useNow();
   if (!now) return null;
   const date = new Date(iso);
   return (
     <span className="block text-fg-muted">
       {dateFormat.format(date)}, {timeFormat.format(date)}
     </span>
-  );
-}
-
-function Summary({
-  label,
-  value,
-  tone,
-  ready = true,
-}: {
-  label: string;
-  value: number;
-  tone?: "danger" | "warning";
-  ready?: boolean;
-}) {
-  return (
-    <div className="flex flex-col gap-1 rounded-lg border border-border bg-surface px-4 py-3">
-      <dt className="text-[13px] text-fg-muted">{label}</dt>
-      <dd
-        className={cn(
-          "text-2xl font-semibold",
-          tone === "danger" && "text-status-danger-fg",
-          tone === "warning" && "text-status-warning-fg",
-        )}
-      >
-        {ready ? value : "–"}
-      </dd>
-    </div>
   );
 }

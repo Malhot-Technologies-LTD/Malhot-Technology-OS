@@ -89,7 +89,10 @@ export function ShowcaseForm(props: Props) {
   const onSubmit = form.handleSubmit((values) => {
     form.clearErrors("root");
     startTransition(async () => {
-      const result = await saveShowcase(values);
+      // The raw input, not `values`: the resolver has already turned the line
+      // lists into arrays and the year into a number, and the action parses the
+      // same schema again, which expects the strings the fields hold.
+      const result = await saveShowcase(form.getValues());
       if (!result.ok) {
         applyActionError(form.setError, result.error);
         return;

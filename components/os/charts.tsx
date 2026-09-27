@@ -202,3 +202,145 @@ function DataTable({
     </table>
   );
 }
+
+export type LineSeries = {
+  key: string;
+  label: string;
+  values: readonly number[];
+  /** Tailwind stroke/fill classes; the first series is the one that matters. */
+  strokeClass: string;
+  swatchClass: string;
+  dashed?: boolean;
+};
+
+/**
+ * Lines over shared points, for cumulative series like a burn-up. The SVG
+ * stretches to the width it is given; strokes stay crisp because they do not
+ * scale with it. Hovering or focusing a column shows every series' value there.
+ */
+export function LineChart({
+  labels,
+  series,
+  caption,
+  height = 220,
+}: {
+  labels: readonly { key: string; label: string; shortLabel?: string; tooltip: string }[];
+  series: readonly LineSeries[];
+  caption: string;
+  height?: number;
+}) {
+  const max = niceMax(Math.max(0, ...series.flatMap((line) => line.values)));
+  const ticks = [max, max / 2, 0];
+  const count = labels.length;
+  const x = (index: number) => (count <= 1 ? 50 : (index / (count - 1)) * 100);
+  const y = (value: number) => (max === 0 ? 100 : 100 - (value / max) * 100);
+
+  return (
+    <figure className="flex flex-col gap-3">
+      <ul className="flex flex-wrap gap-4 text-xs text-fg-muted" aria-hidden="true">
+        {series.map((line) => (
+          <li key={line.key} className="flex items-center gap-1.5">
+            <span className={cn("h-0.5 w-4 rounded-full", line.swatchClass)} />
+            {line.label}
+            <span className="font-medium text-fg tabular-nums">{line.values[line.values.length - 1] ?? 0}</span>
+          </li>
+        ))}
+      </ul>
+      <div className="flex gap-3">
+        <div
+          aria-hidden="true"
+          className="flex flex-col justify-between text-right text-xs text-fg-subtle tabular-nums"
+          style={{ height }}
+        >
+          {ticks.map((tick) => (
+            <span key={tick} className="-my-2 leading-4">
+              {Number.isInteger(tick) ? tick : tick.toFixed(1)}
+            </span>
+          ))}
+        </div>
+        <div className="relative flex-1" style={{ height }}>
+          {ticks.map((tick, index) => (
+            <div
+              key={tick}
+              aria-hidden="true"
+              className="absolute inset-x-0 border-t border-border"
+              style={{ top: `${(index / (ticks.length - 1)) * 100}%` }}
+            />
+          ))}
+          <svg
+            aria-hidden="true"
+            className="absolute inset-0 h-full w-full overflow-visible"
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+          >
+            {series.map((line) => (
+              <polyline
+                key={line.key}
+                fill="none"
+                strokeWidth={2.25}
+                strokeLinejoin="round"
+                strokeLinecap="round"
+                vectorEffect="non-scaling-stroke"
+                strokeDasharray={line.dashed ? "5 4" : undefined}
+                className={line.strokeClass}
+                points={line.values.map((value, index) => `${x(index)},${y(value)}`).join(" ")}
+              />
+            ))}
+          </svg>
+          <ul className="absolute inset-0 flex">
+            {labels.map((label) => (
+              <li
+                key={label.key}
+                tabIndex={0}
+                aria-label={label.tooltip}
+                className="group relative flex-1 rounded-sm outline-none hover:bg-bg-subtle/50 focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <span
+                  role="tooltip"
+                  className="pointer-events-none absolute top-2 left-1/2 z-10 hidden -translate-x-1/2 rounded-md border border-border bg-surface-raised px-2.5 py-1.5 text-xs whitespace-nowrap shadow-m group-hover:block group-focus-visible:block"
+                >
+                  {label.tooltip}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+      <div aria-hidden="true" className="flex gap-3">
+        <span className="invisible text-xs tabular-nums">{max}</span>
+        <div className="flex flex-1 justify-between">
+          {labels.map((label, index) =>
+            index % Math.max(1, Math.ceil(count / 6)) === 0 || index === count - 1 ? (
+              <span key={label.key} className="text-xs text-fg-subtle">
+                {label.label}
+              </span>
+            ) : null,
+          )}
+        </div>
+      </div>
+      <table className="sr-only">
+        <caption>{caption}</caption>
+        <thead>
+          <tr>
+            <th scope="col">Week</th>
+            {series.map((line) => (
+              <th key={line.key} scope="col">
+                {line.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {labels.map((label, index) => (
+            <tr key={label.key}>
+              <th scope="row">{label.label}</th>
+              {series.map((line) => (
+                <td key={line.key}>{line.values[index] ?? 0}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </figure>
+  );
+}

@@ -333,7 +333,7 @@ export function TaskProperties(props: TaskEditorProps) {
                     run(
                       () => deleteTask({ taskId, projectKey }),
                       "Task deleted",
-                      () => router.push(`/os/projects/${projectKey}`),
+                      () => router.push(`/os/projects/${projectKey}/tasks`),
                     )
                   }
                 >
