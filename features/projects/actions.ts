@@ -11,7 +11,7 @@ import { requireViewer } from "@/lib/auth/context";
 import { logger } from "@/lib/logger";
 import { can } from "@/lib/permissions";
 import { createClient } from "@/lib/supabase/server";
-import type { ProjectRole, ProjectStatus } from "@/types/domain";
+import type { ProjectRole } from "@/types/domain";
 
 import { getProjectByKey, getProjectContext } from "./queries";
 import { resolveClientByName } from "./clients";
@@ -124,7 +124,7 @@ export const updateProject = withAction("projects.update", async (input: unknown
   }
 
   revalidatePath("/os/projects");
-  revalidatePath(`/os/projects/${parsed.data.key}`);
+  revalidatePath(`/os/projects/${parsed.data.key}`, "layout");
   return ok(undefined);
 });
 
@@ -192,7 +192,7 @@ export const changeProjectStatus = withAction(
 
     logger.info("project.status_changed", { key: existing.data.key, from: existing.data.status, to: status });
     revalidatePath("/os/projects");
-    revalidatePath(`/os/projects/${existing.data.key}`);
+    revalidatePath(`/os/projects/${existing.data.key}`, "layout");
     return ok(undefined);
   },
 );
@@ -250,34 +250,9 @@ async function addPlanningItem(
     return fail(mapped.code, mapped.message);
   }
 
-  revalidatePath(`/os/projects/${project.data.key}`);
+  revalidatePath(`/os/projects/${project.data.key}`, "layout");
   return ok(undefined);
 }
-
-export type PaletteProject = { key: string; name: string; status: ProjectStatus };
-
-/**
- * Projects for the command palette. Loaded once when the palette first opens
- * and filtered in the browser afterwards: an agency has tens of projects, not
- * thousands, so one round trip beats a query per keystroke — especially at the
- * ~400ms round trip this deployment has.
- */
-export const searchableProjects = withAction(
-  "projects.forPalette",
-  async (): Promise<ActionResult<PaletteProject[]>> => {
-    const viewer = await requireViewer();
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("projects")
-      .select("key, name, status")
-      .eq("organization_id", viewer.organizationId)
-      .is("deleted_at", null)
-      .order("updated_at", { ascending: false })
-      .limit(200);
-    if (error) return fail("unexpected", "Projects could not be loaded.");
-    return ok(data as PaletteProject[]);
-  },
-);
 
 /**
  * Project team (docs/product/user-roles.md#project-roles).
@@ -343,7 +318,7 @@ export const assignProjectMember = withAction(
     }
 
     logger.info("project.member_assigned", { key: loaded.project.key, role: parsed.role });
-    revalidatePath(`/os/projects/${loaded.project.key}`);
+    revalidatePath(`/os/projects/${loaded.project.key}`, "layout");
     return ok(undefined);
   },
 );
@@ -367,7 +342,7 @@ export const changeProjectMemberRole = withAction(
       return fail(mapped.code, mapped.message);
     }
 
-    revalidatePath(`/os/projects/${loaded.project.key}`);
+    revalidatePath(`/os/projects/${loaded.project.key}`, "layout");
     return ok(undefined);
   },
 );
@@ -408,7 +383,7 @@ export const removeProjectMember = withAction(
     }
 
     logger.info("project.member_removed", { key: loaded.project.key });
-    revalidatePath(`/os/projects/${loaded.project.key}`);
+    revalidatePath(`/os/projects/${loaded.project.key}`, "layout");
     return ok(undefined);
   },
 );

@@ -1,11 +1,23 @@
 import "server-only";
 
+import type { PostgrestError } from "@supabase/supabase-js";
+
 import { logger } from "@/lib/logger";
 import { groupFor, type ProjectContext } from "@/lib/permissions";
 
+import type { TaskStatus } from "@/features/tasks/schemas";
+
 import { readinessBlockers } from "./readiness";
 import { createClient } from "@/lib/supabase/server";
-import type { OrgRole, Priority, ProjectKind, ProjectRole, ProjectStatus } from "@/types/domain";
+import type {
+  GoalStatus,
+  MvpItemStatus,
+  OrgRole,
+  Priority,
+  ProjectKind,
+  ProjectRole,
+  ProjectStatus,
+} from "@/types/domain";
 
 /**
  * Project reads (docs/features/projects.md). Every query runs on the viewer's
@@ -42,6 +54,53 @@ export async function listProjects(organizationId: string, limit = 50) {
     .returns<ProjectListRow[]>();
 }
 
+export type ProjectListStats = {
+  tasks: {
+    project_id: string;
+    status: TaskStatus;
+    due_at: string | null;
+    completed_at: string | null;
+    created_at: string;
+    accepted_at: string | null;
+    assignee_id: string | null;
+  }[];
+  milestones: { project_id: string; title: string; due_date: string; completed_at: string | null }[];
+};
+
+/**
+ * The raw rows behind the list's per-project figures, in one parallel wave:
+ * every task's status and dates, and every milestone. Counted in the page
+ * rather than in SQL because the list needs several figures per project and one
+ * pass over a few thousand narrow rows is cheaper than a round trip each.
+ */
+export async function getProjectListStats(organizationId: string): Promise<ProjectListStats> {
+  const supabase = await createClient();
+  const [tasks, milestones] = await Promise.all([
+    supabase
+      .from("tasks")
+      .select(
+        "project_id, status, due_at, completed_at, created_at, accepted_at, assignee_id, project:projects!tasks_project_id_fkey!inner(organization_id)",
+      )
+      .eq("project.organization_id", organizationId)
+      .limit(5000),
+    supabase
+      .from("milestones")
+      .select(
+        "project_id, title, due_date, completed_at, project:projects!milestones_project_id_fkey!inner(organization_id)",
+      )
+      .eq("project.organization_id", organizationId)
+      .order("due_date")
+      .limit(2000),
+  ]);
+  if (tasks.error) logger.error("projects.list_tasks_failed", { code: tasks.error.code, message: tasks.error.message });
+  if (milestones.error)
+    logger.error("projects.list_milestones_failed", { code: milestones.error.code, message: milestones.error.message });
+  return {
+    tasks: (tasks.data ?? []) as ProjectListStats["tasks"],
+    milestones: (milestones.data ?? []) as ProjectListStats["milestones"],
+  };
+}
+
 export type ProjectDetail = ProjectListRow & {
   description: string | null;
   qa_required: boolean;
@@ -65,32 +124,78 @@ export async function getProjectByKey(organizationId: string, key: string) {
     .maybeSingle<ProjectDetail>();
 }
 
-export type ProjectPlanning = {
-  goals: { id: string; title: string; status: string; position: number }[];
-  mvpItems: { id: string; title: string; status: string; goal_id: string | null; position: number }[];
-  milestones: { id: string; title: string; due_date: string; completed_at: string | null }[];
+export type GoalRow = {
+  id: string;
+  title: string;
+  description: string | null;
+  success_criteria: string | null;
+  status: GoalStatus;
+  position: number;
+  created_at: string;
+  owner: { id: string; full_name: string } | null;
 };
 
-/** Goals, MVP items and milestones for the overview, in display order. */
+export type MvpItemRow = {
+  id: string;
+  title: string;
+  description: string | null;
+  status: MvpItemStatus;
+  priority: Priority;
+  goal_id: string | null;
+  position: number;
+  created_at: string;
+};
+
+export type MilestoneRow = {
+  id: string;
+  title: string;
+  description: string | null;
+  due_date: string;
+  completed_at: string | null;
+  position: number;
+  created_at: string;
+};
+
+export type ProjectPlanning = {
+  goals: GoalRow[];
+  mvpItems: MvpItemRow[];
+  milestones: MilestoneRow[];
+  /** The first read that failed, if any; the lists are empty rather than partial in that case. */
+  error: PostgrestError | null;
+};
+
+/** Goals, MVP items and milestones, in display order. */
 export async function getProjectPlanning(projectId: string): Promise<ProjectPlanning> {
   const supabase = await createClient();
   const [goals, mvpItems, milestones] = await Promise.all([
-    supabase.from("goals").select("id, title, status, position").eq("project_id", projectId).order("position"),
+    supabase
+      .from("goals")
+      .select(
+        "id, title, description, success_criteria, status, position, created_at, owner:profiles!goals_owner_id_fkey(id, full_name)",
+      )
+      .eq("project_id", projectId)
+      .order("position")
+      .returns<GoalRow[]>(),
     supabase
       .from("mvp_items")
-      .select("id, title, status, goal_id, position")
+      .select("id, title, description, status, priority, goal_id, position, created_at")
       .eq("project_id", projectId)
-      .order("position"),
+      .order("position")
+      .returns<MvpItemRow[]>(),
     supabase
       .from("milestones")
-      .select("id, title, due_date, completed_at")
+      .select("id, title, description, due_date, completed_at, position, created_at")
       .eq("project_id", projectId)
-      .order("due_date"),
+      .order("due_date")
+      .returns<MilestoneRow[]>(),
   ]);
+  const error = goals.error ?? mvpItems.error ?? milestones.error;
+  if (error) logger.error("projects.planning_failed", { code: error.code, message: error.message });
   return {
-    goals: goals.data ?? [],
-    mvpItems: mvpItems.data ?? [],
-    milestones: milestones.data ?? [],
+    goals: error ? [] : (goals.data ?? []),
+    mvpItems: error ? [] : (mvpItems.data ?? []),
+    milestones: error ? [] : (milestones.data ?? []),
+    error,
   };
 }
 
