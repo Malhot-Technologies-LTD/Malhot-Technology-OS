@@ -24,6 +24,8 @@ export type TaskRow = {
   completed_at: string | null;
   created_at: string;
   assignee: { id: string; full_name: string; avatar_url: string | null } | null;
+  /** Only the project task list reads who created each task. */
+  creator?: { id: string; full_name: string } | null;
 };
 
 /**
@@ -38,7 +40,7 @@ export async function listProjectTasks(projectId: string) {
   return supabase
     .from("tasks")
     .select(
-      "id, seq, title, description, status, priority, due_at, started_at, accepted_at, completed_at, created_at, assignee:profiles!tasks_assignee_id_fkey(id, full_name, avatar_url)",
+      "id, seq, title, description, status, priority, due_at, started_at, accepted_at, completed_at, created_at, assignee:profiles!tasks_assignee_id_fkey(id, full_name, avatar_url), creator:profiles!tasks_created_by_fkey(id, full_name)",
     )
     .eq("project_id", projectId)
     .order("completed_at", { ascending: true, nullsFirst: true })
@@ -66,6 +68,22 @@ export async function listMyTasks(userId: string) {
     .eq("assignee_id", userId)
     .is("completed_at", null)
     .order("due_at", { ascending: true, nullsFirst: false })
+    .limit(100)
+    .returns<MyTaskRow[]>();
+}
+
+/** What this person finished recently, newest first, for "done this week" and the recently completed list. */
+export async function listMyCompletedTasks(userId: string, days = 30) {
+  const supabase = await createClient();
+  const since = new Date(Date.now() - days * 86_400_000).toISOString();
+  return supabase
+    .from("tasks")
+    .select(
+      "id, seq, title, description, status, priority, due_at, started_at, accepted_at, completed_at, created_at, assignee:profiles!tasks_assignee_id_fkey(id, full_name, avatar_url), project:projects!inner(key, name)",
+    )
+    .eq("assignee_id", userId)
+    .gte("completed_at", since)
+    .order("completed_at", { ascending: false })
     .limit(100)
     .returns<MyTaskRow[]>();
 }

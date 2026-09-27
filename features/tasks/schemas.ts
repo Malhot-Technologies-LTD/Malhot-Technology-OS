@@ -39,6 +39,8 @@ export const createTaskSchema = z.object({
     .transform((value) => (value === "" ? null : value))
     .nullable(),
   priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
+  // A card added straight into a board column starts in that column.
+  status: z.enum(TASK_STATUSES).default("todo"),
   dueAt: optionalInstant,
 });
 

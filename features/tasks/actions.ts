@@ -65,7 +65,7 @@ async function loadOwnTask(taskId: string, projectId: string, viewerUserId: stri
   return { ok: true as const, supabase, task: existing.data };
 }
 
-export const createTask = withAction("tasks.create", async (input: unknown): Promise<ActionResult> => {
+export const createTask = withAction("tasks.create", async (input: unknown): Promise<ActionResult<{ seq: number }>> => {
   const parsed = createTaskSchema.safeParse(input);
   if (!parsed.success) return validationFail(parsed.error);
 
@@ -103,6 +103,7 @@ export const createTask = withAction("tasks.create", async (input: unknown): Pro
     description: parsed.data.description,
     assignee_id: parsed.data.assigneeId,
     priority: parsed.data.priority,
+    status: parsed.data.status,
     due_at: parsed.data.dueAt,
     created_by: loaded.viewer.userId,
   });
@@ -115,7 +116,7 @@ export const createTask = withAction("tasks.create", async (input: unknown): Pro
 
   logger.info("task.created", { key: loaded.project.key, seq: seq.data });
   revalidateTaskViews(loaded.project.key);
-  return ok(undefined);
+  return ok({ seq: seq.data as number });
 });
 
 /** Reassigning and re-dating are the same edit; both are contributor-level. */
