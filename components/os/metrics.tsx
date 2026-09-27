@@ -39,28 +39,51 @@ type StatTileProps = {
   icon?: LucideIcon;
   tone?: Tone;
   href?: string;
+  /**
+   * Change against a named earlier period, e.g. "+3 vs last week". `good`
+   * and `bad` colour it; which direction is good is the caller's call, because
+   * more completed tasks is good and more overdue ones is not.
+   */
+  delta?: { text: string; direction: "good" | "bad" | "flat" };
 };
 
-export function StatTile({ label, value, hint, icon: Icon, tone = "neutral", href }: StatTileProps) {
+const DELTA_CLASS = {
+  good: "text-status-success-fg",
+  bad: "text-status-danger-fg",
+  flat: "text-fg-subtle",
+} as const;
+
+export function StatTile({ label, value, hint, icon: Icon, tone = "neutral", href, delta }: StatTileProps) {
   const body = (
     <>
       <div className="flex items-center justify-between gap-3">
-        <span className="truncate text-[15px] text-fg-muted">{label}</span>
+        <span className="truncate text-sm font-medium text-fg-muted">{label}</span>
         {Icon ? (
-          <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-lg", TONE_ICON[tone])}>
-            <Icon className="size-4.5" aria-hidden="true" />
+          <span
+            className={cn("flex size-8 shrink-0 items-center justify-center rounded-md max-sm:hidden", TONE_ICON[tone])}
+          >
+            <Icon className="size-4" aria-hidden="true" />
           </span>
         ) : null}
       </div>
-      <div className="flex flex-col gap-0.5">
-        <span className={cn("text-[40px] leading-none font-semibold tabular-nums", TONE_VALUE[tone])}>{value}</span>
-        {hint ? <span className="truncate text-sm text-fg-subtle">{hint}</span> : null}
+      <div className="flex flex-col gap-1">
+        <span className={cn("text-[30px] leading-none font-semibold tracking-[-0.02em]", TONE_VALUE[tone])}>
+          {value}
+        </span>
+        {delta || hint ? (
+          <span className="flex min-w-0 items-center gap-1.5 text-[13px]">
+            {delta ? (
+              <span className={cn("shrink-0 font-medium", DELTA_CLASS[delta.direction])}>{delta.text}</span>
+            ) : null}
+            {hint ? <span className="truncate text-fg-subtle">{hint}</span> : null}
+          </span>
+        ) : null}
       </div>
     </>
   );
 
   const className = cn(
-    "flex flex-col justify-between gap-7 rounded-lg border border-border bg-surface p-6 transition-[colors,transform,box-shadow] duration-[160ms] ease-standard",
+    "flex flex-col justify-between gap-4 rounded-lg border border-border bg-surface p-4 sm:p-5 transition-[colors,transform,box-shadow] duration-[160ms] ease-standard",
     href && "hover:-translate-y-0.5 hover:border-border-strong hover:bg-surface-raised hover:shadow-m",
   );
 
@@ -75,7 +98,7 @@ export function StatTile({ label, value, hint, icon: Icon, tone = "neutral", hre
 }
 
 export function StatRow({ children }: { children: React.ReactNode }) {
-  return <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">{children}</div>;
+  return <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-5">{children}</div>;
 }
 
 type RingProps = {

@@ -1,5 +1,7 @@
 "use client";
 
+import { Menu } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 
 import { AppSidebar, type SidebarUser } from "@/components/os/app-sidebar.client";
@@ -7,6 +9,8 @@ import type { NavAudience } from "@/components/os/nav-audience";
 import { Breadcrumbs } from "@/components/os/breadcrumbs.client";
 import { CommandPalette } from "@/components/os/command-palette.client";
 import { ThemeSwitch } from "@/components/os/theme-toggle.client";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 export const SIDEBAR_COOKIE = "os_sidebar";
@@ -34,9 +38,16 @@ type Props = {
  * the viewport, utilities on the right. Centring search costs a grid but means
  * it lands in the same place on every page and at every sidebar width — the
  * thing people reach for most stops moving.
+ *
+ * Below `md` there is no room for a sidebar beside the page, so it moves into a
+ * drawer behind a menu button. The drawer is tied to the path it opened on, so
+ * following a link closes it without an effect.
  */
 export function OsShell({ user, defaultCollapsed, audience, bell, notificationBadge, children }: Props) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
+  const pathname = usePathname();
+  const [drawerPath, setDrawerPath] = useState<string | null>(null);
+  const drawerOpen = drawerPath === pathname;
 
   function toggle() {
     const next = !collapsed;
@@ -53,17 +64,47 @@ export function OsShell({ user, defaultCollapsed, audience, bell, notificationBa
         Skip to content
       </a>
       <div className="flex h-dvh overflow-hidden bg-bg">
-        <AppSidebar
-          collapsed={collapsed}
-          onToggle={toggle}
-          user={user}
-          audience={audience}
-          notificationBadge={notificationBadge}
-        />
+        <div className="hidden md:flex">
+          <AppSidebar
+            collapsed={collapsed}
+            onToggle={toggle}
+            user={user}
+            audience={audience}
+            notificationBadge={notificationBadge}
+          />
+        </div>
+        <Sheet open={drawerOpen} onOpenChange={(open) => setDrawerPath(open ? pathname : null)}>
+          <SheetContent
+            side="left"
+            showCloseButton={false}
+            className="flex w-72 max-w-[85vw] flex-row gap-0 p-0 md:hidden"
+          >
+            <SheetTitle className="sr-only">Navigation</SheetTitle>
+            <AppSidebar
+              collapsed={false}
+              onToggle={() => setDrawerPath(null)}
+              user={user}
+              audience={audience}
+              notificationBadge={notificationBadge}
+            />
+          </SheetContent>
+        </Sheet>
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="grid h-16 shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-4 border-b border-border bg-bg/85 px-5 backdrop-blur-sm sm:px-7">
-            <div className="min-w-0">
-              <Breadcrumbs />
+          <header className="grid h-16 shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-border bg-bg/85 px-4 backdrop-blur-sm sm:px-7 md:grid-cols-[1fr_auto_1fr] md:gap-4">
+            <div className="flex min-w-0 items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="shrink-0 md:hidden"
+                aria-label="Open navigation"
+                onClick={() => setDrawerPath(pathname)}
+              >
+                <Menu aria-hidden="true" />
+              </Button>
+              <div className="hidden min-w-0 md:block">
+                <Breadcrumbs />
+              </div>
             </div>
             <CommandPalette audience={audience} />
             <div className="flex items-center justify-end gap-1.5">

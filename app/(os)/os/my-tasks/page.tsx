@@ -7,12 +7,8 @@ import { ErrorState } from "@/components/os/error-state";
 import { PageBody, PageHeader } from "@/components/os/page-header";
 import { listProjectOptions, listTeamsByProject } from "@/features/projects/queries";
 import { AssignTaskDialog } from "@/features/tasks/components/assign-task-dialog.client";
-import { TaskCard, TaskGrid } from "@/features/tasks/components/task-card";
-import { TaskAcceptButton } from "@/features/tasks/components/task-accept-button.client";
-import { TaskDoneButton } from "@/features/tasks/components/task-done-button.client";
-import { TeamWorkload } from "@/features/tasks/components/team-workload.client";
-import { listMyTasks, listTeamTasks } from "@/features/tasks/queries";
-import { groupByAssignee } from "@/features/tasks/workload";
+import { MyTaskList } from "@/features/tasks/components/my-task-list.client";
+import { listMyTasks } from "@/features/tasks/queries";
 import { describeQueryFailure } from "@/lib/actions/db-errors";
 import { requireViewer } from "@/lib/auth/context";
 import { logger } from "@/lib/logger";
@@ -20,30 +16,20 @@ import { logger } from "@/lib/logger";
 export const metadata: Metadata = { title: "My Tasks" };
 
 /**
- * My Tasks (docs/features/tasks.md).
+ * My Tasks (docs/features/tasks.md): what this person owes, across every
+ * project, grouped by when it is due. Each row opens the task's own page.
  *
- * What this person owes, across every project they are on, soonest deadline
- * first. Completed work is not here: the question is what is left.
- *
- * Managers and org admins also get "Assign a task", because the other half of
- * the same thought — "this needs doing, and by them" — otherwise means finding
- * the right project first and working inwards.
+ * Managers and org admins also get "Assign a task". The team's workload lives
+ * on the dashboard (Team load), not here: this page is about your own list.
  */
 export default async function MyTasksPage() {
   const viewer = await requireViewer();
   const canAssign = oversees({ orgRole: viewer.orgRole, projectRoles: viewer.projectRoles });
 
-  // The picker data is only fetched for someone who will see the picker.
-  const [tasks, projects, teams, teamTasks] = await Promise.all([
+  const [tasks, projects, teams] = await Promise.all([
     listMyTasks(viewer.userId),
     canAssign ? listProjectOptions(viewer.organizationId) : Promise.resolve({ data: [], error: null }),
     canAssign ? listTeamsByProject(viewer.organizationId) : Promise.resolve(new Map()),
-    /*
-     * Everyone sees what the team is carrying — knowing who holds what is how
-     * people stop stepping on each other. RLS keeps it to projects they are on,
-     * and the section is read-only for work that is not theirs.
-     */
-    listTeamTasks(viewer.organizationId),
   ]);
 
   if (tasks.error) {
@@ -56,21 +42,9 @@ export default async function MyTasksPage() {
     );
   }
 
-  /*
-   * No overdue count here, deliberately. It would have to be computed from the
-   * server's clock, and the whole reason Countdown is a client component is
-   * that the server's instant is not the reader's. A number that is stale on
-   * arrival next to a countdown that is not would contradict itself.
-   */
-  const rows = tasks.data;
-
   const assignDialog = canAssign ? (
     <AssignTaskDialog
-      projects={(projects.data ?? []).map((project) => ({
-        id: project.id,
-        key: project.key,
-        name: project.name,
-      }))}
+      projects={(projects.data ?? []).map((project) => ({ id: project.id, key: project.key, name: project.name }))}
       teams={Object.fromEntries(
         [...(teams as Map<string, { userId: string; fullName: string }[]>).entries()].map(([projectId, people]) => [
           projectId,
@@ -80,89 +54,36 @@ export default async function MyTasksPage() {
     />
   ) : undefined;
 
+  const rows = tasks.data.flatMap((task) =>
+    task.project
+      ? [
+          {
+            id: task.id,
+            seq: task.seq,
+            title: task.title,
+            status: task.status,
+            priority: task.priority,
+            dueAt: task.due_at,
+            acceptedAt: task.accepted_at,
+            project: task.project,
+          },
+        ]
+      : [],
+  );
+
   return (
     <PageBody>
-      <PageHeader
-        title="My Tasks"
-        description={rows.length === 0 ? "Nothing is assigned to you." : `${rows.length} open, soonest deadline first.`}
-        actions={assignDialog}
-      />
-
+      <PageHeader title="My Tasks" description="Your open work across every project." actions={assignDialog} />
       {rows.length === 0 ? (
         <EmptyState
           icon={CheckCircle2}
           title="Nothing on your plate"
-          description="Work assigned to you appears here, soonest deadline first."
+          description="Work assigned to you appears here, grouped by when it is due."
           action={assignDialog}
         />
       ) : (
-        <TaskGrid>
-          {rows.map((task) => (
-            <li key={task.id}>
-              <TaskCard
-                projectKey={task.project?.key ?? null}
-                linkProject
-                task={{
-                  id: task.id,
-                  seq: task.seq,
-                  title: task.title,
-                  description: task.description,
-                  status: task.status,
-                  priority: task.priority,
-                  dueAt: task.due_at,
-                  acceptedAt: task.accepted_at,
-                  startedAt: task.started_at,
-                  completedAt: task.completed_at,
-                  createdAt: task.created_at,
-                  assignee: null,
-                }}
-                actions={
-                  task.project ? (
-                    /* Every task here is already yours, so the control is
-                       unconditional — the ownership test would always pass. */
-                    <>
-                      {task.status === "done" ? null : (
-                        <TaskAcceptButton
-                          taskId={task.id}
-                          projectKey={task.project.key}
-                          title={task.title}
-                          acceptedAt={task.accepted_at}
-                        />
-                      )}
-                      <TaskDoneButton
-                        taskId={task.id}
-                        projectKey={task.project.key}
-                        title={task.title}
-                        done={task.status === "done"}
-                        reopenTo={task.started_at ? "in_progress" : "todo"}
-                      />
-                    </>
-                  ) : null
-                }
-              />
-            </li>
-          ))}
-        </TaskGrid>
+        <MyTaskList tasks={rows} />
       )}
-
-      <section aria-labelledby="workload-heading" className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1">
-          <h2 id="workload-heading" className="text-xl font-medium">
-            The team{String.fromCharCode(8217)}s work
-          </h2>
-          <p className="text-[15px] text-fg-muted">
-            {canAssign
-              ? "Everyone with open work on your projects, whoever is closest to running out first."
-              : "What everyone on your projects is carrying, whoever is closest to running out first. Read-only unless it is yours."}
-          </p>
-        </div>
-
-        {teamTasks.error ? (
-          <ErrorState {...describeQueryFailure(teamTasks.error)} />
-        ) : (
-          <TeamWorkload people={groupByAssignee(teamTasks.data ?? [])} viewerUserId={viewer.userId} />
-        )}
-      </section>
     </PageBody>
   );
 }

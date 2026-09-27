@@ -38,9 +38,22 @@ type MarkProps = {
    * unlike `mono`, which flattens the whole thing to one colour.
    */
   onLight?: boolean;
+  /**
+   * Draw the arrow in `currentColor`, keeping the blue blades. For surfaces
+   * that switch between light and dark (the OS), where neither fixed arrow
+   * colour works in both: set the text colour on the mark instead.
+   */
+  adaptive?: boolean;
 };
 
-export function LogoMark({ className, glow = false, id = "malhot", mono = false, onLight = false }: MarkProps) {
+export function LogoMark({
+  className,
+  glow = false,
+  id = "malhot",
+  mono = false,
+  onLight = false,
+  adaptive = false,
+}: MarkProps) {
   const gradId = `${id}-grad`;
 
   return (
@@ -62,7 +75,11 @@ export function LogoMark({ className, glow = false, id = "malhot", mono = false,
 
       <path d={BLADE_LEFT} fill={mono ? "currentColor" : `url(#${gradId})`} />
       <path d={BLADE_RIGHT} fill={mono ? "currentColor" : `url(#${gradId})`} />
-      <path d={ARROW} fill={mono ? "currentColor" : onLight ? "#081f5c" : "#ffffff"} opacity={mono ? 0.5 : 0.92} />
+      <path
+        d={ARROW}
+        fill={mono || adaptive ? "currentColor" : onLight ? "#081f5c" : "#ffffff"}
+        opacity={mono ? 0.5 : 0.92}
+      />
     </svg>
   );
 }

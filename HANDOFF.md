@@ -1,23 +1,27 @@
 # HANDOFF
 
 ## Current Task
-**Website projects from the database (2026-09-27).** The owner could not change anything on the public site and the six
-case studies were fake. Projects now come from the OS: **Settings → Website** (`/os/settings/website`, org admins only)
-lists every project; an admin writes its public copy, uploads photos, switches "Show on the website" and sets the order.
-Each published project has its own page at `/projects/[slug]` with a photo gallery.
+**OS overhaul (started 2026-09-27).** The owner judged the OS unfinished and unprofessional: "MT" instead of a logo,
+a home page with one big project card and no stats, a card-grid My Tasks with side sheets instead of task pages, a
+one-long-page project view with a poor Kanban, and no Timeline, Documents, Photos or Analytics. Agreed plan, in order:
 
-Phase 3 (below) is paused behind it.
+1. **Done (uncommitted):** sidebar logo, dashboard, task pages, My Tasks, phone layout for the whole OS shell.
+2. **Next: Projects.** Cleaner list with progress/task counts; project page split into tab routes
+   `/os/projects/[key]/{board,timeline,documents,photos,analytics,team,settings}` under a shared layout; Kanban rebuilt
+   with drag-and-drop (keyboard move too). The task page's Delete currently redirects to `/os/projects/[key]`; point it
+   at `/board` once that exists.
+3. Timeline: per-project Gantt-lite + `/os/timeline`, including milestone create/edit (no milestone UI exists yet).
+4. Analytics tab, Documents (**owner chose uploaded files**, not an in-app editor), Photos. Both need a migration and a
+   private bucket.
 
 ## Status
-**Code complete, not yet verified against a real database.** Format, lint, typecheck, 420 unit tests and `npm run build`
-pass; website e2e 26/28 against a local build. The 2 failures are "unknown project → 404", which returns 500 until the
-migration exists (a DB error is deliberately not treated as not-found). Not committed (owner has not asked).
+Step 1 verified in a browser (Playwright, headless: the Chrome extension was not connected) as a temporary admin with a
+sample project, light + dark, 1440px + 390px; title/priority edits, row → task page and complete-from-list all passed.
+Temp admin and project deleted afterwards (0 rows left). Format, lint, typecheck, 424 unit tests, build all pass.
 
-**Blocking next step:** apply `supabase/migrations/20260926120000_project_showcase.sql` to the hosted project, either by
-pushing to main (release.yml runs `supabase db push` then deploys) or by pasting it into the SQL editor (it is idempotent,
-so the later `db push` re-run is harmless). Then verify as the owner: set up a project, upload 2 photos, publish, reorder,
-check `/projects`, `/projects/<slug>`, home "Recent projects", header menu, sitemap; delete a photo; confirm a member gets
-404 on `/os/settings/website`; re-run the e2e suite (expect 28/28).
+Still open from before: migration `20260926120000_project_showcase.sql` is **not applied to production**, because the
+Release workflow lacks `SUPABASE_PROJECT_REF` / `SUPABASE_ACCESS_TOKEN` / `SUPABASE_DB_PASSWORD` /
+`VERCEL_DEPLOY_HOOK_URL`. CI's types-drift check is broken (formatting mismatch; pre-existing).
 
 ## Progress
 ### Phase 3 (in progress)
@@ -45,6 +49,18 @@ check `/projects`, `/projects/<slug>`, home "Recent projects", header menu, site
 - [ ] Deferred to Phase 4: `inquiry_received` notification to admins (needs `notifications` + `emit_event`); daily prune of `inquiry_rate_limits` (W9 cron)
 
 ## Working Notes
+- **OS overhaul pieces (2026-09-27).** Dashboard maths is pure and tested in `features/dashboard/stats.ts`
+  (reads `getDashboardData`: open tasks + tasks completed in the last 9 weeks). Charts are dependency-free DOM in
+  `components/os/charts.tsx` (`ColumnChart`, `BarList`) with CSS hover/focus tooltips and an sr-only table.
+  Task pages: `/os/tasks/[ref]` (ref = `KEY-42`, helpers in `features/tasks/links.ts`), editor in
+  `task-editor.client.tsx`; `updateTask` now also takes title/description/priority and revalidates every task view.
+  My Tasks groups by the reader's clock (`features/tasks/due-groups.ts`, via `useSyncExternalStore`). Removed: side
+  sheet, TeamWorkload, `workload.ts` (Team load now lives on the dashboard). Mobile: the shell hides the sidebar below
+  `md` and opens it as a drawer (`os-shell.client.tsx`).
+  - **Visual verification recipe:** `scratchpad/ui-fixture.ts setup|teardown` (temp admin `claude-ui-test@…` + project
+    `ZQ` with 12 tasks) and `scratchpad/shots.mjs` (env `PAGES`, `W`, `H`, `THEME`; copy into the repo root to run, use
+    `MSYS_NO_PATHCONV=1`). The scratchpad is session-specific; recreate the scripts if it is gone.
+  - Streamed OS pages return HTTP 200 even when they render not-found (loading.tsx starts the stream first). Expected.
 - **Showcase design (2026-09-27).** `project_showcases` (1:1 with projects, public copy kept apart from the internal
   description) + `project_showcase_images` + public bucket `site-media` (`{org}/showcase/{project}/{uuid}.ext`, 10 MB,
   jpeg/png/webp/avif). RLS: anon reads published only; org admins write. Storage writes authorised by
@@ -112,6 +128,7 @@ check `/projects`, `/projects/<slug>`, home "Recent projects", header menu, site
 - Next step on resume: see Status (apply migration 20260926120000, verify live). `image.png` is the owner's reference, do not commit it unless asked. Lighthouse was not run for the redesign. Then resume Phase 3 from its unchecked items.
 
 ## Recently Completed
+- 2026-09-27: OS step 1: logo, stat dashboard with charts, task pages at /os/tasks/KEY-42, row-based My Tasks, mobile drawer nav.
 - 2026-09-27: Settings → Website: projects, copy and photos on the public site now come from the OS; fake case studies deleted (pending migration + live verification).
 - 2026-09-26: Home intro card replaced with an open two-column section; e2e website suite passes; pushed in 4b4c55b.
 - Website redesigned as a light corporate site: photo carousel hero with African team photos, sign in in footer, dead motion stack removed; e2e + axe AA 26/26, 404 unit tests (2026-09-26).

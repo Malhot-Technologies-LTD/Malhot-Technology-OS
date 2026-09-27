@@ -22,6 +22,7 @@ const SECTION_LABELS: Record<string, string> = {
   password: "Password",
   appearance: "Appearance",
   inquiries: "Enquiries",
+  tasks: "Tasks",
   new: "New",
   dev: "Developer",
   tokens: "Tokens",
@@ -29,8 +30,9 @@ const SECTION_LABELS: Record<string, string> = {
 
 function labelFor(segment: string): string {
   if (SECTION_LABELS[segment]) return SECTION_LABELS[segment];
-  // Project keys are 2-6 upper-case letters; anything else gets title-cased.
+  // Project keys are 2-6 upper-case letters, task references KEY-42; anything else gets title-cased.
   if (/^[A-Za-z]{2,6}$/.test(segment) && segment === segment.toUpperCase()) return segment;
+  if (/^[A-Za-z]{2,6}-\d+$/.test(segment)) return segment.toUpperCase();
   return segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, " ");
 }
 

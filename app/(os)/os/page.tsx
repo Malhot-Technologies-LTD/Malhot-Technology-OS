@@ -1,386 +1,405 @@
-import { AlertTriangle, ArrowRight, CalendarClock, CircleDashed, FolderKanban, Plus, Rocket } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowRight,
+  CalendarClock,
+  CheckCircle2,
+  FolderKanban,
+  ListTodo,
+  Plus,
+  Rocket,
+} from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import type { ReactNode } from "react";
 
-import { DueDate, ProjectKey, daysUntil } from "@/components/os/data-display";
+import { BarList, ColumnChart } from "@/components/os/charts";
+import { DueDate, ProjectKey } from "@/components/os/data-display";
 import { EmptyState } from "@/components/os/empty-state";
-import { FocusCard } from "@/components/os/focus-card";
-import { ProgressRing, StatRow, StatTile } from "@/components/os/metrics";
+import { ErrorState } from "@/components/os/error-state";
+import { StatRow, StatTile } from "@/components/os/metrics";
 import { PageBody, PageHeader } from "@/components/os/page-header";
-import { SetupChecklist, type SetupStep } from "@/components/os/setup-checklist";
-import { PriorityBadge, ProjectStatusBadge } from "@/components/os/status-badge";
+import { ProjectStatusBadge } from "@/components/os/status-badge";
+import { UserAvatar } from "@/components/os/user-menu.client";
 import { Button } from "@/components/ui/button";
-import { getDashboardProjects, type DashboardProject } from "@/features/projects/queries";
+import { getDashboardData } from "@/features/dashboard/queries";
+import { computeDashboardStats, type DashboardStats } from "@/features/dashboard/stats";
+import { Countdown } from "@/features/tasks/components/countdown.client";
+import { taskHref, taskRef } from "@/features/tasks/links";
+import { TASK_STATUS_META } from "@/features/tasks/schemas";
+import { describeQueryFailure } from "@/lib/actions/db-errors";
 import { requireViewer, type Viewer } from "@/lib/auth/context";
 import { can } from "@/lib/permissions";
 
 export const metadata: Metadata = { title: "Home" };
 
-/** Days to a project's target date; dateless projects sort last rather than first. */
-function targetDays(project: DashboardProject): number {
-  return project.target_end_date ? daysUntil(project.target_end_date) : Number.POSITIVE_INFINITY;
-}
-
-function first(value: string | string[] | undefined): string | undefined {
-  return Array.isArray(value) ? value[0] : value;
-}
+const weekLabel = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+const shortWeekLabel = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "numeric", timeZone: "UTC" });
 
 /**
- * Home (docs/features/dashboard.md).
+ * Home (docs/features/dashboard.md): the state of the work, at a glance.
  *
- * Answers one question: what should I do next? The page is ordered by how
- * loudly it needs to be heard — one focus panel for the single most pressing
- * thing, then the counts, then the lists. Task-based widgets (overdue, in
- * review, assigned to me) arrive with Phase 4; until then the honest signals
- * are projects that cannot start and dates that have passed.
+ * Figures first, because they are what someone opening the OS wants to know —
+ * how much is open, what is late, what is moving. Then the two charts that say
+ * whether the work is flowing, then the lists to act on. Everything is scoped
+ * by RLS to what the viewer can see, so an admin reads the company and a
+ * developer reads their projects, from the same page.
  */
 export default async function DashboardPage({ searchParams }: PageProps<"/os">) {
   const [viewer, params] = await Promise.all([requireViewer(), searchParams]);
-  const justJoined = first(params.welcome) === "1";
-  const firstName = viewer.profile.fullName.split(" ")[0];
-
-  const projects = await getDashboardProjects(viewer.organizationId);
-  const canCreate = can(viewer, "project.create");
+  // Set by invitation acceptance, so a newcomer is told where they landed.
+  const justJoined = params.welcome === "1";
+  const { tasks, projects, now } = await getDashboardData(viewer.organizationId);
   const { greeting, today } = localDate(viewer);
-
-  const active = projects.filter((p) => p.status === "active");
-  const planning = projects.filter((p) => p.status === "planning");
-  const stuck = planning.filter((p) => p.blockers > 0);
-  const ready = projects.filter((p) => p.blockers === 0);
-  const late = projects
-    .filter(
-      (p) => (p.status === "active" || p.status === "on_hold") && p.target_end_date && daysUntil(p.target_end_date) < 0,
-    )
-    .sort((a, b) => targetDays(a) - targetDays(b));
-  const upcoming = projects
-    .filter(
-      (p) =>
-        p.status !== "completed" && p.status !== "archived" && p.target_end_date && daysUntil(p.target_end_date) >= 0,
-    )
-    .sort((a, b) => targetDays(a) - targetDays(b))
-    .slice(0, 5);
+  const firstName = viewer.profile.fullName.split(" ")[0] || "there";
+  const canCreate = can(viewer, "project.create");
 
   const header = (
     <PageHeader
       eyebrow={today}
-      title={`${greeting}, ${firstName || "there"}.`}
+      title={`${greeting}, ${firstName}`}
       description={
         justJoined
           ? `You are in ${viewer.organization.name}. Complete your profile so teammates recognise you.`
           : undefined
       }
-      aside={<OrgCard viewer={viewer} projectCount={projects.length} />}
+      actions={
+        <>
+          <Button asChild variant="outline">
+            <Link href="/os/my-tasks">My tasks</Link>
+          </Button>
+          {canCreate ? (
+            <Button asChild>
+              <Link href="/os/projects/new">
+                <Plus aria-hidden="true" /> New project
+              </Link>
+            </Button>
+          ) : null}
+        </>
+      }
     />
   );
 
-  if (projects.length === 0) {
+  const failure = tasks.error ?? projects.error;
+  if (failure || !tasks.data || !projects.data) {
     return (
       <PageBody>
         {header}
-        <FocusCard
-          eyebrow="Nothing here yet"
-          title="Start with a project"
-          description="Everything in Malhot OS hangs off a project: goals, the MVP, tasks, tests and documents. Create one and the rest of the OS has something to work with."
-          action={canCreate ? { label: "Create your first project", href: "/os/projects/new" } : undefined}
-        />
-        {canCreate ? null : (
-          <EmptyState
-            icon={FolderKanban}
-            title="No projects yet"
-            description="Ask an owner or admin to add you to a project, or to start one for your team."
-          />
-        )}
+        {failure ? <ErrorState {...describeQueryFailure(failure)} /> : null}
       </PageBody>
     );
   }
 
-  const focus = pickFocus(late, stuck, upcoming);
+  if (projects.data.length === 0) {
+    return (
+      <PageBody>
+        {header}
+        <EmptyState
+          icon={FolderKanban}
+          title="No projects yet"
+          description={
+            canCreate
+              ? "Everything in the OS hangs off a project: goals, tasks, documents. Create one and this page fills in."
+              : "Ask an owner or admin to add you to a project."
+          }
+          action={
+            canCreate ? (
+              <Button asChild>
+                <Link href="/os/projects/new">Create a project</Link>
+              </Button>
+            ) : undefined
+          }
+        />
+      </PageBody>
+    );
+  }
+
+  const stats = computeDashboardStats(tasks.data, projects.data, viewer.userId, now);
 
   return (
     <PageBody>
       {header}
 
-      {focus ? <FocusCard {...focus} /> : null}
-
-      <SetupChecklist steps={setupSteps(viewer, projects)} />
-
       <StatRow>
         <StatTile
-          label="Active"
-          value={active.length}
-          hint={active.length === 0 ? "Nothing in flight" : "In flight now"}
+          label="Open tasks"
+          value={stats.openTasks}
+          hint={`${stats.mine} assigned to you`}
+          icon={ListTodo}
+          href="/os/my-tasks"
+        />
+        <StatTile
+          label="Overdue"
+          value={stats.overdue}
+          hint={stats.overdue === 0 ? "Every deadline still holds" : "Past their deadline"}
+          icon={AlertTriangle}
+          tone={stats.overdue > 0 ? "danger" : "neutral"}
+        />
+        <StatTile
+          label="Due in 7 days"
+          value={stats.dueSoon}
+          hint={stats.dueSoon === 0 ? "Nothing due this week" : "Coming up"}
+          icon={CalendarClock}
+          tone={stats.dueSoon > 0 ? "warning" : "neutral"}
+        />
+        <StatTile
+          label="Done this week"
+          value={stats.completedThisWeek}
+          delta={completedDelta(stats)}
+          hint="vs the week before"
+          icon={CheckCircle2}
+          tone="success"
+        />
+        <StatTile
+          label="Active projects"
+          value={stats.activeProjects}
+          hint={`${stats.planningProjects} in planning`}
           icon={Rocket}
           tone="brand"
           href="/os/projects"
         />
-        <StatTile
-          label="In planning"
-          value={planning.length}
-          hint={stuck.length > 0 ? `${stuck.length} cannot start yet` : "All ready to start"}
-          icon={CircleDashed}
-          href="/os/projects"
-        />
-        <StatTile
-          label="Past target"
-          value={late.length}
-          hint={late.length === 0 ? "Every date still holds" : "Needs a new date or a push"}
-          icon={AlertTriangle}
-          tone={late.length > 0 ? "danger" : "neutral"}
-          href="/os/projects"
-        />
-        <StatTile
-          label="Total projects"
-          value={projects.length}
-          hint={`${ready.length} fully set up`}
-          icon={FolderKanban}
-          href="/os/projects"
-        />
       </StatRow>
 
-      <div className="grid gap-7 lg:grid-cols-3">
-        <div className="flex min-w-0 flex-col gap-7 lg:col-span-2">
-          {late.length > 0 || stuck.length > 0 ? (
-            <Panel title="Needs attention">
-              <div className="flex flex-col gap-5">
-                {late.length > 0 ? (
-                  <Section title="Past their target end date">
-                    {late.map((project) => (
-                      <ProjectRow key={project.key} project={project}>
-                        <DueDate value={project.target_end_date} relative />
-                      </ProjectRow>
-                    ))}
-                  </Section>
-                ) : null}
-                {stuck.length > 0 ? (
-                  <Section title="Cannot start yet">
-                    {stuck.map((project) => (
-                      <ProjectRow key={project.key} project={project}>
-                        <span className="text-[15px] text-fg-muted">
-                          {project.blockers} item{project.blockers === 1 ? "" : "s"} missing
-                        </span>
-                      </ProjectRow>
-                    ))}
-                  </Section>
-                ) : null}
-              </div>
-            </Panel>
-          ) : null}
-
-          <Panel
-            title="Projects"
-            action={
-              <Link
-                href="/os/projects"
-                className="flex items-center gap-1.5 text-[15px] text-fg-muted hover:text-fg hover:underline"
-              >
-                All projects
-                <ArrowRight className="size-4" aria-hidden="true" />
-              </Link>
-            }
-          >
-            <ul className="flex flex-col divide-y divide-border">
-              {projects.slice(0, 8).map((project) => (
-                <ProjectRow key={project.key} project={project}>
-                  <DueDate
-                    value={project.target_end_date}
-                    open={project.status !== "completed" && project.status !== "archived"}
-                  />
-                </ProjectRow>
-              ))}
-            </ul>
-          </Panel>
-        </div>
-
-        <div className="flex min-w-0 flex-col gap-7">
-          <Panel title="Ready to start">
-            <div className="flex flex-col items-center gap-3 py-2">
-              <ProgressRing done={ready.length} total={projects.length} label="Projects fully set up" />
-              <p className="text-center text-[15px] text-fg-muted">
-                {ready.length === projects.length
-                  ? "Every project has a manager, a start date, goals and an MVP."
-                  : "A project counts once it has a manager, a start date, goals and an MVP."}
-              </p>
-            </div>
-          </Panel>
-
-          <Panel title="Upcoming targets">
-            {upcoming.length === 0 ? (
-              <EmptyState
-                variant="well"
-                icon={CalendarClock}
-                title="No target dates ahead"
-                description="Set target end dates so this fills in."
-              />
-            ) : (
-              <ul className="flex flex-col divide-y divide-border">
-                {upcoming.map((project) => (
-                  <li key={project.key} className="flex items-center gap-4 py-3.5 first:pt-0 last:pb-0">
-                    <ProjectKey value={project.key} />
-                    <Link
-                      href={`/os/projects/${project.key}`}
-                      title={project.name}
-                      className="min-w-0 flex-1 truncate text-[15px] font-medium hover:underline focus-visible:underline"
-                    >
-                      {project.name}
-                    </Link>
-                    <DueDate value={project.target_end_date} className="shrink-0 text-[15px]" />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Panel>
-
-          {canCreate ? (
-            <Button asChild variant="outline" size="lg">
-              <Link href="/os/projects/new">
-                <Plus aria-hidden="true" />
-                New project
-              </Link>
-            </Button>
-          ) : null}
-        </div>
+      <div className="grid gap-5 xl:grid-cols-3">
+        <Panel
+          title="Tasks completed per week"
+          description="Last 8 weeks, weeks starting Monday"
+          className="xl:col-span-2"
+        >
+          <ColumnChart
+            caption="Tasks completed per week, last 8 weeks"
+            valueHeading="Completed"
+            data={stats.weeks.map((week) => {
+              const label = weekLabel.format(new Date(week.start));
+              return {
+                key: week.start,
+                label,
+                shortLabel: shortWeekLabel.format(new Date(week.start)),
+                value: week.completed,
+                tooltip: `Week of ${label}: ${week.completed} completed, ${week.created} created`,
+              };
+            })}
+          />
+        </Panel>
+        <Panel title="Open tasks by status" description={`${stats.openTasks} open in total`}>
+          <BarList
+            caption="Open tasks by status"
+            labelHeading="Status"
+            valueHeading="Tasks"
+            data={stats.byStatus.map((row) => ({
+              key: row.status,
+              label: TASK_STATUS_META[row.status].label,
+              value: row.count,
+            }))}
+          />
+        </Panel>
       </div>
+
+      <div className="grid gap-5 xl:grid-cols-5">
+        <Panel
+          title="Your next deadlines"
+          className="xl:col-span-2"
+          action={<PanelLink href="/os/my-tasks">All my tasks</PanelLink>}
+        >
+          {stats.myNext.length === 0 ? (
+            <EmptyState
+              variant="well"
+              icon={CheckCircle2}
+              title="Nothing assigned to you"
+              description="Open work assigned to you shows here, soonest first."
+            />
+          ) : (
+            <ul className="-my-1 flex flex-col divide-y divide-border">
+              {stats.myNext.map((task) => {
+                const meta = TASK_STATUS_META[task.status];
+                return (
+                  <li key={task.id} className="relative flex items-center gap-3 py-2.5">
+                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <Link
+                        href={task.project ? taskHref(task.project.key, task.seq) : "/os/my-tasks"}
+                        className="truncate text-sm font-medium after:absolute after:inset-0 hover:underline"
+                        title={task.title}
+                      >
+                        {task.title}
+                      </Link>
+                      <span className="truncate text-xs text-fg-subtle">
+                        {task.project ? <span className="font-mono">{taskRef(task.project.key, task.seq)}</span> : null}{" "}
+                        · {meta.label}
+                      </span>
+                    </div>
+                    <span className="shrink-0 text-right text-[13px]">
+                      {task.due_at ? (
+                        <Countdown dueAt={task.due_at} className="font-medium" />
+                      ) : (
+                        <span className="text-fg-subtle">No deadline</span>
+                      )}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </Panel>
+
+        <Panel
+          title="Projects"
+          className="xl:col-span-3"
+          action={<PanelLink href="/os/projects">All projects</PanelLink>}
+        >
+          <ProjectTable projects={stats.projects} />
+        </Panel>
+      </div>
+
+      <Panel title="Team load" description="Open work per person across the projects you can see, most overdue first">
+        {stats.people.length === 0 ? (
+          <EmptyState
+            variant="well"
+            title="No assigned work"
+            description="When tasks have owners, each person's load shows here."
+          />
+        ) : (
+          <TeamLoad people={stats.people} />
+        )}
+      </Panel>
     </PageBody>
   );
 }
 
-/**
- * Greeting and date in the viewer's own timezone, not the server's.
- *
- * A dashboard that says "Good morning" to someone at 9pm has told them the
- * whole page is guessing. An unusable timezone falls back to UTC rather than
- * throwing — a slightly wrong greeting beats a 500 on the home page.
- */
-function localDate(viewer: Viewer): { greeting: string; today: string } {
-  const timeZone = viewer.profile.timezone || "UTC";
-  const now = new Date();
-
-  const format = (options: Intl.DateTimeFormatOptions) => {
-    try {
-      return new Intl.DateTimeFormat("en-GB", { ...options, timeZone }).format(now);
-    } catch {
-      return new Intl.DateTimeFormat("en-GB", { ...options, timeZone: "UTC" }).format(now);
-    }
-  };
-
-  const hour = Number(format({ hour: "numeric", hour12: false }));
-  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
-
-  return {
-    greeting,
-    today: format({ weekday: "long", day: "numeric", month: "long", year: "numeric" }),
-  };
+function completedDelta(stats: DashboardStats): { text: string; direction: "good" | "bad" | "flat" } {
+  const change = stats.completedThisWeek - stats.completedLastWeek;
+  if (change === 0) return { text: "±0", direction: "flat" };
+  return { text: change > 0 ? `+${change}` : `${change}`, direction: change > 0 ? "good" : "bad" };
 }
 
-/** Which single thing the focus panel should carry, in order of how much it hurts. */
-function pickFocus(
-  late: DashboardProject[],
-  stuck: DashboardProject[],
-  upcoming: DashboardProject[],
-): React.ComponentProps<typeof FocusCard> | null {
-  const worst = late[0];
-  if (worst?.target_end_date) {
-    const days = Math.abs(daysUntil(worst.target_end_date));
-    return {
-      eyebrow: "Past target",
-      title: worst.name,
-      description:
-        "This project is past the date it was meant to finish. Move the date or move the work — leaving it is the one option that costs you twice.",
-      figure: { value: String(days), unit: days === 1 ? "day late" : "days late", caption: "Overdue by" },
-      action: { label: `Open ${worst.key}`, href: `/os/projects/${worst.key}` },
-    };
-  }
-
-  const blocked = stuck[0];
-  if (blocked) {
-    return {
-      eyebrow: "Cannot start",
-      title: blocked.name,
-      description:
-        "Planning is not finished: a manager, a start date, goals or an MVP is still missing, so the work cannot begin.",
-      figure: {
-        value: String(blocked.blockers),
-        unit: blocked.blockers === 1 ? "item" : "items",
-        caption: "Still missing",
-      },
-      action: { label: `Open ${blocked.key}`, href: `/os/projects/${blocked.key}` },
-    };
-  }
-
-  const next = upcoming[0];
-  if (next?.target_end_date) {
-    const days = daysUntil(next.target_end_date);
-    return {
-      eyebrow: "Next target",
-      title: next.name,
-      description: "Nothing is late and nothing is blocked. This is the next date the team is working towards.",
-      figure: {
-        value: String(days),
-        unit: days === 1 ? "day left" : "days left",
-        caption: "Due in",
-      },
-      action: { label: `Open ${next.key}`, href: `/os/projects/${next.key}` },
-    };
-  }
-
-  return null;
-}
-
-/** Setup steps, every one read off data that already exists — never a dismissed flag. */
-function setupSteps(viewer: Viewer, projects: DashboardProject[]): SetupStep[] {
-  return [
-    {
-      title: "Complete your profile",
-      description: "A name, a photo and a job title, so teammates know who is on a task.",
-      done: Boolean(viewer.profile.avatarUrl && viewer.profile.title),
-      href: "/os/settings/profile",
-    },
-    {
-      title: "Create a project",
-      description: "Everything else in the OS hangs off one: goals, tasks, tests and documents.",
-      done: projects.length > 0,
-      href: "/os/projects/new",
-    },
-    {
-      title: "Set goals",
-      description: "What the project is for, in outcomes. Without them the MVP has nothing to answer to.",
-      done: projects.some((project) => project.goalCount > 0),
-      href: "/os/projects",
-    },
-    {
-      title: "Define the MVP",
-      description: "The smallest version worth shipping. This is what tasks get built against.",
-      done: projects.some((project) => project.mvpCount > 0),
-      href: "/os/projects",
-    },
-    {
-      title: "Assign a manager",
-      description: "Every project needs one person answerable for it.",
-      done: projects.every((project) => project.manager_id),
-      href: "/os/projects",
-      optional: true,
-    },
-  ];
-}
-
-/** Where you are, at a glance — the counterpart to the greeting. */
-function OrgCard({ viewer, projectCount }: { viewer: Viewer; projectCount: number }) {
+function ProjectTable({ projects }: { projects: DashboardStats["projects"] }) {
   return (
-    <div className="flex shrink-0 flex-col gap-1.5 rounded-lg border border-border bg-surface px-7 py-5">
-      <span className="text-xs font-medium tracking-[0.08em] text-fg-subtle uppercase">Currently in</span>
-      <span className="text-2xl font-semibold tracking-[-0.02em]">{viewer.organization.name}</span>
-      <span className="text-base text-fg-muted tabular-nums">
-        {projectCount} project{projectCount === 1 ? "" : "s"}
-      </span>
+    <div className="-mx-1 overflow-x-auto">
+      <table className="w-full min-w-[34rem] text-sm">
+        <thead>
+          <tr className="text-left text-xs text-fg-subtle">
+            <th scope="col" className="px-1 pb-2 font-medium">
+              Project
+            </th>
+            <th scope="col" className="px-1 pb-2 font-medium">
+              Status
+            </th>
+            <th scope="col" className="w-36 px-1 pb-2 font-medium">
+              Progress
+            </th>
+            <th scope="col" className="px-1 pb-2 text-right font-medium">
+              Open
+            </th>
+            <th scope="col" className="px-1 pb-2 text-right font-medium">
+              Overdue
+            </th>
+            <th scope="col" className="px-1 pb-2 text-right font-medium">
+              Target
+            </th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-border">
+          {projects.slice(0, 8).map((project) => {
+            const percent = project.total === 0 ? 0 : Math.round((project.done / project.total) * 100);
+            const open = project.status !== "completed" && project.status !== "archived";
+            return (
+              <tr key={project.id}>
+                <td className="px-1 py-2.5">
+                  <Link
+                    href={`/os/projects/${project.key}`}
+                    className="flex min-w-0 items-center gap-2.5 hover:underline"
+                  >
+                    <ProjectKey value={project.key} />
+                    <span className="truncate font-medium">{project.name}</span>
+                  </Link>
+                </td>
+                <td className="px-1 py-2.5">
+                  <ProjectStatusBadge status={project.status} />
+                </td>
+                <td className="px-1 py-2.5">
+                  {project.total === 0 ? (
+                    <span className="text-xs text-fg-subtle">No tasks yet</span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      <span
+                        className="h-1.5 flex-1 rounded-full bg-bg-subtle"
+                        role="img"
+                        aria-label={`${project.done} of ${project.total} tasks done`}
+                      >
+                        <span className="block h-full rounded-full bg-brand" style={{ width: `${percent}%` }} />
+                      </span>
+                      <span className="w-9 text-right text-xs text-fg-muted tabular-nums">{percent}%</span>
+                    </span>
+                  )}
+                </td>
+                <td className="px-1 py-2.5 text-right tabular-nums">{project.open}</td>
+                <td
+                  className={
+                    project.overdue > 0
+                      ? "px-1 py-2.5 text-right font-medium text-status-danger-fg tabular-nums"
+                      : "px-1 py-2.5 text-right text-fg-subtle tabular-nums"
+                  }
+                >
+                  {project.overdue}
+                </td>
+                <td className="px-1 py-2.5 text-right whitespace-nowrap">
+                  <DueDate value={project.target_end_date} open={open} />
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
 
-function Panel({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
+function TeamLoad({ people }: { people: DashboardStats["people"] }) {
+  const max = Math.max(1, ...people.map((person) => person.open));
   return (
-    <section className="flex flex-col gap-5 rounded-lg border border-border bg-surface p-6 sm:p-7">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-xl font-medium">{title}</h2>
+    <ul className="grid gap-x-8 gap-y-3 md:grid-cols-2">
+      {people.map((person) => (
+        <li key={person.id} className="flex items-center gap-3 text-sm">
+          <UserAvatar name={person.fullName} avatarUrl={person.avatarUrl} className="size-7" />
+          <span className="w-32 shrink-0 truncate font-medium">{person.fullName}</span>
+          <span
+            className="flex h-2 flex-1 overflow-hidden rounded-full bg-bg-subtle"
+            role="img"
+            aria-label={`${person.open} open, ${person.overdue} overdue`}
+          >
+            <span className="h-full bg-status-danger-fg" style={{ width: `${(person.overdue / max) * 100}%` }} />
+            <span className="h-full bg-brand" style={{ width: `${((person.open - person.overdue) / max) * 100}%` }} />
+          </span>
+          <span className="w-28 shrink-0 text-right text-[13px] text-fg-muted tabular-nums">
+            {person.open} open
+            {person.overdue > 0 ? <span className="text-status-danger-fg"> · {person.overdue} late</span> : null}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function Panel({
+  title,
+  description,
+  action,
+  className,
+  children,
+}: {
+  title: string;
+  description?: string;
+  action?: ReactNode;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section
+      className={`flex min-w-0 flex-col gap-5 rounded-lg border border-border bg-surface p-5 ${className ?? ""}`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <h2 className="text-base font-semibold tracking-tight">{title}</h2>
+          {description ? <p className="text-[13px] text-fg-subtle">{description}</p> : null}
+        </div>
         {action}
       </div>
       {children}
@@ -388,29 +407,33 @@ function Panel({ title, action, children }: { title: string; action?: React.Reac
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function PanelLink({ href, children }: { href: string; children: ReactNode }) {
   return (
-    <div className="flex flex-col gap-1.5">
-      <h3 className="text-xs font-medium tracking-[0.08em] text-fg-subtle uppercase">{title}</h3>
-      <ul className="flex flex-col divide-y divide-border">{children}</ul>
-    </div>
+    <Link
+      href={href}
+      className="flex shrink-0 items-center gap-1 text-[13px] text-fg-muted hover:text-fg hover:underline"
+    >
+      {children}
+      <ArrowRight className="size-3.5" aria-hidden="true" />
+    </Link>
   );
 }
 
-function ProjectRow({ project, children }: { project: DashboardProject; children?: React.ReactNode }) {
-  return (
-    <li className="flex items-center gap-4 py-3.5 first:pt-0 last:pb-0">
-      <ProjectKey value={project.key} />
-      <Link
-        href={`/os/projects/${project.key}`}
-        title={project.name}
-        className="min-w-0 flex-1 truncate text-[15px] font-medium hover:underline focus-visible:underline"
-      >
-        {project.name}
-      </Link>
-      <ProjectStatusBadge status={project.status} />
-      <PriorityBadge priority={project.priority} />
-      <div className="w-40 shrink-0 text-right text-[15px]">{children}</div>
-    </li>
-  );
+/**
+ * Greeting and date in the viewer's own timezone, not the server's. An
+ * unusable timezone falls back to UTC rather than throwing.
+ */
+function localDate(viewer: Viewer): { greeting: string; today: string } {
+  const timeZone = viewer.profile.timezone || "UTC";
+  const now = new Date();
+  const format = (options: Intl.DateTimeFormatOptions) => {
+    try {
+      return new Intl.DateTimeFormat("en-GB", { ...options, timeZone }).format(now);
+    } catch {
+      return new Intl.DateTimeFormat("en-GB", { ...options, timeZone: "UTC" }).format(now);
+    }
+  };
+  const hour = Number(format({ hour: "numeric", hour12: false }));
+  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  return { greeting, today: format({ weekday: "long", day: "numeric", month: "long", year: "numeric" }) };
 }

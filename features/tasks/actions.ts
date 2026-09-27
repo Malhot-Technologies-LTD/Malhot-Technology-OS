@@ -13,8 +13,11 @@ import { createClient } from "@/lib/supabase/server";
 import { getProjectByKey, getProjectContext } from "@/features/projects/queries";
 
 import type { TablesUpdate } from "@/types/database";
+import type { Priority } from "@/types/domain";
 
 import { TASK_STATUSES, createTaskSchema, type TaskStatus } from "./schemas";
+
+const PRIORITIES: readonly Priority[] = ["low", "medium", "high", "urgent"];
 
 /**
  * Task actions (docs/features/tasks.md). Each checks `can()` before touching
@@ -111,8 +114,7 @@ export const createTask = withAction("tasks.create", async (input: unknown): Pro
   }
 
   logger.info("task.created", { key: loaded.project.key, seq: seq.data });
-  revalidatePath(`/os/projects/${loaded.project.key}`);
-  revalidatePath("/os/my-tasks");
+  revalidateTaskViews(loaded.project.key);
   return ok(undefined);
 });
 
@@ -124,6 +126,9 @@ export const updateTask = withAction("tasks.update", async (input: unknown): Pro
     assigneeId?: unknown;
     status?: unknown;
     dueAt?: unknown;
+    title?: unknown;
+    description?: unknown;
+    priority?: unknown;
   };
   const taskId = typeof payload?.taskId === "string" ? payload.taskId : null;
   const projectKey = typeof payload?.projectKey === "string" ? payload.projectKey : null;
@@ -159,6 +164,27 @@ export const updateTask = withAction("tasks.update", async (input: unknown): Pro
   if (typeof payload.dueAt === "string") {
     patch.due_at = payload.dueAt === "" ? null : new Date(payload.dueAt).toISOString();
   }
+  if (typeof payload.title === "string") {
+    const title = payload.title.trim();
+    if (title.length < 1 || title.length > 200)
+      return fail("validation", "Give the task a title of up to 200 characters.", {
+        fieldErrors: { title: ["Give the task a title of up to 200 characters."] },
+      });
+    patch.title = title;
+  }
+  if (typeof payload.description === "string") {
+    const description = payload.description.trim();
+    if (description.length > 5000)
+      return fail("validation", "Keep the description under 5,000 characters.", {
+        fieldErrors: { description: ["Keep the description under 5,000 characters."] },
+      });
+    patch.description = description === "" ? null : description;
+  }
+  if (typeof payload.priority === "string") {
+    const priority = payload.priority as Priority;
+    if (!PRIORITIES.includes(priority)) return fail("validation", "Unknown priority.");
+    patch.priority = priority;
+  }
   if (Object.keys(patch).length === 0) return ok(undefined);
 
   const supabase = await createClient();
@@ -168,10 +194,17 @@ export const updateTask = withAction("tasks.update", async (input: unknown): Pro
     return fail(mapped.code, mapped.message);
   }
 
-  revalidatePath(`/os/projects/${loaded.project.key}`);
-  revalidatePath("/os/my-tasks");
+  revalidateTaskViews(loaded.project.key);
   return ok(undefined);
 });
+
+/** Every page a task appears on. Cheap: each is dynamic and re-renders on the next visit anyway. */
+function revalidateTaskViews(projectKey: string) {
+  revalidatePath(`/os/projects/${projectKey}`, "layout");
+  revalidatePath("/os/tasks/[ref]", "page");
+  revalidatePath("/os/my-tasks");
+  revalidatePath("/os");
+}
 
 export const deleteTask = withAction("tasks.delete", async (input: unknown): Promise<ActionResult> => {
   const payload = input as { taskId?: unknown; projectKey?: unknown };
@@ -191,8 +224,7 @@ export const deleteTask = withAction("tasks.delete", async (input: unknown): Pro
     return fail(mapped.code, mapped.message);
   }
 
-  revalidatePath(`/os/projects/${loaded.project.key}`);
-  revalidatePath("/os/my-tasks");
+  revalidateTaskViews(loaded.project.key);
   return ok(undefined);
 });
 
@@ -241,8 +273,7 @@ export const acceptTask = withAction("tasks.accept", async (input: unknown): Pro
   }
 
   logger.info("task.accepted", { key: loaded.project.key, seq: existing.data.id });
-  revalidatePath(`/os/projects/${loaded.project.key}`);
-  revalidatePath("/os/my-tasks");
+  revalidateTaskViews(loaded.project.key);
   // The manager's notification is derived from accepted_at, so this is what
   // makes it appear rather than a second write that could disagree with it.
   revalidatePath("/os/notifications");

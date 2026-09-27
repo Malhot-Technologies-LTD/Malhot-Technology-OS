@@ -15,6 +15,7 @@ import {
   type NavItem,
 } from "@/components/os/nav";
 import { UserMenu } from "@/components/os/user-menu.client";
+import { LogoMark } from "@/components/site/brand/Logo";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -95,7 +96,7 @@ export function AppSidebar({ collapsed, onToggle, user, audience, notificationBa
       >
         <div className="flex h-16 shrink-0 items-center justify-between gap-2 pr-2.5 pl-3.5">
           <Link href="/os" className="flex min-w-0 items-center gap-2.5" title={user.organizationName}>
-            <OrgMark name={user.organizationName} />
+            <OrgMark />
             <span
               className={cn(
                 "truncate text-base font-semibold tracking-tight whitespace-nowrap transition-opacity duration-[160ms]",
@@ -192,22 +193,11 @@ export function AppSidebar({ collapsed, onToggle, user, audience, notificationBa
   );
 }
 
-/** Two-letter monogram in brand colour — a logo stand-in that never 404s. */
-function OrgMark({ name }: { name: string }) {
-  const letters = name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((word) => word[0])
-    .join("")
-    .toUpperCase();
-
+/** The MALHOT mark. The arrow takes the ink colour, so it reads in both themes. */
+function OrgMark() {
   return (
-    <span
-      aria-hidden="true"
-      className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-solid text-xs font-semibold text-brand-solid-fg"
-    >
-      {letters || "M"}
+    <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center">
+      <LogoMark id="os-sidebar" adaptive className="h-[26px] w-[32px] text-fg" />
     </span>
   );
 }
