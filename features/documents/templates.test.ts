@@ -9,6 +9,7 @@ import {
   sanitiseValues,
   type TemplateContext,
 } from "./templates";
+import { ROLE_PROFILES, roleProfile } from "./roles";
 
 const context: TemplateContext = {
   today: "2026-09-27",
@@ -46,8 +47,8 @@ describe("templates", () => {
       "Candidate's full name",
       "Position",
       "Start date",
-      "Gross monthly salary",
-      "Signed for the company by",
+      "Compensation",
+      "CEO / signing for the company",
     ]);
   });
 
@@ -91,6 +92,61 @@ describe("templates", () => {
     expect(contract.build({ ...values, agreementDate: "2026-10-01" }, context).date).toBe("1 October 2026");
   });
 
+  it("lays the offer out like the company agreement, sections numbered in reading order", () => {
+    const offer = findTemplate("offer_letter")!;
+    const content = offer.build(
+      { ...initialValues(offer, context), candidateName: "Aline Uwase", benefits: "Laptop" },
+      context,
+    );
+    expect(content.layout).toBe("contract");
+    expect(content.title).toBe("Offer of Employment");
+    expect(content.subtitle).toBe("Developer / Technical Role");
+    expect(content.blocks.flatMap((block) => (block.kind === "heading" ? [block.text] : []))).toEqual([
+      "1. POSITION & RESPONSIBILITIES",
+      "2. TERMS OF EMPLOYMENT",
+      "3. COMPENSATION",
+      "4. CONFIDENTIALITY",
+      "5. SOURCE CODE & IP OWNERSHIP",
+      "6. ACCESS & SECURITY",
+      "7. TERMINATION",
+      "8. ACCEPTANCE",
+      "9. GOVERNING LAW",
+    ]);
+    expect(content.blocks.at(-1)).toMatchObject({
+      kind: "signatures",
+      parties: [{ role: "Employee signature", name: "Aline Uwase" }, { role: "CEO signature" }],
+    });
+  });
+
+  it.each(ROLE_PROFILES.map((profile) => [profile.name, profile] as const))(
+    "words the offer and the agreement for the %s role",
+    (_, profile) => {
+      for (const key of ["offer_letter", "employment_contract"]) {
+        const template = findTemplate(key)!;
+        const content = template.build({ ...initialValues(template, context), roleType: profile.name }, context);
+        const text = JSON.stringify(content);
+        expect(content.subtitle).toBe(profile.subtitle);
+        expect(text).toContain(profile.responsibilities);
+        expect(text).toContain(profile.confidential[0]);
+        expect(text).toContain(profile.workProduct);
+        expect(text).toContain(profile.access);
+      }
+    },
+  );
+
+  it("lets the author replace a role's standard duties and confidentiality list", () => {
+    const offer = findTemplate("offer_letter")!;
+    const text = JSON.stringify(
+      offer.build(
+        { ...initialValues(offer, context), responsibilities: "running the help desk", confidential: "Ticket data" },
+        context,
+      ),
+    );
+    expect(text).toContain("with responsibilities including running the help desk.");
+    expect(text).toContain("Ticket data");
+    expect(text).not.toContain("Source code and technical systems");
+  });
+
   it("uses the contract layout for every legal template", () => {
     for (const template of TEMPLATES.filter((candidate) => candidate.legal))
       expect(template.build(initialValues(template, context), context).layout).toBe("contract");
@@ -107,6 +163,13 @@ describe("templates", () => {
     expect(values.items).toEqual([{ description: "Design", quantity: 2, unitPrice: 50000 }]);
     expect(values).not.toHaveProperty("injected");
     expect(sanitiseValues(invoice, null).clientName).toBe("");
+  });
+});
+
+describe("roles", () => {
+  it("falls back to the technical role for unknown or old values", () => {
+    expect(roleProfile(undefined).name).toBe("Developer / Technical");
+    expect(roleProfile("Astronaut").name).toBe("Developer / Technical");
   });
 });
 

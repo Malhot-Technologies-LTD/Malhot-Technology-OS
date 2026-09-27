@@ -9,6 +9,7 @@ import {
   type Letterhead,
   type LineItem,
 } from "./content";
+import { ROLE_NAMES, roleProfile, type RoleProfile } from "./roles";
 
 /**
  * Document templates for the generator (Documents → Generate).
@@ -151,103 +152,6 @@ const common = {
 
 // Templates ------------------------------------------------------------------
 
-const offerLetter: DocumentTemplate = {
-  key: "offer_letter",
-  name: "Offer of employment",
-  category: "HR & recruitment",
-  documentType: "other",
-  summary: "A formal job offer: role, start date, pay, probation and how to accept.",
-  fields: [
-    common.reference("MAL/HR"),
-    common.date,
-    { name: "candidateName", label: "Candidate's full name", type: "text", required: true },
-    { name: "candidateAddress", label: "Candidate's address", type: "textarea", placeholder: "Street, district, city" },
-    { name: "position", label: "Position", type: "text", required: true, placeholder: "e.g. Frontend Developer" },
-    { name: "department", label: "Department / team", type: "text" },
-    { name: "reportsTo", label: "Reports to", type: "text" },
-    { name: "startDate", label: "Start date", type: "date", required: true },
-    {
-      name: "employmentType",
-      label: "Employment type",
-      type: "select",
-      options: ["Full-time, permanent", "Full-time, fixed term", "Part-time", "Contract"],
-      default: () => "Full-time, permanent",
-    },
-    { name: "location", label: "Place of work", type: "text", default: () => "Kigali, Rwanda" },
-    common.currency,
-    { name: "salary", label: "Gross monthly salary", type: "number", required: true },
-    { name: "probation", label: "Probation period", type: "text", default: () => "three (3) months" },
-    {
-      name: "benefits",
-      label: "Benefits (one per line)",
-      type: "textarea",
-      placeholder: "Health insurance\nLaptop\nAnnual leave of 18 working days",
-    },
-    { name: "acceptBy", label: "Accept by", type: "date" },
-    common.signatory,
-    common.signatoryTitle,
-  ],
-  build(values, context) {
-    const currency = text(values, "currency", "Currency");
-    const name = text(values, "candidateName", "Candidate's full name");
-    const benefits = lines(values, "benefits");
-    return {
-      title: "Offer of Employment",
-      reference: optional(values, "reference") ?? undefined,
-      date: date(values, "date", "Date"),
-      recipient: [name, ...(optional(values, "candidateAddress")?.split("\n") ?? [])],
-      classification: "Private and confidential",
-      blocks: [
-        { kind: "paragraph", text: `Dear ${name.split(" ")[0]},` },
-        {
-          kind: "paragraph",
-          text: `Following our recent conversations, we are delighted to offer you the position of ${text(values, "position", "Position")} at ${company(context)}. This letter sets out the main terms of the offer.`,
-        },
-        {
-          kind: "facts",
-          rows: [
-            ["Position", text(values, "position", "Position")],
-            ...(optional(values, "department") ? ([["Department", optional(values, "department")!]] as const) : []),
-            ...(optional(values, "reportsTo") ? ([["Reports to", optional(values, "reportsTo")!]] as const) : []),
-            ["Employment type", text(values, "employmentType", "Employment type")],
-            ["Start date", date(values, "startDate", "Start date")],
-            ["Place of work", text(values, "location", "Place of work")],
-            ["Gross monthly salary", money(values, "salary", "Gross monthly salary", currency)],
-            ["Probation period", text(values, "probation", "Probation period")],
-          ],
-        },
-        {
-          kind: "paragraph",
-          text: "Your salary will be paid monthly, subject to the deductions required by law, including income tax and social security contributions. The detailed terms of your employment will be set out in a written employment contract, which you will receive before your start date.",
-        },
-        ...(benefits.length > 0
-          ? ([
-              { kind: "heading", text: "Benefits" },
-              { kind: "list", items: benefits },
-            ] as const)
-          : []),
-        {
-          kind: "paragraph",
-          text: `This offer is conditional on satisfactory references and on your providing proof of identity and of your right to work in Rwanda. To accept, please sign and return a copy of this letter${optional(values, "acceptBy") ? ` by ${date(values, "acceptBy", "Accept by")}` : ""}.`,
-        },
-        { kind: "paragraph", text: `We look forward to welcoming you to ${company(context)}.` },
-        { kind: "paragraph", text: "Yours sincerely," },
-        {
-          kind: "signatures",
-          parties: [
-            {
-              role: `For ${company(context)}`,
-              name: text(values, "signatoryName", "Signatory"),
-              title: optional(values, "signatoryTitle") ?? undefined,
-            },
-            { role: "Accepted by the candidate", name },
-          ],
-        },
-      ],
-    };
-  },
-};
-
 /**
  * Contracts follow the company's own agreement format (its developer
  * contract): title and role, AGREEMENT DATE, "entered into between" the
@@ -279,57 +183,247 @@ const ceoField: FieldDef = {
   required: true,
 };
 
+/** The role picker shared by offers and employment agreements (see roles.ts). */
+const roleField: FieldDef = {
+  name: "roleType",
+  label: "Role",
+  type: "select",
+  options: ROLE_NAMES,
+  default: () => ROLE_NAMES[0]!,
+  hint: "Sets the duties, confidentiality, IP and access clauses for this kind of work.",
+};
+
+const responsibilitiesField: FieldDef = {
+  name: "responsibilities",
+  label: "Responsibilities (optional)",
+  type: "textarea",
+  wide: true,
+  placeholder: "Leave empty for the standard duties of the role",
+  hint: 'Completes "…with responsibilities including ___".',
+};
+
+const confidentialField: FieldDef = {
+  name: "confidential",
+  label: "Kept confidential (optional, one per line)",
+  type: "textarea",
+  wide: true,
+  placeholder: "Leave empty for the standard list for the role",
+};
+
+const terminationField: FieldDef = {
+  name: "termination",
+  label: "Terminated when (one per line)",
+  type: "textarea",
+  wide: true,
+  default: (context) =>
+    `The Employee chooses to leave or no longer wishes to be part of ${company(context)}\nThe Employee fails to meet performance expectations or deliver quality work\nThe Employee violates company policies, confidentiality agreements, or professional standards`,
+};
+
+const compensationField: FieldDef = {
+  name: "compensation",
+  label: "Compensation",
+  type: "text",
+  required: true,
+  placeholder: "e.g. RWF 800,000 per month, or 14.295% of salary base",
+};
+
+const paymentScheduleField: FieldDef = {
+  name: "paymentSchedule",
+  label: "Payment schedule",
+  type: "textarea",
+  wide: true,
+  default: () =>
+    "Per project basis. Payment is received upon successful completion and delivery of project milestones.",
+};
+
+function role(values: Values): RoleProfile {
+  return roleProfile(optional(values, "roleType"));
+}
+
+/**
+ * The clauses every employment document shares, worded for the role: duties,
+ * pay, confidentiality, IP ownership, access and termination, in the order of
+ * the company's own contract.
+ */
+function employmentClauses(
+  values: Values,
+  employer: string,
+  position: string,
+  section: (title: string) => Block,
+  /** Built only when reached, so any sections they add are numbered in reading order. */
+  extra: { afterPosition?: () => readonly Block[]; afterCompensation?: () => readonly Block[] } = {},
+): Block[] {
+  const profile = role(values);
+  const confidential = lines(values, "confidential");
+  const termination = lines(values, "termination");
+  return [
+    section("Position & responsibilities"),
+    {
+      kind: "paragraph",
+      text: `The Employee is hired as a ${position} with responsibilities including ${optional(values, "responsibilities") ?? profile.responsibilities}.`,
+    },
+    ...(extra.afterPosition?.() ?? []),
+    section("Compensation"),
+    {
+      kind: "terms",
+      rows: [
+        ["Compensation", text(values, "compensation", "Compensation")],
+        ["Payment Schedule", text(values, "paymentSchedule", "Payment schedule")],
+      ],
+    },
+    ...(extra.afterCompensation?.() ?? []),
+    section("Confidentiality"),
+    { kind: "paragraph", text: "The Employee agrees to maintain strict confidentiality regarding:" },
+    { kind: "list", items: confidential.length > 0 ? confidential : profile.confidential },
+    section(profile.ipHeading),
+    {
+      kind: "paragraph",
+      text: `All work produced by the Employee, including ${profile.workProduct}, is the property of ${employer}. The Employee has no personal ownership rights to company intellectual property.`,
+    },
+    section("Access & security"),
+    {
+      kind: "paragraph",
+      text: `The Employee receives access to ${profile.access} as required by their role. This access must be protected and used only for authorized work.`,
+    },
+    section("Termination"),
+    { kind: "paragraph", text: "This agreement is terminated under the following conditions:" },
+    { kind: "list", items: termination.length > 0 ? termination : ["[Conditions]"] },
+    {
+      kind: "paragraph",
+      text: "Upon termination, all company property, credentials, and access must be returned immediately.",
+    },
+  ];
+}
+
+const offerLetter: DocumentTemplate = {
+  key: "offer_letter",
+  name: "Offer of employment",
+  category: "HR & recruitment",
+  documentType: "other",
+  summary: "A job offer in the company's agreement format, worded for the role: duties, pay, start date, acceptance.",
+  fields: [
+    roleField,
+    { name: "candidateName", label: "Candidate's full name", type: "text", required: true },
+    { name: "position", label: "Position", type: "text", required: true, placeholder: "e.g. Frontend Developer" },
+    { name: "startDate", label: "Start date", type: "date", required: true },
+    {
+      name: "employmentType",
+      label: "Employment type",
+      type: "select",
+      options: ["Full-time, permanent", "Full-time, fixed term", "Part-time", "Contract"],
+      default: () => "Full-time, permanent",
+    },
+    { name: "reportsTo", label: "Reports to", type: "text" },
+    { name: "location", label: "Place of work", type: "text", default: () => "Kigali, Rwanda" },
+    { name: "probation", label: "Probation period", type: "text", default: () => "Three (3) months" },
+    compensationField,
+    {
+      ...paymentScheduleField,
+      default: () => "Monthly, at the end of each month, less the deductions required by law.",
+    },
+    {
+      name: "benefits",
+      label: "Benefits (optional, one per line)",
+      type: "textarea",
+      wide: true,
+      placeholder: "Laptop\nInternet allowance\nAnnual leave of 18 working days",
+    },
+    responsibilitiesField,
+    confidentialField,
+    terminationField,
+    { name: "date", label: "Offer date", type: "date", default: today },
+    { name: "acceptBy", label: "Accept by", type: "date" },
+    { name: "governingLaw", label: "Governing law", type: "text", default: () => "the laws of Rwanda" },
+    ceoField,
+    { name: "reference", label: "Reference (optional)", type: "text", default: ref("MAL/HR") },
+  ],
+  build(values, context) {
+    const employer = company(context);
+    const candidate = text(values, "candidateName", "Candidate's full name");
+    const position = text(values, "position", "Position");
+    const benefits = lines(values, "benefits");
+    const reportsTo = optional(values, "reportsTo");
+    const acceptBy = optional(values, "acceptBy");
+    const section = sections();
+    return {
+      layout: "contract",
+      title: "Offer of Employment",
+      subtitle: role(values).subtitle,
+      dateLabel: "Offer date",
+      // Empty leaves a line to date by hand, as on the agreement.
+      date: optional(values, "date") ? date(values, "date", "Offer date") : "",
+      reference: optional(values, "reference") ?? undefined,
+      classification: "Private and confidential",
+      blocks: [
+        {
+          kind: "parties",
+          intro: `${employer} is pleased to offer employment on the terms below. This Offer of Employment ("Offer") is made between:`,
+          parties: [
+            { role: "Employer", lines: [employer, context.letterhead.address].filter(Boolean) },
+            { role: "Employee", lines: [candidate, `Position: ${position}`] },
+          ],
+        },
+        ...employmentClauses(values, employer, position, section, {
+          afterPosition: () => [
+            section("Terms of employment"),
+            {
+              kind: "terms",
+              rows: [
+                ["Start Date", date(values, "startDate", "Start date")],
+                ["Employment Type", text(values, "employmentType", "Employment type")],
+                ...(reportsTo ? ([["Reports To", reportsTo]] as const) : []),
+                ["Place of Work", text(values, "location", "Place of work")],
+                ["Probation Period", text(values, "probation", "Probation period")],
+              ],
+            },
+          ],
+          afterCompensation: () =>
+            benefits.length > 0
+              ? [
+                  { kind: "paragraph", text: "The Employee also receives the following benefits:" },
+                  { kind: "list", items: benefits },
+                ]
+              : [],
+        }),
+        section("Acceptance"),
+        {
+          kind: "paragraph",
+          text: acceptBy
+            ? `To accept this Offer, sign below and return a copy to ${employer} by ${longDate(acceptBy)}. If it is not accepted by then, the Offer lapses.`
+            : `To accept this Offer, sign below and return a copy to ${employer}. Once signed by both parties, it forms the Employee's agreement with ${employer}.`,
+        },
+        section("Governing law"),
+        { kind: "paragraph", text: `This agreement is governed by ${text(values, "governingLaw", "Governing law")}.` },
+        {
+          kind: "signatures",
+          parties: [
+            { role: "Employee signature", name: candidate },
+            { role: "CEO signature", name: text(values, "signatoryName", "CEO") },
+          ],
+        },
+      ],
+    };
+  },
+};
+
 const employmentContract: DocumentTemplate = {
   key: "employment_contract",
   name: "Employment agreement",
   category: "HR & recruitment",
   documentType: "other",
-  summary: "The company's employment agreement: role, compensation, confidentiality, IP, access, termination.",
+  summary:
+    "The company's employment agreement, worded for the role: duties, pay, confidentiality, IP, access, termination.",
   legal: true,
   fields: [
     agreementDateField,
-    { name: "role", label: "Role type (subtitle)", type: "text", default: () => "Developer / Technical Role" },
+    roleField,
     { name: "employeeName", label: "Employee's full name", type: "text", required: true },
     { name: "position", label: "Position", type: "text", required: true, placeholder: "e.g. Developer" },
-    {
-      name: "responsibilities",
-      label: "Responsibilities include",
-      type: "textarea",
-      wide: true,
-      default: () =>
-        "software development, coding, technical architecture, quality assurance, testing, documentation, and other duties as assigned by management",
-    },
-    {
-      name: "compensation",
-      label: "Compensation",
-      type: "text",
-      required: true,
-      placeholder: "e.g. 14.295% of salary base, or RWF 800,000 per month",
-    },
-    {
-      name: "paymentSchedule",
-      label: "Payment schedule",
-      type: "textarea",
-      wide: true,
-      default: () =>
-        "Per project basis. Payment is received upon successful completion and delivery of project milestones.",
-    },
-    {
-      name: "confidential",
-      label: "Kept confidential (one per line)",
-      type: "textarea",
-      wide: true,
-      default: () =>
-        "Source code and technical systems\nClient information and contracts\nBusiness plans and strategies\nFinancial information\nAny proprietary information",
-    },
-    {
-      name: "termination",
-      label: "Terminated when (one per line)",
-      type: "textarea",
-      wide: true,
-      default: (context) =>
-        `The Employee chooses to leave or no longer wishes to be part of ${company(context)}\nThe Employee fails to meet performance expectations or deliver quality work\nThe Employee violates company policies, confidentiality agreements, or professional standards`,
-    },
+    compensationField,
+    paymentScheduleField,
+    responsibilitiesField,
+    confidentialField,
+    terminationField,
     { name: "governingLaw", label: "Governing law", type: "text", default: () => "the laws of Rwanda" },
     ceoField,
     { name: "reference", label: "Reference (optional)", type: "text" },
@@ -342,7 +436,7 @@ const employmentContract: DocumentTemplate = {
     return {
       layout: "contract",
       title: "Employment Agreement",
-      subtitle: optional(values, "role") ?? undefined,
+      subtitle: role(values).subtitle,
       dateLabel: "Agreement date",
       date: agreementDate(values),
       reference: optional(values, "reference") ?? undefined,
@@ -356,46 +450,7 @@ const employmentContract: DocumentTemplate = {
             { role: "Employee", lines: [employee, `Position: ${position}`] },
           ],
         },
-        section("Position & responsibilities"),
-        {
-          kind: "paragraph",
-          text: `The Employee is hired as a ${position} with responsibilities including ${text(values, "responsibilities", "Responsibilities")}.`,
-        },
-        section("Compensation"),
-        {
-          kind: "terms",
-          rows: [
-            ["Compensation", text(values, "compensation", "Compensation")],
-            ["Payment Schedule", text(values, "paymentSchedule", "Payment schedule")],
-          ],
-        },
-        section("Confidentiality"),
-        { kind: "paragraph", text: "The Employee agrees to maintain strict confidentiality regarding:" },
-        {
-          kind: "list",
-          items:
-            lines(values, "confidential").length > 0 ? lines(values, "confidential") : ["[Confidential information]"],
-        },
-        section("Source code & IP ownership"),
-        {
-          kind: "paragraph",
-          text: `All work produced by the Employee, including source code, designs, and documentation, is the property of ${employer}. The Employee has no personal ownership rights to company intellectual property.`,
-        },
-        section("Access & security"),
-        {
-          kind: "paragraph",
-          text: "The Employee receives access to company systems, repositories, and credentials as required by their role. This access must be protected and used only for authorized work.",
-        },
-        section("Termination"),
-        { kind: "paragraph", text: "This agreement is terminated under the following conditions:" },
-        {
-          kind: "list",
-          items: lines(values, "termination").length > 0 ? lines(values, "termination") : ["[Conditions]"],
-        },
-        {
-          kind: "paragraph",
-          text: "Upon termination, all company property, credentials, and access must be returned immediately.",
-        },
+        ...employmentClauses(values, employer, position, section),
         section("Governing law"),
         { kind: "paragraph", text: `This agreement is governed by ${text(values, "governingLaw", "Governing law")}.` },
         {

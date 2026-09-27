@@ -6,7 +6,7 @@ import { notFound, redirect } from "next/navigation";
 import { formatDate } from "@/components/os/data-display";
 import { Button } from "@/components/ui/button";
 import { DocumentPaper } from "@/features/documents/components/document-paper";
-import { PrintButton, PrintCopy } from "@/features/documents/components/print.client";
+import { A4Frame, DownloadWordButton, PrintButton, PrintCopy } from "@/features/documents/components/print.client";
 import { DOCUMENT_TYPE_LABEL, sanitiseLetterhead } from "@/features/documents/files";
 import { getProjectDocument } from "@/features/documents/queries";
 import { findTemplate, sanitiseValues } from "@/features/documents/templates";
@@ -66,12 +66,15 @@ export default async function ProjectDocumentPage({ params }: PageProps<"/os/pro
               <Copy aria-hidden="true" /> Edit a copy
             </Link>
           </Button>
+          <DownloadWordButton content={content} letterhead={letterhead} fileTitle={document.title} />
           <PrintButton />
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-lg bg-bg-subtle p-3 sm:p-8">
-        <DocumentPaper content={content} letterhead={letterhead} id="saved" />
+      <div className="rounded-lg bg-bg-subtle p-3 sm:p-8">
+        <A4Frame>
+          <DocumentPaper content={content} letterhead={letterhead} id="saved" />
+        </A4Frame>
       </div>
 
       <PrintCopy>

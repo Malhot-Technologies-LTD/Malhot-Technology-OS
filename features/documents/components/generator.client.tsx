@@ -24,7 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { saveGeneratedDocument } from "@/features/documents/actions";
 import { DocumentPaper } from "@/features/documents/components/document-paper";
-import { PrintButton, PrintCopy } from "@/features/documents/components/print.client";
+import { A4Frame, DownloadWordButton, PrintButton, PrintCopy } from "@/features/documents/components/print.client";
 import { LETTERHEAD_FIELDS, type Letterhead, type LineItem } from "@/features/documents/content";
 import { sanitiseLetterhead } from "@/features/documents/files";
 import {
@@ -69,8 +69,8 @@ const noSubscription = () => () => {};
 
 /**
  * Documents → Generate: pick a template, fill in the facts, and the document is
- * drawn on company letterhead as you type. Print or save it as a PDF from the
- * browser, or save it to a project, where it is kept as the facts rather than a
+ * drawn on company letterhead as you type. Download it as a Word file, print or
+ * save it as a PDF from the browser, or save it to a project, where it is kept as the facts rather than a
  * file, so it can be reopened, copied and reprinted.
  *
  * Rendered only in the browser: the letterhead is remembered per browser, and
@@ -217,6 +217,7 @@ function Workspace({
           <h2 className="truncate text-lg font-semibold">{template.name}</h2>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <DownloadWordButton content={content} letterhead={letterhead} fileTitle={title.trim() || suggestedTitle} />
           <PrintButton />
           {canSave && projects.length > 0 ? (
             <Button onClick={save} disabled={pending}>
@@ -315,8 +316,10 @@ function Workspace({
           </details>
         </form>
 
-        <div className="min-w-0 overflow-x-auto rounded-lg bg-bg-subtle p-3 sm:p-6" aria-label="Preview">
-          <DocumentPaper content={content} letterhead={letterhead} id="preview" />
+        <div className="min-w-0 rounded-lg bg-bg-subtle p-3 sm:p-6" aria-label="Preview">
+          <A4Frame>
+            <DocumentPaper content={content} letterhead={letterhead} id="preview" />
+          </A4Frame>
         </div>
       </div>
 

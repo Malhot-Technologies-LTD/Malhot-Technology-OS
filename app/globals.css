@@ -309,7 +309,7 @@
 @media print {
   @page {
     size: A4;
-    margin: 16mm 16mm 18mm;
+    margin: 18mm;
   }
 
   html,

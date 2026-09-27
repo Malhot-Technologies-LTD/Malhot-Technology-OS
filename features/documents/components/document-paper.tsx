@@ -4,8 +4,10 @@ import { cn } from "@/lib/utils";
 import { formatMoney, itemTotals, type Block, type DocumentContent, type Letterhead } from "../content";
 
 /**
- * A generated document on company letterhead: an A4 sheet that looks the same
- * on screen and on paper.
+ * A generated document on company letterhead: an A4 sheet (210 × 297 mm, 18 mm
+ * margins) that looks the same on screen, on paper and in the Word download
+ * (features/documents/docx.ts, which mirrors this layout). On screen, wrap it
+ * in A4Frame so narrow panes zoom the page rather than reflow it.
  *
  * Colours are fixed rather than theme tokens. Paper is white in dark mode too,
  * and a document printed from a dark screen must not come out grey. The navy
@@ -33,7 +35,7 @@ export function DocumentPaper({
     <article
       id={id}
       className={cn(
-        "document-paper mx-auto flex w-full max-w-[210mm] flex-col bg-white px-[14mm] py-[14mm] text-[10.5pt] leading-[1.55] text-[#1b2230] shadow-[0_1px_3px_rgba(15,23,42,0.12),0_12px_32px_-12px_rgba(15,23,42,0.25)] sm:px-[18mm] sm:py-[16mm] print:max-w-none print:p-0 print:shadow-none",
+        "document-paper mx-auto flex min-h-[297mm] w-[210mm] flex-col bg-white p-[18mm] text-[10.5pt] leading-[1.55] text-[#1b2230] shadow-[0_1px_3px_rgba(15,23,42,0.12),0_12px_32px_-12px_rgba(15,23,42,0.25)] print:min-h-0 print:w-auto print:p-0 print:shadow-none",
         className,
       )}
       style={{ fontFamily: "'Inter', 'Segoe UI', Arial, sans-serif" }}
@@ -102,7 +104,7 @@ export function DocumentPaper({
         </>
       )}
 
-      <div className={cn("flex flex-col", contract ? "mt-7 gap-3.5" : "mt-5 gap-3")}>
+      <div className={cn("flex flex-col", contract ? "mt-6 gap-2.5" : "mt-5 gap-3")}>
         {content.blocks.map((block, index) => (
           <BlockView key={index} block={block} contract={contract} />
         ))}
@@ -195,7 +197,7 @@ function BlockView({ block, contract = false }: { block: Block; contract?: boole
     case "heading":
       if (contract)
         return (
-          <h2 className="mt-3 [break-after:avoid] border-b border-[#d6dbe6] pb-1 text-[10.5pt] font-bold tracking-[0.06em] text-[#0b1f4b] uppercase">
+          <h2 className="mt-2.5 [break-after:avoid] border-b border-[#d6dbe6] pb-1 text-[10.5pt] font-bold tracking-[0.06em] text-[#0b1f4b] uppercase">
             <Gap>{block.text}</Gap>
           </h2>
         );
@@ -206,7 +208,7 @@ function BlockView({ block, contract = false }: { block: Block; contract?: boole
       );
     case "paragraph":
       return (
-        <p className="text-justify [hyphens:auto] whitespace-pre-line">
+        <p className="text-justify whitespace-pre-line">
           <Gap>{block.text}</Gap>
         </p>
       );
@@ -359,7 +361,7 @@ function BlockView({ block, contract = false }: { block: Block; contract?: boole
     case "signatures":
       if (contract)
         return (
-          <table className="mt-8 w-full border-collapse [break-inside:avoid] text-[9.5pt]">
+          <table className="mt-6 w-full border-collapse [break-inside:avoid] text-[9.5pt]">
             <tbody>
               <tr>
                 {block.parties.map((party, index) => (
