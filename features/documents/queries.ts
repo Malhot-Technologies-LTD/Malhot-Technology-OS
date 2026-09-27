@@ -26,6 +26,7 @@ export type DocumentRow = {
   size_bytes: number | null;
   template_key: string | null;
   created_at: string;
+  updated_at: string;
   uploaded_by: string;
   uploader: { id: string; full_name: string } | null;
 };
@@ -35,7 +36,7 @@ export type DocumentListRow = DocumentRow & { project: { key: string; name: stri
 export type DocumentsResult<T> = { data: T[]; error: PostgrestError | null; missing: boolean };
 
 const COLUMNS =
-  "id, project_id, title, type, description, source, storage_path, file_name, mime_type, size_bytes, template_key, created_at, uploaded_by, uploader:profiles!project_documents_uploaded_by_fkey(id, full_name)";
+  "id, project_id, title, type, description, source, storage_path, file_name, mime_type, size_bytes, template_key, created_at, updated_at, uploaded_by, uploader:profiles!project_documents_uploaded_by_fkey(id, full_name)";
 
 function settle<T>(result: { data: T[] | null; error: PostgrestError | null }): DocumentsResult<T> {
   if (result.error) {

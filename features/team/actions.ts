@@ -209,3 +209,54 @@ export const deleteMemberDocument = withAction("team.deleteDocument", async (inp
   refresh(parsed.data.userId);
   return ok(undefined);
 });
+
+const editSchema = z.object({
+  userId: z.uuid(),
+  id: z.uuid(),
+  title: z.string().trim().min(1, "Give the document a title").max(200),
+  values: z.unknown(),
+  letterhead: z.unknown(),
+  /** When the editor was opened: a save over someone else's newer save is refused, not silently lost. */
+  updatedAt: z.string().min(1),
+});
+
+/** Saves changes to a generated document on a person, in place. Admins only, as for creating one. */
+export const updateMemberDocument = withAction(
+  "team.updateGenerated",
+  async (input: unknown): Promise<ActionResult> => {
+    const parsed = editSchema.safeParse(input);
+    if (!parsed.success) return validationFail(parsed.error);
+    const auth = await authorise(parsed.data.userId);
+    if ("result" in auth) return auth.result;
+
+    const supabase = await createClient();
+    const existing = await supabase
+      .from("member_documents")
+      .select("source, template_key")
+      .eq("organization_id", auth.viewer.organizationId)
+      .eq("user_id", parsed.data.userId)
+      .eq("id", parsed.data.id)
+      .maybeSingle();
+    if (existing.error) return dbFail(existing.error);
+    if (!existing.data) return fail("not_found", "That document does not exist.");
+    const template = findTemplate(existing.data.template_key);
+    if (existing.data.source !== "generated" || !template)
+      return fail("validation", "Only documents made from a template can be edited here.");
+
+    const fields = {
+      values: sanitiseValues(template, parsed.data.values),
+      letterhead: sanitiseLetterhead(parsed.data.letterhead),
+    } as unknown as Json;
+    const { error, count } = await supabase
+      .from("member_documents")
+      .update({ title: parsed.data.title, fields }, { count: "exact" })
+      .eq("id", parsed.data.id)
+      .eq("updated_at", parsed.data.updatedAt);
+    if (error) return dbFail(error);
+    if (count === 0)
+      return fail("conflict", "Someone saved this document after you opened it. Reload to see their version.");
+    logger.info("team.document_edited", { template: template.key });
+    refresh(parsed.data.userId);
+    return ok(undefined);
+  },
+);

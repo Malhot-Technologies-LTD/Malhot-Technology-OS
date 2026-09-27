@@ -35,10 +35,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { saveGeneratedDocument } from "@/features/documents/actions";
-import { saveGeneratedToFolder } from "@/features/files/actions";
+import { saveGeneratedDocument, updateGeneratedDocument } from "@/features/documents/actions";
+import { saveGeneratedToFolder, updateGeneratedFile } from "@/features/files/actions";
 import type { FolderPath } from "@/features/files/tree";
-import { saveMemberDocument } from "@/features/team/actions";
+import { saveMemberDocument, updateMemberDocument } from "@/features/team/actions";
 import { DocumentPaper } from "@/features/documents/components/document-paper";
 import { ClientJourney } from "@/features/documents/components/client-journey";
 import { PagedDocument } from "@/features/documents/components/paged-document.client";
@@ -76,7 +76,7 @@ type Props = {
   /** The folder "New document" was pressed in; null = the top level. */
   folderId?: string | null;
   templateKey: string | null;
-  /** "Edit a copy" of a saved document. */
+  /** A saved document's facts: for "Edit a copy", or for `editing` it in place. */
   seed?: { values: Values; letterhead: Letterhead; title: string } | null;
   /** Today in the viewer's timezone, from the server so both renders agree. */
   today: string;
@@ -89,6 +89,19 @@ type Props = {
    * templates about one person are offered.
    */
   person?: { userId: string; fullName: string; title: string | null; templates: readonly string[] } | null;
+  /**
+   * Set when editing a saved document in place: the form opens on its facts
+   * (pass them as `seed`), and Save writes over it instead of making a new one.
+   * `updatedAt` is when it was opened, so a save over someone else's newer
+   * save is refused rather than silently losing their changes.
+   */
+  editing?: {
+    id: string;
+    updatedAt: string;
+    /** The document's own page: where Cancel and a successful save go. */
+    backHref: string;
+    target: { kind: "file" } | { kind: "project"; projectKey: string } | { kind: "member"; userId: string };
+  } | null;
 };
 
 const CATEGORY_ICON: Record<TemplateCategory, typeof Users> = {
@@ -208,6 +221,7 @@ function Workspace({
   defaultLetterhead,
   canSave,
   person,
+  editing = null,
 }: Props & { template: DocumentTemplate }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -223,7 +237,7 @@ function Workspace({
   );
   const targetKey = target.startsWith("project:") ? target.slice("project:".length) : "";
   const project = projects.find((candidate) => candidate.key === targetKey) ?? null;
-  const canSaveHere = person ? canSave : offerFolders || offerProjects;
+  const canSaveHere = editing !== null || (person ? canSave : offerFolders || offerProjects);
   const [letterhead, setLetterhead] = useState<Letterhead>(
     () => seed?.letterhead ?? readStoredLetterhead(defaultLetterhead),
   );
@@ -249,6 +263,31 @@ function Workspace({
   }
 
   function save() {
+    if (editing) {
+      startTransition(async () => {
+        const changes = {
+          id: editing.id,
+          updatedAt: editing.updatedAt,
+          title: title.trim() || suggestedTitle,
+          values,
+          letterhead,
+        };
+        const { target: where } = editing;
+        const result =
+          where.kind === "file"
+            ? await updateGeneratedFile(changes)
+            : where.kind === "project"
+              ? await updateGeneratedDocument({ ...changes, projectKey: where.projectKey })
+              : await updateMemberDocument({ ...changes, userId: where.userId });
+        if (!result.ok) {
+          toast.error(result.error.message);
+          return;
+        }
+        toast.success("Changes saved");
+        router.push(editing.backHref);
+      });
+      return;
+    }
     if (person) {
       startTransition(async () => {
         const result = await saveMemberDocument({
@@ -311,13 +350,19 @@ function Workspace({
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.push(folderId && offerFolders ? `${pathname}?folder=${folderId}` : pathname)}
-          >
-            <ChevronLeft aria-hidden="true" /> Templates
-          </Button>
+          {editing ? (
+            <Button variant="ghost" size="sm" onClick={() => router.push(editing.backHref)} disabled={pending}>
+              <ChevronLeft aria-hidden="true" /> Cancel
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push(folderId && offerFolders ? `${pathname}?folder=${folderId}` : pathname)}
+            >
+              <ChevronLeft aria-hidden="true" /> Templates
+            </Button>
+          )}
           <h2 className="truncate text-lg font-semibold">{template.name}</h2>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -328,11 +373,13 @@ function Workspace({
               <Save aria-hidden="true" />{" "}
               {pending
                 ? "Saving…"
-                : person
-                  ? `Save to ${firstName(person.fullName)}`
-                  : target.startsWith("folder:")
-                    ? "Save to folder"
-                    : "Save to project"}
+                : editing
+                  ? "Save changes"
+                  : person
+                    ? `Save to ${firstName(person.fullName)}`
+                    : target.startsWith("folder:")
+                      ? "Save to folder"
+                      : "Save to project"}
             </Button>
           ) : null}
         </div>
@@ -361,7 +408,7 @@ function Workspace({
         >
           {canSaveHere ? (
             <div className="grid gap-4 border-b border-border pb-5">
-              {!projectKey && !person ? (
+              {!projectKey && !person && !editing ? (
                 <div className="flex flex-col gap-1.5">
                   <span className="text-sm font-medium" aria-hidden="true">
                     Save to

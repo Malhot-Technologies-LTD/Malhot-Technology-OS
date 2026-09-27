@@ -104,11 +104,12 @@ export type MemberDocument = {
   template_key: string | null;
   fields: unknown;
   created_at: string;
+  updated_at: string;
   creator: { full_name: string } | null;
 };
 
 const DOC_COLUMNS =
-  "id, title, kind, source, storage_path, file_name, mime_type, size_bytes, template_key, fields, created_at, creator:profiles!member_documents_created_by_fkey(full_name)";
+  "id, title, kind, source, storage_path, file_name, mime_type, size_bytes, template_key, fields, created_at, updated_at, creator:profiles!member_documents_created_by_fkey(full_name)";
 
 export async function listMemberDocuments(organizationId: string, userId: string): Promise<Settled<MemberDocument[]>> {
   const supabase = await createClient();

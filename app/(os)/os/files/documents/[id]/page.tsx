@@ -1,4 +1,4 @@
-import { ChevronLeft, Copy } from "lucide-react";
+import { ChevronLeft, Copy, Pencil } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -12,7 +12,7 @@ import { DownloadWordButton, PrintButton, PrintCopy } from "@/features/documents
 import { sanitiseLetterhead } from "@/features/documents/files";
 import { findTemplate, sanitiseValues } from "@/features/documents/templates";
 import { getCompanyFile, listFolders } from "@/features/files/queries";
-import { ancestry, folderHref } from "@/features/files/tree";
+import { ancestry, canManageItem, folderHref } from "@/features/files/tree";
 import { dayKey } from "@/features/timeline/calendar";
 import { requireViewer } from "@/lib/auth/context";
 import { requestTime } from "@/lib/request-time";
@@ -43,6 +43,7 @@ export default async function CompanyFilePage({ params }: PageProps<"/os/files/d
     project: null,
   });
   const path = ancestry(folders.data, file.data.folder_id);
+  const mayEdit = canManageItem({ userId: viewer.userId, isAdmin: viewer.orgRole !== "member" }, file.data);
   const back = path.at(-1);
 
   return (
@@ -62,6 +63,13 @@ export default async function CompanyFilePage({ params }: PageProps<"/os/files/d
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {mayEdit ? (
+            <Button asChild>
+              <Link href={`/os/files/documents/${file.data.id}/edit`}>
+                <Pencil aria-hidden="true" /> Edit
+              </Link>
+            </Button>
+          ) : null}
           <Button asChild variant="outline">
             <Link href={`/os/documents/new?from=${file.data.id}`}>
               <Copy aria-hidden="true" /> Edit a copy

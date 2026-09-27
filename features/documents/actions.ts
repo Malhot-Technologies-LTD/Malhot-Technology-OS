@@ -193,3 +193,66 @@ export const deleteDocument = withAction("documents.delete", async (input: unkno
   done(project.data.key);
   return ok(undefined);
 });
+
+const editSchema = z.object({
+  projectKey: z.string().min(1),
+  id: z.uuid(),
+  title: z.string().trim().min(1, "Give the document a title").max(200),
+  values: z.unknown(),
+  letterhead: z.unknown(),
+  /** When the editor was opened: a save over someone else's newer save is refused, not silently lost. */
+  updatedAt: z.string().min(1),
+});
+
+/** Saves changes to a generated project document in place. */
+export const updateGeneratedDocument = withAction(
+  "documents.updateGenerated",
+  async (input: unknown): Promise<ActionResult> => {
+    const parsed = editSchema.safeParse(input);
+    if (!parsed.success) return validationFail(parsed.error);
+    const viewer = await requireViewer();
+    const project = await getProjectByKey(viewer.organizationId, parsed.data.projectKey);
+    if (project.error || !project.data) return fail("not_found", "That project does not exist.");
+    const ctx = await getProjectContext(project.data, viewer);
+
+    const supabase = await createClient();
+    const existing = await supabase
+      .from("project_documents")
+      .select("id, source, template_key, uploaded_by")
+      .eq("id", parsed.data.id)
+      .eq("project_id", project.data.id)
+      .maybeSingle();
+    if (existing.error || !existing.data) return fail("not_found", "That document does not exist.");
+    const template = findTemplate(existing.data.template_key);
+    if (existing.data.source !== "generated" || !template)
+      return fail("validation", "Only documents made from a template can be edited here.");
+
+    // Mirrors project_documents_update: the manager, or whoever added it, on a project that is not archived.
+    const writable = project.data.status !== "archived" || viewer.orgRole !== "member";
+    const mayEdit =
+      writable &&
+      (can(viewer, "document.delete", ctx) ||
+        (existing.data.uploaded_by === viewer.userId && can(viewer, "document.create", ctx)));
+    if (!mayEdit) return fail("forbidden", "Only the project manager or the person who added it can edit this.");
+
+    const fields = {
+      values: sanitiseValues(template, parsed.data.values),
+      letterhead: sanitiseLetterhead(parsed.data.letterhead),
+    } as unknown as Json;
+    const { error, count } = await supabase
+      .from("project_documents")
+      .update({ title: parsed.data.title, fields }, { count: "exact" })
+      .eq("id", parsed.data.id)
+      .eq("updated_at", parsed.data.updatedAt);
+    if (error) {
+      const mapped = mapDbError(error);
+      return fail(mapped.code, mapped.message);
+    }
+    if (count === 0)
+      return fail("conflict", "Someone saved this document after you opened it. Reload to see their version.");
+
+    logger.info("documents.edited", { key: project.data.key, template: template.key });
+    done(project.data.key);
+    return ok(undefined);
+  },
+);

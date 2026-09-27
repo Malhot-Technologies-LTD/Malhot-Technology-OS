@@ -1,10 +1,11 @@
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Pencil } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { formatDate } from "@/components/os/data-display";
 import { PageBody } from "@/components/os/page-header";
+import { Button } from "@/components/ui/button";
 import { DocumentPaper } from "@/features/documents/components/document-paper";
 import { PagedDocument } from "@/features/documents/components/paged-document.client";
 import { DownloadWordButton, PrintButton, PrintCopy } from "@/features/documents/components/print.client";
@@ -15,6 +16,7 @@ import { getMember, getMemberDocument } from "@/features/team/queries";
 import { MEMBER_DOC_KIND_LABEL } from "@/features/team/schemas";
 import { dayKey } from "@/features/timeline/calendar";
 import { requireViewer } from "@/lib/auth/context";
+import { can } from "@/lib/permissions";
 import { requestTime } from "@/lib/request-time";
 
 export const metadata: Metadata = { title: "Document" };
@@ -64,6 +66,13 @@ export default async function MemberDocumentPage({ params }: PageProps<"/os/team
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {can(viewer, "member.records") ? (
+            <Button asChild>
+              <Link href={`/os/team/${userId}/documents/${docId}/edit`}>
+                <Pencil aria-hidden="true" /> Edit
+              </Link>
+            </Button>
+          ) : null}
           <DownloadWordButton content={content} letterhead={letterhead} fileTitle={document.data.title} />
           <PrintButton />
         </div>

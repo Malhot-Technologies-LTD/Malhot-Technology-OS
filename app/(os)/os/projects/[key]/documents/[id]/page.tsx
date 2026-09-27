@@ -1,4 +1,4 @@
-import { ChevronLeft, Copy } from "lucide-react";
+import { ChevronLeft, Copy, Pencil } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -14,6 +14,7 @@ import { findTemplate, sanitiseValues } from "@/features/documents/templates";
 import { projectHref } from "@/features/projects/tabs";
 import { loadWorkspace } from "@/features/projects/workspace";
 import { dayKey } from "@/features/timeline/calendar";
+import { can } from "@/lib/permissions";
 
 export const metadata: Metadata = { title: "Document" };
 
@@ -28,7 +29,7 @@ export default async function ProjectDocumentPage({ params }: PageProps<"/os/pro
   if (!UUID.test(id)) notFound();
   const workspace = await loadWorkspace(key);
   if (workspace.kind !== "ok") return null;
-  const { project, viewer, now } = workspace;
+  const { project, viewer, ctx, perms, now } = workspace;
   const base = `${projectHref(project.key)}/documents`;
 
   const { data: document } = await getProjectDocument(project.id, id);
@@ -37,6 +38,11 @@ export default async function ProjectDocumentPage({ params }: PageProps<"/os/pro
 
   const template = findTemplate(document.template_key);
   if (!template) notFound();
+  // Mirrors project_documents_update: the manager, or whoever added it, on a project that is not archived.
+  const mayEdit =
+    perms.writable &&
+    (can(viewer, "document.delete", ctx) ||
+      (document.uploaded_by === viewer.userId && can(viewer, "document.create", ctx)));
   const stored = (document.fields ?? {}) as { values?: unknown; letterhead?: unknown };
   const letterhead = sanitiseLetterhead(stored.letterhead);
   const content = template.build(sanitiseValues(template, stored.values), {
@@ -62,6 +68,13 @@ export default async function ProjectDocumentPage({ params }: PageProps<"/os/pro
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {mayEdit ? (
+            <Button asChild>
+              <Link href={`${base}/${document.id}/edit`}>
+                <Pencil aria-hidden="true" /> Edit
+              </Link>
+            </Button>
+          ) : null}
           <Button asChild variant="outline">
             <Link href={`${base}/new?from=${document.id}`}>
               <Copy aria-hidden="true" /> Edit a copy

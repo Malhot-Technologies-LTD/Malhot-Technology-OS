@@ -5,6 +5,7 @@ import {
   Download,
   FileArchive,
   FileImage,
+  FilePen,
   FileSignature,
   FileSpreadsheet,
   FileText,
@@ -606,6 +607,13 @@ export function FileExplorer({ organizationId, viewer, folder, trail, folders, f
                         )}
                         {manage ? (
                           <>
+                            {upload ? null : (
+                              <DropdownMenuItem asChild>
+                                <Link href={`${fileHref(file)}/edit`}>
+                                  <FilePen aria-hidden="true" /> Edit
+                                </Link>
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem onSelect={() => setRenamingFile(file)}>
                               <Pencil aria-hidden="true" /> Rename
                             </DropdownMenuItem>

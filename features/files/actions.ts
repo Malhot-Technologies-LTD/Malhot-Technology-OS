@@ -456,3 +456,48 @@ export const folderArchive = withAction(
     return ok({ name: plan.name, directories: plan.directories, entries });
   },
 );
+
+const editSchema = z.object({
+  id: z.uuid(),
+  title: z.string().trim().min(1, "Give the document a title").max(200),
+  values: z.unknown(),
+  letterhead: z.unknown(),
+  /** When the editor was opened: a save over someone else's newer save is refused, not silently lost. */
+  updatedAt: z.string().min(1),
+});
+
+/** Saves changes to a generated document in a folder, in place. */
+export const updateGeneratedFile = withAction(
+  "files.updateGenerated",
+  async (input: unknown): Promise<ActionResult> => {
+    const parsed = editSchema.safeParse(input);
+    if (!parsed.success) return validationFail(parsed.error);
+    const found = await manageableFile(parsed.data.id);
+    if (!found.ok) return found.result;
+    const row = await found.supabase
+      .from("company_files")
+      .select("source, template_key")
+      .eq("id", parsed.data.id)
+      .single();
+    if (row.error) return refused(row.error);
+    const template = findTemplate(row.data.template_key);
+    if (row.data.source !== "generated" || !template)
+      return fail("validation", "Only documents made from a template can be edited here.");
+
+    const fields = {
+      values: sanitiseValues(template, parsed.data.values),
+      letterhead: sanitiseLetterhead(parsed.data.letterhead),
+    } as unknown as Json;
+    const { error, count } = await found.supabase
+      .from("company_files")
+      .update({ title: parsed.data.title, fields }, { count: "exact" })
+      .eq("id", parsed.data.id)
+      .eq("updated_at", parsed.data.updatedAt);
+    if (error) return refused(error);
+    if (count === 0)
+      return fail("conflict", "Someone saved this document after you opened it. Reload to see their version.");
+    logger.info("files.edited", { template: template.key });
+    done();
+    return ok(undefined);
+  },
+);
