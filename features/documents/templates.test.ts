@@ -147,8 +147,11 @@ describe("templates", () => {
     expect(text).not.toContain("Source code and technical systems");
   });
 
-  it("uses the contract layout for every legal template", () => {
-    for (const template of TEMPLATES.filter((candidate) => candidate.legal))
+  // Legal notices and letters (disciplinary notice, authorisation) keep the letter layout.
+  it("uses the contract layout for every legal agreement", () => {
+    for (const template of TEMPLATES.filter(
+      (candidate) => candidate.legal && candidate.category === "Contracts & Legal",
+    ))
       expect(template.build(initialValues(template, context), context).layout).toBe("contract");
   });
 

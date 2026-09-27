@@ -6,7 +6,8 @@ import { notFound, redirect } from "next/navigation";
 import { formatDate } from "@/components/os/data-display";
 import { PageBody } from "@/components/os/page-header";
 import { DocumentPaper } from "@/features/documents/components/document-paper";
-import { A4Frame, DownloadWordButton, PrintButton, PrintCopy } from "@/features/documents/components/print.client";
+import { PagedDocument } from "@/features/documents/components/paged-document.client";
+import { DownloadWordButton, PrintButton, PrintCopy } from "@/features/documents/components/print.client";
 import { sanitiseLetterhead } from "@/features/documents/files";
 import { findTemplate, sanitiseValues } from "@/features/documents/templates";
 import { canSeeRecords } from "@/features/team/access";
@@ -69,9 +70,7 @@ export default async function MemberDocumentPage({ params }: PageProps<"/os/team
       </div>
 
       <div className="rounded-lg bg-bg-subtle p-3 sm:p-8">
-        <A4Frame>
-          <DocumentPaper content={content} letterhead={letterhead} id="saved" />
-        </A4Frame>
+        <PagedDocument content={content} letterhead={letterhead} id="saved" />
       </div>
 
       <PrintCopy>

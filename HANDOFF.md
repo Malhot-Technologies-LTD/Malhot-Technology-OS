@@ -1,12 +1,16 @@
 # HANDOFF
 
-## Current Task (2026-09-27, cut off by usage limit — nothing committed)
-Uncommitted: favicon + sidebar changes, Instagram error details, Social overview order, Team member pages (typecheck/lint
-clean, not visually verified; migration 20260927190000_member_records.sql verified in PGlite, not applied live), and the
-document library refactor (template-kit.ts, table block, 8 categories, library/*.ts). Background agents were writing the
-new templates into library/*.ts and an A4 pagination component (paged-document.client.tsx). On resume: review their
-files, delete the old proposal/minutes/handover in templates.ts where replaced with the same keys, run tests/typecheck/
-lint/build, switch the team document page to PagedDocument, wire project data into TemplateContext.project.
+## Current Task (2026-09-27): document library finished, uncommitted
+Library of 55 templates in 8 categories (`features/documents/library/*.ts`, kit in `template-kit.ts`), all 20 of the
+owner's priority list included. This session: removed the old proposal/minutes/handover from `templates.ts` (library
+versions with the same keys now win), scoped the contract-layout test to "Contracts & Legal" (disciplinary notice and
+authorisation letter stay letters but keep the lawyer-review reminder), team document page now uses `PagedDocument`,
+in-project generator prefills from real data via `features/documents/project-context.ts` (manager, team by project
+role, dates, milestones; defaults only, saved documents never change), deleted the temporary `app/(dev)/paged-preview`.
+Verified: 737 unit tests, lint, typecheck, format, build; paged screenshots of SOW, status report, payment reminder,
+handover. Not verified: generator in a signed-in browser with a real project. Saved proposals/minutes/handovers made
+with the old templates re-render with the new field set (old fields dropped). Next: commit; optionally prefill the
+global /os/documents/new page too (it passes only key/name/client per project).
 
 ## Current Task
 **Instagram connection for Social (2026-09-27, not committed yet).** Owner created a Meta developer app and put

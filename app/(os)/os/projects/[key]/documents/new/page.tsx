@@ -3,8 +3,9 @@ import type { Metadata } from "next";
 import { DocumentGenerator } from "@/features/documents/components/generator.client";
 import { DEFAULT_LETTERHEAD, sanitiseLetterhead } from "@/features/documents/files";
 import { getProjectDocument, listProjectDocuments } from "@/features/documents/queries";
+import { toTemplateProject } from "@/features/documents/project-context";
 import { findTemplate, sanitiseValues } from "@/features/documents/templates";
-import { loadWorkspace } from "@/features/projects/workspace";
+import { loadMembers, loadPlanning, loadWorkspace } from "@/features/projects/workspace";
 import { dayKey } from "@/features/timeline/calendar";
 
 export const metadata: Metadata = { title: "Generate a document" };
@@ -28,12 +29,16 @@ export default async function NewProjectDocumentPage({
   const stored = (source?.fields ?? {}) as { values?: unknown; letterhead?: unknown };
 
   const templateKey = sourceTemplate?.key ?? (typeof query.template === "string" ? query.template : null);
-  // Whether saving can work at all: the table exists.
-  const probe = await listProjectDocuments(project.id);
+  // Whether saving can work at all: the table exists. Members and milestones prefill the templates.
+  const [probe, members, planning] = await Promise.all([
+    listProjectDocuments(project.id),
+    loadMembers(project.id),
+    loadPlanning(project.id),
+  ]);
 
   return (
     <DocumentGenerator
-      projects={[{ key: project.key, name: project.name, clientName: project.client?.name ?? null }]}
+      projects={[toTemplateProject(project, members.data ?? [], planning.milestones)]}
       projectKey={project.key}
       templateKey={templateKey}
       seed={

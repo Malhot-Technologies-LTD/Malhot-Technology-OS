@@ -44,9 +44,10 @@ import {
   type TemplateCategory,
   type Values,
 } from "@/features/documents/templates";
+import type { TemplateProject } from "@/features/documents/project-context";
 import { cn } from "@/lib/utils";
 
-export type GeneratorProject = { key: string; name: string; clientName: string | null };
+export type GeneratorProject = TemplateProject;
 
 type Props = {
   /** Projects the viewer may save documents into. */
