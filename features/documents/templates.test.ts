@@ -9,7 +9,7 @@ import {
   sanitiseValues,
   type TemplateContext,
 } from "./templates";
-import { ROLE_PROFILES, roleProfile } from "./roles";
+import { ROLE_PROFILES, combineRoles, listText, roleNamesFrom, roleProfile } from "./roles";
 
 const context: TemplateContext = {
   today: "2026-09-27",
@@ -86,7 +86,7 @@ describe("templates", () => {
     const text = JSON.stringify(content);
     expect(text).toContain("Compensation");
     expect(text).toContain("14.295% of salary base");
-    expect(text).toContain("The Employee is hired as a Developer");
+    expect(text).toContain("The Employee is hired as Developer");
     expect(text).toContain("no longer wishes to be part of Malhot Technologies");
     expect(missingFields(contract, values)).toEqual([]);
     expect(contract.build({ ...values, agreementDate: "2026-10-01" }, context).date).toBe("1 October 2026");
@@ -125,11 +125,13 @@ describe("templates", () => {
         const template = findTemplate(key)!;
         const content = template.build({ ...initialValues(template, context), roleType: profile.name }, context);
         const text = JSON.stringify(content);
-        expect(content.subtitle).toBe(profile.subtitle);
-        expect(text).toContain(profile.responsibilities);
+        const clauses = combineRoles([profile.name]);
+        expect(content.subtitle).toBe(`${profile.subtitle} Role`);
+        expect(text).toContain(clauses.responsibilities);
         expect(text).toContain(profile.confidential[0]);
-        expect(text).toContain(profile.workProduct);
-        expect(text).toContain(profile.access);
+        expect(text).toContain(clauses.workProduct);
+        expect(text).toContain(clauses.access);
+        for (const term of clauses.accessTerms) expect(text).toContain(term);
       }
     },
   );
@@ -173,6 +175,77 @@ describe("roles", () => {
   it("falls back to the technical role for unknown or old values", () => {
     expect(roleProfile(undefined).name).toBe("Developer / Technical");
     expect(roleProfile("Astronaut").name).toBe("Developer / Technical");
+    expect(roleNamesFrom("")).toEqual(["Developer / Technical"]);
+    expect(roleNamesFrom(["Astronaut", "Hardware Engineer"].join("\n"))).toEqual(["Hardware Engineer"]);
+  });
+
+  it("have unique names and something in every clause", () => {
+    expect(new Set(ROLE_PROFILES.map((profile) => profile.name)).size).toBe(ROLE_PROFILES.length);
+    for (const profile of ROLE_PROFILES) {
+      expect(profile.duties.length, profile.name).toBeGreaterThan(0);
+      expect(profile.confidential.length, profile.name).toBeGreaterThan(0);
+      expect(profile.workProduct.length, profile.name).toBeGreaterThan(0);
+      expect(profile.access.length, profile.name).toBeGreaterThan(0);
+    }
+  });
+
+  it("keeps the wording of documents saved with one of the original roles", () => {
+    const developer = combineRoles(["Developer / Technical"]);
+    expect(developer.subtitle).toBe("Developer / Technical Role");
+    expect(developer.responsibilities).toBe(
+      "software development, coding, technical architecture, quality assurance, testing, documentation, and other duties as assigned by management",
+    );
+    expect(developer.workProduct).toBe("source code, designs, and documentation");
+    expect(developer.access).toBe("company systems, repositories, and credentials");
+    expect(developer.ipHeading).toBe("Source code & IP ownership");
+  });
+
+  it("combines several roles, each clause once", () => {
+    const both = combineRoles(["Developer / Technical", "Hardware Engineer"]);
+    expect(both.subtitle).toBe("Developer / Technical & Hardware Engineering / Technical Role");
+    expect(both.responsibilities).toContain("software development");
+    expect(both.responsibilities).toContain("circuit and PCB design");
+    expect(both.responsibilities.match(/other duties as assigned/g)).toHaveLength(1);
+    expect(both.confidential.filter((item) => item === "Client information and contracts")).toHaveLength(1);
+    expect(both.confidential.at(-1)).toBe("Any proprietary information");
+    expect(both.access.match(/company systems/g)).toHaveLength(1);
+    expect(both.access.endsWith("and credentials")).toBe(true);
+    expect(both.ipHeading).toBe("Source code & IP ownership");
+    expect(both.accessTerms).toHaveLength(1);
+
+    const three = combineRoles([
+      "Human Resources",
+      "Finance & Accounting",
+      "Administrative Assistant / Office Manager",
+    ]);
+    expect(three.subtitle).toBe(
+      "Human Resources / Administrative, Finance & Accounting / Administrative & Administrative / Office Management Role",
+    );
+    expect(three.ipHeading).toBe("Work product & IP ownership");
+    expect(three.accessTerms).toHaveLength(3);
+  });
+
+  it("prints every chosen position and its clauses in the offer and the agreement", () => {
+    for (const key of ["offer_letter", "employment_contract"]) {
+      const template = findTemplate(key)!;
+      const values = {
+        ...initialValues(template, context),
+        position: ["Hardware Engineer", "Systems & Network Administrator"].join("\n"),
+      };
+      const text = JSON.stringify(template.build(values, context));
+      expect(text).toContain("hired as Hardware Engineer and Systems & Network Administrator with");
+      // Only listed titles, so the "clauses like" question is not asked.
+      expect(missingFields(template, values)).not.toContain("Contract clauses like");
+      expect(text).toContain("embedded firmware development");
+      expect(text).toContain("backups and recovery");
+      expect(text).toContain("must be returned on request or when the employment ends");
+    }
+  });
+
+  it("writes lists in the house style", () => {
+    expect(listText(["a"])).toBe("a");
+    expect(listText(["a", "b"])).toBe("a and b");
+    expect(listText(["a", "b", "c"])).toBe("a, b, and c");
   });
 });
 

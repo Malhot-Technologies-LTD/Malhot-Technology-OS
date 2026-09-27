@@ -189,7 +189,7 @@ const assetHandover: DocumentTemplate = {
     common.reference("MAL/AST"),
     common.date,
     { name: "employeeName", label: "Received by (full name)", type: "text", required: true },
-    { name: "position", label: "Position", type: "text" },
+    { name: "position", label: "Position", type: "position" },
     {
       name: "assets",
       label: "Assets (one per line: Asset | Serial / tag | Condition | Date issued)",

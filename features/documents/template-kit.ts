@@ -28,11 +28,19 @@ type BaseField = {
   hint?: string;
   placeholder?: string;
   wide?: boolean;
+  /** Shown (and required) only when this holds, e.g. a follow-up question for an unusual answer. */
+  visible?: (values: Values) => boolean;
 };
 
 export type FieldDef =
   | (BaseField & { type: "text" | "textarea" | "date" | "number"; default?: (context: TemplateContext) => string })
   | (BaseField & { type: "select"; options: readonly string[]; default?: (context: TemplateContext) => string })
+  /**
+   * A job title from the company's position list (positions.ts), searchable,
+   * or one typed in. `multiple` holds several, one per line, so the value
+   * stays a plain string like every other field.
+   */
+  | (BaseField & { type: "position"; multiple?: boolean; default?: (context: TemplateContext) => string })
   | (BaseField & { type: "items" });
 
 /**

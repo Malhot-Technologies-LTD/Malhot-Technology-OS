@@ -7,7 +7,8 @@ import { PROJECT_TEMPLATES } from "./library/projects";
 import { SALES_TEMPLATES } from "./library/sales";
 import { SUPPORT_TEMPLATES } from "./library/support";
 import { TECHNICAL_TEMPLATES } from "./library/technical";
-import { ROLE_NAMES, roleProfile, type RoleProfile } from "./roles";
+import { clausesForPositions, findPosition, positionText, positionTitles } from "./positions";
+import { ROLE_NAMES, type RoleClauses } from "./roles";
 import {
   agreementDate,
   ceoField,
@@ -45,14 +46,36 @@ export {
  * category under library/. The building blocks are in template-kit.ts.
  */
 
-/** The role picker shared by offers and employment agreements (see roles.ts). */
-const roleField: FieldDef = {
+/**
+ * The positions picker shared by offers and employment agreements: one or
+ * more job titles (positions.ts), which also decide the contract's clauses.
+ */
+const positionsField: FieldDef = {
+  name: "position",
+  label: "Position",
+  type: "position",
+  multiple: true,
+  required: true,
+  wide: true,
+  hint: "Pick every position this person holds, e.g. CEO and Software Engineer. The duties, confidentiality, IP and access clauses follow from them.",
+};
+
+function hasUnlistedPosition(values: Values): boolean {
+  const titles = positionTitles(optional(values, "position"));
+  return titles.some((title) => !findPosition(title));
+}
+
+/** Only asked when a title was typed that is not in the list; saved documents from before positions keep theirs here. */
+const clausesLikeField: FieldDef = {
   name: "roleType",
-  label: "Role",
+  label: "Contract clauses like",
   type: "select",
   options: ROLE_NAMES,
   default: () => ROLE_NAMES[0]!,
-  hint: "Sets the duties, confidentiality, IP and access clauses for this kind of work.",
+  required: true,
+  wide: true,
+  visible: hasUnlistedPosition,
+  hint: "A title that is not in the list takes the duties, confidentiality, IP and access clauses of this kind of work.",
 };
 
 const responsibilitiesField: FieldDef = {
@@ -98,8 +121,14 @@ const paymentScheduleField: FieldDef = {
     "Per project basis. Payment is received upon successful completion and delivery of project milestones.",
 };
 
-function role(values: Values): RoleProfile {
-  return roleProfile(optional(values, "roleType"));
+function role(values: Values): RoleClauses {
+  return clausesForPositions(positionTitles(optional(values, "position")), optional(values, "roleType"));
+}
+
+/** The position(s) as they read in a sentence: "Chief Executive Officer (CEO) and Software Engineer". */
+function positionsOf(values: Values): string {
+  const titles = positionTitles(optional(values, "position"));
+  return titles.length > 0 ? positionText(titles) : "[Position]";
 }
 
 /**
@@ -122,7 +151,7 @@ function employmentClauses(
     section("Position & responsibilities"),
     {
       kind: "paragraph",
-      text: `The Employee is hired as a ${position} with responsibilities including ${optional(values, "responsibilities") ?? profile.responsibilities}.`,
+      text: `The Employee is hired as ${position} with responsibilities including ${optional(values, "responsibilities") ?? profile.responsibilities}.`,
     },
     ...(extra.afterPosition?.() ?? []),
     section("Compensation"),
@@ -145,7 +174,11 @@ function employmentClauses(
     section("Access & security"),
     {
       kind: "paragraph",
-      text: `The Employee receives access to ${profile.access} as required by their role. This access must be protected and used only for authorized work.`,
+      text: [
+        `The Employee receives access to ${profile.access} as required by their role.`,
+        ...profile.accessTerms,
+        "This access must be protected and used only for authorized work.",
+      ].join(" "),
     },
     section("Termination"),
     { kind: "paragraph", text: "This agreement is terminated under the following conditions:" },
@@ -164,9 +197,9 @@ const offerLetter: DocumentTemplate = {
   documentType: "other",
   summary: "A job offer in the company's agreement format, worded for the role: duties, pay, start date, acceptance.",
   fields: [
-    roleField,
     { name: "candidateName", label: "Candidate's full name", type: "text", required: true },
-    { name: "position", label: "Position", type: "text", required: true, placeholder: "e.g. Frontend Developer" },
+    positionsField,
+    clausesLikeField,
     { name: "startDate", label: "Start date", type: "date", required: true },
     {
       name: "employmentType",
@@ -175,7 +208,7 @@ const offerLetter: DocumentTemplate = {
       options: ["Full-time, permanent", "Full-time, fixed term", "Part-time", "Contract"],
       default: () => "Full-time, permanent",
     },
-    { name: "reportsTo", label: "Reports to", type: "text" },
+    { name: "reportsTo", label: "Reports to", type: "position" },
     { name: "location", label: "Place of work", type: "text", default: () => "Kigali, Rwanda" },
     { name: "probation", label: "Probation period", type: "text", default: () => "Three (3) months" },
     compensationField,
@@ -202,7 +235,7 @@ const offerLetter: DocumentTemplate = {
   build(values, context) {
     const employer = company(context);
     const candidate = text(values, "candidateName", "Candidate's full name");
-    const position = text(values, "position", "Position");
+    const position = positionsOf(values);
     const benefits = lines(values, "benefits");
     const reportsTo = optional(values, "reportsTo");
     const acceptBy = optional(values, "acceptBy");
@@ -278,9 +311,9 @@ const employmentContract: DocumentTemplate = {
   legal: true,
   fields: [
     agreementDateField,
-    roleField,
     { name: "employeeName", label: "Employee's full name", type: "text", required: true },
-    { name: "position", label: "Position", type: "text", required: true, placeholder: "e.g. Developer" },
+    positionsField,
+    clausesLikeField,
     compensationField,
     paymentScheduleField,
     responsibilitiesField,
@@ -293,7 +326,7 @@ const employmentContract: DocumentTemplate = {
   build(values, context) {
     const employer = company(context);
     const employee = text(values, "employeeName", "Employee's full name");
-    const position = text(values, "position", "Position");
+    const position = positionsOf(values);
     const section = sections();
     return {
       layout: "contract",
@@ -446,7 +479,7 @@ const employmentCertificate: DocumentTemplate = {
     common.reference("MAL/HR"),
     common.date,
     { name: "employeeName", label: "Employee's full name", type: "text", required: true },
-    { name: "position", label: "Position held", type: "text", required: true },
+    { name: "position", label: "Position held", type: "position", required: true },
     { name: "startDate", label: "Employed since", type: "date", required: true },
     { name: "endDate", label: "Until (leave empty if still employed)", type: "date" },
     { name: "remarks", label: "Remarks (optional)", type: "textarea", wide: true },
@@ -896,7 +929,7 @@ export function initialValues(template: DocumentTemplate, context: TemplateConte
 /** Required fields still empty, by label, so the form can say what is missing. */
 export function missingFields(template: DocumentTemplate, values: Values): string[] {
   return template.fields
-    .filter((field) => field.required)
+    .filter((field) => field.required && (!field.visible || field.visible(values)))
     .filter((field) => {
       const value = values[field.name];
       if (Array.isArray(value)) return value.every((item) => item.description.trim() === "");

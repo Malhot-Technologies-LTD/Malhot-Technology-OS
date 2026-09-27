@@ -42,6 +42,7 @@ import { saveMemberDocument } from "@/features/team/actions";
 import { DocumentPaper } from "@/features/documents/components/document-paper";
 import { ClientJourney } from "@/features/documents/components/client-journey";
 import { PagedDocument } from "@/features/documents/components/paged-document.client";
+import { PositionPicker } from "@/features/documents/components/position-picker.client";
 import { DownloadWordButton, PrintButton, PrintCopy } from "@/features/documents/components/print.client";
 import { LETTERHEAD_FIELDS, type Letterhead, type LineItem } from "@/features/documents/content";
 import { sanitiseLetterhead } from "@/features/documents/files";
@@ -419,14 +420,16 @@ function Workspace({
           ) : null}
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-            {template.fields.map((field) => (
-              <FieldInput
-                key={field.name}
-                field={field}
-                value={values[field.name]}
-                onChange={(value) => setValues((previous) => ({ ...previous, [field.name]: value }))}
-              />
-            ))}
+            {template.fields
+              .filter((field) => !field.visible || field.visible(values))
+              .map((field) => (
+                <FieldInput
+                  key={field.name}
+                  field={field}
+                  value={values[field.name]}
+                  onChange={(value) => setValues((previous) => ({ ...previous, [field.name]: value }))}
+                />
+              ))}
           </div>
 
           <details className="group rounded-md border border-border">
@@ -545,6 +548,17 @@ function FieldInput({
   }
 
   const text = typeof value === "string" ? value : "";
+
+  if (field.type === "position") {
+    return (
+      <div className={cn("flex flex-col gap-1.5", wide && "col-span-full")}>
+        {label}
+        <PositionPicker id={id} value={text} onChange={onChange} multiple={field.multiple} />
+        {field.hint ? <span className="text-xs text-fg-subtle">{field.hint}</span> : null}
+      </div>
+    );
+  }
+
   return (
     <div className={cn("flex flex-col gap-1.5", wide && "col-span-full")}>
       {label}

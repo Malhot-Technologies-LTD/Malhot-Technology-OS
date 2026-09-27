@@ -29,7 +29,7 @@ const employeeNameField: FieldDef = {
   type: "text",
   required: true,
 };
-const positionField: FieldDef = { name: "position", label: "Position", type: "text", required: true };
+const positionField: FieldDef = { name: "position", label: "Position", type: "position", required: true };
 
 const CHECKLIST_COLUMNS = ["Item", "Done", "Notes"] as const;
 
@@ -119,9 +119,9 @@ const jobDescription: DocumentTemplate = {
   fields: [
     common.reference("MAL/HR"),
     common.date,
-    { ...positionField, placeholder: "e.g. Backend Developer" },
+    positionField,
     { name: "department", label: "Department / team", type: "text", placeholder: "e.g. Engineering" },
-    { name: "reportsTo", label: "Reports to", type: "text" },
+    { name: "reportsTo", label: "Reports to", type: "position" },
     {
       name: "employmentType",
       label: "Employment type",
@@ -475,9 +475,8 @@ const promotionLetter: DocumentTemplate = {
     {
       name: "newPosition",
       label: "New position",
-      type: "text",
+      type: "position",
       hint: "For a promotion.",
-      placeholder: "e.g. Senior Developer",
     },
     { name: "effectiveDate", label: "Effective date", type: "date", required: true },
     {
