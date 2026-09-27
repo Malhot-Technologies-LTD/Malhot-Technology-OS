@@ -77,6 +77,140 @@ export type Database = {
           },
         ]
       }
+      company_files: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          fields: Json | null
+          file_name: string | null
+          folder_id: string | null
+          id: string
+          mime_type: string | null
+          organization_id: string
+          size_bytes: number | null
+          source: string
+          storage_path: string | null
+          template_key: string | null
+          title: string
+          type: Database["public"]["Enums"]["document_type"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          fields?: Json | null
+          file_name?: string | null
+          folder_id?: string | null
+          id?: string
+          mime_type?: string | null
+          organization_id: string
+          size_bytes?: number | null
+          source: string
+          storage_path?: string | null
+          template_key?: string | null
+          title: string
+          type?: Database["public"]["Enums"]["document_type"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          fields?: Json | null
+          file_name?: string | null
+          folder_id?: string | null
+          id?: string
+          mime_type?: string | null
+          organization_id?: string
+          size_bytes?: number | null
+          source?: string
+          storage_path?: string | null
+          template_key?: string | null
+          title?: string
+          type?: Database["public"]["Enums"]["document_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_files_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_files_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "file_folders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_files_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      file_folders: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          organization_id: string
+          parent_id: string | null
+          restricted: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          parent_id?: string | null
+          restricted?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          parent_id?: string | null
+          restricted?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "file_folders_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "file_folders_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "file_folders_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "file_folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       github_repositories: {
         Row: {
           created_at: string
@@ -1503,6 +1637,10 @@ export type Database = {
       can_manage_project: { Args: { project: string }; Returns: boolean }
       can_manage_social: { Args: { org: string }; Returns: boolean }
       can_manage_site_media: { Args: { object_name: string }; Returns: boolean }
+      can_see_file_folder: { Args: { folder: string }; Returns: boolean }
+      company_file_org: { Args: { object_name: string }; Returns: string }
+      company_file_is_recorded: { Args: { object_name: string }; Returns: boolean }
+      file_folder_is_empty: { Args: { folder: string }; Returns: boolean }
       has_duty: { Args: { org: string; wanted: string }; Returns: boolean }
       is_org_admin: { Args: { org: string }; Returns: boolean }
       member_file_segment: { Args: { n: number; object_name: string }; Returns: string }

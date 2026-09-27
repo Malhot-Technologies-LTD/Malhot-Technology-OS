@@ -13,6 +13,7 @@ const UNIQUE_MESSAGES: Record<string, string> = {
   project_showcases_slug_key: "Another project on the website already uses that address.",
   // One project per repository; see the migration's rationale on auto-linking.
   github_repositories_full_name_key: "That repository is already connected to a project.",
+  file_folders_sibling_name: "A folder with that name is already here.",
 };
 
 const MALHOT_PREFIX = "MALHOT:";

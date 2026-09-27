@@ -5,10 +5,10 @@ import { CLIENT_JOURNEY } from "../client-journey";
 
 /**
  * The client templates as numbered stages, first contact to support. Each
- * template links to `${basePath}?template=<key>`, so the generator opens on it
- * wherever this is shown.
+ * template links to `${basePath}?template=<key>` plus `query` (e.g. the folder
+ * to save into), so the generator opens on it wherever this is shown.
  */
-export function ClientJourney({ basePath }: { basePath: string }) {
+export function ClientJourney({ basePath, query = "" }: { basePath: string; query?: string }) {
   return (
     <section aria-labelledby="client-work-heading" className="flex flex-col gap-3">
       <div className="flex flex-col gap-0.5">
@@ -39,7 +39,7 @@ export function ClientJourney({ basePath }: { basePath: string }) {
               {stage.templates.map((template) => (
                 <li key={template.key}>
                   <Link
-                    href={`${basePath}?template=${template.key}`}
+                    href={`${basePath}?template=${template.key}${query}`}
                     className="flex items-center gap-2 rounded-md px-1.5 py-1 text-sm hover:bg-bg-subtle hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                   >
                     <FileSignature className="size-3.5 shrink-0 text-brand" aria-hidden="true" />

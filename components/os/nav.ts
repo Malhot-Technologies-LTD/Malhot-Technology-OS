@@ -106,8 +106,8 @@ export type NavGroup = { label: string; items: readonly NavItem[] };
 export const GROUP_HREFS: readonly { label: string; hrefs: readonly NavItem["href"][] }[] = [
   { label: "Overview", hrefs: ["/os"] },
   { label: "Delivery", hrefs: ["/os/projects", "/os/my-tasks", "/os/timeline"] },
-  { label: "Quality", hrefs: ["/os/documents", "/os/testing"] },
-  { label: "Company", hrefs: ["/os/team", "/os/reports", "/os/activity"] },
+  { label: "Quality", hrefs: ["/os/testing"] },
+  { label: "Company", hrefs: ["/os/documents", "/os/team", "/os/reports", "/os/activity"] },
   { label: "Marketing", hrefs: ["/os/social"] },
 ];
 

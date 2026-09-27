@@ -1,20 +1,24 @@
 # HANDOFF
 
-## Current Task (2026-09-27): document library finished, uncommitted
-Library of 55 templates in 8 categories (`features/documents/library/*.ts`, kit in `template-kit.ts`), all 20 of the
-owner's priority list included. This session: removed the old proposal/minutes/handover from `templates.ts` (library
-versions with the same keys now win), scoped the contract-layout test to "Contracts & Legal" (disciplinary notice and
-authorisation letter stay letters but keep the lawyer-review reminder), team document page now uses `PagedDocument`,
-in-project generator prefills from real data via `features/documents/project-context.ts` (manager, team by project
-role, dates, milestones; defaults only, saved documents never change), deleted the temporary `app/(dev)/paged-preview`.
-Verified: 737 unit tests, lint, typecheck, format, build; paged screenshots of SOW, status report, payment reminder,
-handover. Not verified: generator in a signed-in browser with a real project. Saved proposals/minutes/handovers made
-with the old templates re-render with the new field set (old fields dropped). Next: commit; optionally prefill the
-global /os/documents/new page too (it passes only key/name/client per project).
-Then (uncommitted): "Client work" panel, the 31 client-facing templates in 6 lifecycle stages (Win the work → Agree
-terms → Kick off and build → Deliver → Get paid → Support), defined in `features/documents/client-journey.ts`, shown
-on /os/documents and at the top of the generator gallery (not on a person's page). Templates keep their own category.
-Project Documents quick picks are now SOW, minutes, status report, change request, invoice.
+## Current Task (2026-09-27): company file explorer, uncommitted
+Owner: "not all documents get saved to documents... make a file system like file explorer, folders, save documents in
+them". Documents (`/os/documents`) is now an explorer: nested folders, upload (button or drop from desktop, several at
+once), generate a document into a folder ("Save to" lists company folders and projects), rename / move (menu or drag
+onto a folder or crumb) / delete, admins-only folders. Project paperwork moved to `/os/documents/projects`.
+Code: `supabase/migrations/20260927210000_company_files.sql` (file_folders, company_files, bucket company-files),
+`features/files/` (tree.ts pure + tests, queries, actions, explorer + dialogs), pages under `app/(os)/os/documents/`.
+Types hand-added in `types/database.ts`. Documents now shows for everyone and sits in the Company nav group.
+Design notes: `docs/features/documents.md#as-built-2026-09`.
+**Migration NOT applied** (no DB credentials here): until it is, Documents shows a notice, and saving to a folder fails
+with "needs a one-time database update"; project saving still works.
+Verified: migration + RLS + storage policies in PGlite (83/83; script in the session scratchpad, gone next session):
+restricted inheritance, cycles, cross-org, empty-folder rule counting hidden subfolders, orphan cleanup, creator pinned.
+UI screenshotted with fixtures at 1440/1280/390 (explorer, member view, empty folder, dialogs, Save to).
+751 unit tests, lint, typecheck, build. **Not tested against the real database or with real uploads.**
+Next: apply the migration, then as an admin and a member: make folders, upload, drag-move, restrict, delete, generate
+into a folder; regenerate types (`npm run db:types`).
+Known, accepted: a member creating a top-level folder named like a hidden admins-only one gets "already here", which
+reveals the name exists. Previous uncommitted item: the Client work panel was committed in 9f20146.
 
 ## Current Task
 **Instagram connection for Social (2026-09-27, not committed yet).** Owner created a Meta developer app and put

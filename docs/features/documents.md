@@ -1,5 +1,30 @@
 # Feature: Documents
 
+## As built (2026-09)
+
+The in-app editor designed below was not built. The owner chose uploaded files plus documents generated on the
+letterhead from templates (`features/documents/library/*.ts`, 55 templates in 8 categories; the "Client work" panel
+orders the client-facing ones by stage, `features/documents/client-journey.ts`). A generated document is stored as its
+template key and field values and re-rendered on view, never as a file.
+
+Where a document can be saved:
+
+| Where | Table | Who sees it |
+|---|---|---|
+| A company folder (the Documents explorer, `/os/documents`) | `company_files` in `file_folders` | Everyone in the organisation; admins-only folders only admins |
+| A project (`/os/projects/KEY/documents`) | `project_documents` | Everyone on the project |
+| A person (`/os/team/<id>`) | `member_documents` | Admins and the person |
+
+**Company folders** (`supabase/migrations/20260927210000_company_files.sql`, `features/files/`): folders nest without
+limit; sibling names are unique ignoring case. Anyone creates folders and adds files where they can see; the creator
+or an admin renames, moves or deletes; a non-admin may delete only an empty folder (counting what they cannot see), so
+nobody removes other people's files with a folder. An admin can make a folder admins only; everything under it
+inherits that (a trigger restricts subfolders and anything moved in) and lifting it leaves subfolders as they were.
+Uploads go to the private `company-files` bucket as `<org>/<uuid>-<name>` and are read through the file's row, so a
+restricted folder's bytes cannot be fetched by path. The creator of a row can never be changed. The explorer
+uploads files dropped from the desktop straight into the open folder and moves rows dragged onto a folder or a crumb.
+Project paperwork appears in the explorer as a read-only Projects entry (`/os/documents/projects`).
+
 ## Purpose
 Produce and manage professional project documentation, generated from structured project data and finished by people. Documents are deliverables (briefs, specs, reports) with a review/approval lifecycle and version history.
 

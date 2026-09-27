@@ -31,7 +31,15 @@ const SECTION_LABELS: Record<string, string> = {
 };
 
 /** What an id stands for, named by the collection it sits in: /milestones/<uuid> is "Milestone". */
-const ITEM_LABELS: Record<string, string> = { milestones: "Milestone", documents: "Document" };
+const ITEM_LABELS: Record<string, string> = {
+  milestones: "Milestone",
+  documents: "Document",
+  folders: "Folder",
+  files: "File",
+};
+
+/** Collections with no page of their own: /os/documents/folders/<id> reads "Documents / Folder". */
+const HIDDEN_UNDER: Record<string, readonly string[]> = { documents: ["folders", "files"] };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function labelFor(segment: string, previous?: string): string {
@@ -61,6 +69,7 @@ export function Breadcrumbs() {
           </Link>
         </li>
         {segments.map((segment, index) => {
+          if (HIDDEN_UNDER[segments[index - 1] ?? ""]?.includes(segment) && index < segments.length - 1) return null;
           const href = `/os/${segments.slice(0, index + 1).join("/")}`;
           const last = index === segments.length - 1;
           return (

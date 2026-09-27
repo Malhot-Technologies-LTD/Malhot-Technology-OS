@@ -71,10 +71,10 @@ export const NAV_VISIBILITY: Record<string, { test: (audience: NavAudience) => b
   "/os": { test: () => true, because: "Everyone" },
   "/os/projects": { test: () => true, because: "Everyone can see the projects they are on" },
   "/os/my-tasks": { test: () => true, because: "Everyone has their own queue" },
+  "/os/documents": { test: () => true, because: "Company folders are shared with everyone" },
 
   // Doing your own work: needs a project behind it, nothing more.
   "/os/timeline": { test: hasAnyProject, because: "The schedule of projects you are on" },
-  "/os/documents": { test: hasAnyProject, because: "The documents of projects you are on" },
 
   // Overseeing other people's: a manager's job, not a contributor's.
   "/os/team": { test: oversees, because: "A directory of people you manage" },

@@ -8,6 +8,7 @@ import {
   Code2,
   ChevronLeft,
   FileSignature,
+  Folder,
   FolderKanban,
   Handshake,
   LifeBuoy,
@@ -24,9 +25,19 @@ import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { saveGeneratedDocument } from "@/features/documents/actions";
+import { saveGeneratedToFolder } from "@/features/files/actions";
+import type { FolderPath } from "@/features/files/tree";
 import { saveMemberDocument } from "@/features/team/actions";
 import { DocumentPaper } from "@/features/documents/components/document-paper";
 import { ClientJourney } from "@/features/documents/components/client-journey";
@@ -55,13 +66,21 @@ type Props = {
   projects: readonly GeneratorProject[];
   /** Fixed when opened from inside a project. */
   projectKey?: string;
+  /**
+   * Company folders the document can be saved into, or null when that is not
+   * possible yet (the migration is not applied). Not offered inside a project
+   * or on a person's page.
+   */
+  folders?: readonly FolderPath[] | null;
+  /** The folder "New document" was pressed in; null = the top level. */
+  folderId?: string | null;
   templateKey: string | null;
   /** "Edit a copy" of a saved document. */
   seed?: { values: Values; letterhead: Letterhead; title: string } | null;
   /** Today in the viewer's timezone, from the server so both renders agree. */
   today: string;
   defaultLetterhead: Letterhead;
-  /** False until the documents migration is applied; printing still works. */
+  /** Whether saving to a project (or a person) can work; printing always does. */
   canSave: boolean;
   /**
    * Set when generating from a person's page: the document is saved to them
@@ -113,16 +132,18 @@ export function DocumentGenerator(props: Props) {
   return template ? (
     <Workspace key={template.key} {...props} template={template} />
   ) : (
-    <Gallery only={props.person?.templates} />
+    <Gallery only={props.person?.templates} folderId={props.folderId ?? null} />
   );
 }
 
-function Gallery({ only }: { only?: readonly string[] }) {
+function Gallery({ only, folderId }: { only?: readonly string[]; folderId: string | null }) {
   const router = useRouter();
   const pathname = usePathname();
+  // Picking a template keeps the folder "New document" was pressed in.
+  const keep = folderId ? `&folder=${folderId}` : "";
   return (
     <div className="flex flex-col gap-8">
-      {only ? null : <ClientJourney basePath={pathname} />}
+      {only ? null : <ClientJourney basePath={pathname} query={keep} />}
       {TEMPLATE_CATEGORIES.filter((category) =>
         TEMPLATES.some((template) => template.category === category && (!only || only.includes(template.key))),
       ).map((category) => {
@@ -142,7 +163,7 @@ function Gallery({ only }: { only?: readonly string[] }) {
                 <li key={template.key}>
                   <button
                     type="button"
-                    onClick={() => router.push(`${pathname}?template=${template.key}`)}
+                    onClick={() => router.push(`${pathname}?template=${template.key}${keep}`)}
                     className="group flex h-full w-full flex-col gap-2 rounded-lg border border-border bg-surface p-4 text-left transition-[border-color,box-shadow,transform] duration-[160ms] hover:-translate-y-0.5 hover:border-border-strong hover:shadow-m focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                   >
                     <span className="flex items-center gap-2.5">
@@ -179,6 +200,8 @@ function Workspace({
   template,
   projects,
   projectKey,
+  folders = null,
+  folderId = null,
   seed,
   today,
   defaultLetterhead,
@@ -187,8 +210,19 @@ function Workspace({
 }: Props & { template: DocumentTemplate }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [targetKey, setTargetKey] = useState(projectKey ?? projects[0]?.key ?? "");
+  // Where "Save" files it: `folder:<id>` (empty id = the top level) or `project:<key>`.
+  const offerFolders = folders !== null && !projectKey && !person;
+  const offerProjects = canSave && projects.length > 0;
+  const [target, setTarget] = useState(() =>
+    projectKey
+      ? `project:${projectKey}`
+      : offerFolders
+        ? `folder:${folders.some((folder) => folder.id === folderId) ? folderId : ""}`
+        : `project:${projects[0]?.key ?? ""}`,
+  );
+  const targetKey = target.startsWith("project:") ? target.slice("project:".length) : "";
   const project = projects.find((candidate) => candidate.key === targetKey) ?? null;
+  const canSaveHere = person ? canSave : offerFolders || offerProjects;
   const [letterhead, setLetterhead] = useState<Letterhead>(
     () => seed?.letterhead ?? readStoredLetterhead(defaultLetterhead),
   );
@@ -232,8 +266,27 @@ function Workspace({
       });
       return;
     }
+    if (target.startsWith("folder:")) {
+      const folder = target.slice("folder:".length) || null;
+      startTransition(async () => {
+        const result = await saveGeneratedToFolder({
+          folderId: folder,
+          templateKey: template.key,
+          title: title.trim() || suggestedTitle,
+          values,
+          letterhead,
+        });
+        if (!result.ok) {
+          toast.error(result.error.message);
+          return;
+        }
+        toast.success(`Saved to ${folders?.find((candidate) => candidate.id === folder)?.path ?? "Documents"}`);
+        router.push(`/os/documents/files/${result.data.id}`);
+      });
+      return;
+    }
     if (!targetKey) {
-      toast.error("Choose a project to save it to.");
+      toast.error("Choose where to save it.");
       return;
     }
     startTransition(async () => {
@@ -257,7 +310,11 @@ function Workspace({
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => router.push(pathname)}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push(folderId && offerFolders ? `${pathname}?folder=${folderId}` : pathname)}
+          >
             <ChevronLeft aria-hidden="true" /> Templates
           </Button>
           <h2 className="truncate text-lg font-semibold">{template.name}</h2>
@@ -265,10 +322,16 @@ function Workspace({
         <div className="flex flex-wrap items-center gap-2">
           <DownloadWordButton content={content} letterhead={letterhead} fileTitle={title.trim() || suggestedTitle} />
           <PrintButton />
-          {canSave && (person || projects.length > 0) ? (
+          {canSaveHere ? (
             <Button onClick={save} disabled={pending}>
               <Save aria-hidden="true" />{" "}
-              {pending ? "Saving…" : person ? `Save to ${firstName(person.fullName)}` : "Save to project"}
+              {pending
+                ? "Saving…"
+                : person
+                  ? `Save to ${firstName(person.fullName)}`
+                  : target.startsWith("folder:")
+                    ? "Save to folder"
+                    : "Save to project"}
             </Button>
           ) : null}
         </div>
@@ -281,11 +344,11 @@ function Workspace({
           on it for signing.
         </p>
       ) : null}
-      {!canSave ? (
+      {!canSaveHere ? (
         <p className="rounded-md border border-border bg-bg-subtle px-4 py-3 text-sm text-fg-muted">
           {person
             ? "Saving documents to a person needs a one-time database update."
-            : "Saving documents to a project needs a one-time database update."}{" "}
+            : "Saving documents needs a one-time database update."}{" "}
           You can still print this or save it as a PDF.
         </p>
       ) : null}
@@ -295,24 +358,44 @@ function Workspace({
           className="flex flex-col gap-5 rounded-lg border border-border bg-surface p-5 lg:sticky lg:top-4 lg:max-h-[calc(100dvh-9rem)] lg:overflow-y-auto"
           onSubmit={(event) => event.preventDefault()}
         >
-          {canSave && (person || projects.length > 0) ? (
+          {canSaveHere ? (
             <div className="grid gap-4 border-b border-border pb-5">
               {!projectKey && !person ? (
                 <div className="flex flex-col gap-1.5">
                   <span className="text-sm font-medium" aria-hidden="true">
-                    Save to project
+                    Save to
                   </span>
-                  <Select value={targetKey} onValueChange={setTargetKey}>
-                    <SelectTrigger className="w-full" aria-label="Save to project">
-                      <FolderKanban className="size-4 text-fg-subtle" aria-hidden="true" />
+                  <Select value={target} onValueChange={setTarget}>
+                    <SelectTrigger className="w-full" aria-label="Save to">
+                      {target.startsWith("folder:") ? (
+                        <Folder className="size-4 text-fg-subtle" aria-hidden="true" />
+                      ) : (
+                        <FolderKanban className="size-4 text-fg-subtle" aria-hidden="true" />
+                      )}
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {projects.map((candidate) => (
-                        <SelectItem key={candidate.key} value={candidate.key}>
-                          {candidate.key} · {candidate.name}
-                        </SelectItem>
-                      ))}
+                      {offerFolders ? (
+                        <SelectGroup>
+                          <SelectLabel>Company folders</SelectLabel>
+                          <SelectItem value="folder:">Documents (top level)</SelectItem>
+                          {folders.map((folder) => (
+                            <SelectItem key={folder.id} value={`folder:${folder.id}`}>
+                              {folder.path}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      ) : null}
+                      {offerProjects ? (
+                        <SelectGroup>
+                          <SelectLabel>Projects</SelectLabel>
+                          {projects.map((candidate) => (
+                            <SelectItem key={candidate.key} value={`project:${candidate.key}`}>
+                              {candidate.key} · {candidate.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      ) : null}
                     </SelectContent>
                   </Select>
                 </div>
