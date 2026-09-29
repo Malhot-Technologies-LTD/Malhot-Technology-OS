@@ -1648,6 +1648,7 @@ export type Database = {
       is_org_owner: { Args: { org: string }; Returns: boolean }
       is_project_member: { Args: { project: string }; Returns: boolean }
       next_project_sequence: { Args: { kind: string; project: string }; Returns: number }
+      owns_avatar: { Args: { object_name: string }; Returns: boolean }
       project_group_of: { Args: { project: string }; Returns: string }
       project_is_writable: { Args: { project: string }; Returns: boolean }
       project_file_project: { Args: { object_name: string }; Returns: string }

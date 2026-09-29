@@ -13,6 +13,8 @@ import { logger } from "@/lib/logger";
 import { verifyPassword } from "@/lib/supabase/password-check";
 import { createClient } from "@/lib/supabase/server";
 
+import { AVATAR_BUCKET, avatarPathFromUrl, isOwnAvatarPath } from "./avatar";
+import { avatarUrl } from "./avatar-media";
 import { authErrorMessage } from "./lib/auth-errors";
 import {
   changePasswordSchema,
@@ -20,6 +22,7 @@ import {
   magicLinkSchema,
   resetPasswordSchema,
   signInSchema,
+  setAvatarSchema,
   signUpSchema,
   updateProfileSchema,
 } from "./schemas";
@@ -202,5 +205,74 @@ export const signUp = withAction("auth.signUp", async (input: unknown): Promise<
   }
 
   logger.info("auth.signup.created");
+  return ok(undefined);
+});
+
+/**
+ * Settings → Profile: record a photo the browser has already uploaded.
+ *
+ * The upload itself goes straight from the browser to Storage, which is what
+ * keeps a 2MB file off the Server Action wire. That means this action must not
+ * trust the path it is handed: `isOwnAvatarPath` pins it to the caller's own
+ * folder and to an extension the bucket accepts, so a forged path cannot point
+ * `avatar_url` at somebody else's face or at an arbitrary object.
+ *
+ * The storage policy would refuse the *write*, but nothing about writing a
+ * string into a column consults Storage at all — this is the only check between
+ * a forged path and everyone seeing it.
+ */
+export const setAvatar = withAction("auth.setAvatar", async (input: unknown): Promise<ActionResult> => {
+  const parsed = setAvatarSchema.safeParse(input);
+  if (!parsed.success) return validationFail(parsed.error);
+  const viewer = await requireViewer();
+  if (!isOwnAvatarPath(parsed.data.path, viewer.userId)) {
+    logger.warn("auth.setAvatar.rejected_path", { userId: viewer.userId });
+    return fail("forbidden", "That photo could not be saved.");
+  }
+
+  const supabase = await createClient();
+  const previous = avatarPathFromUrl(viewer.profile.avatarUrl);
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ avatar_url: avatarUrl(parsed.data.path) })
+    .eq("id", viewer.userId);
+  if (error) {
+    logger.warn("auth.setAvatar.failed", { code: error.code });
+    return fail("unexpected", "Your photo could not be saved. Try again.");
+  }
+
+  /*
+   * Ordered after the update, and its failure ignored. A leftover file costs
+   * storage; a deleted file with the column still pointing at it costs the
+   * person their photo. Only one of those is worth failing the action for.
+   */
+  if (previous && previous !== parsed.data.path) {
+    const removed = await supabase.storage.from(AVATAR_BUCKET).remove([previous]);
+    if (removed.error) logger.info("auth.setAvatar.old_file_kept", { message: removed.error.message });
+  }
+
+  revalidatePath("/os", "layout");
+  return ok(undefined);
+});
+
+/** Settings → Profile: go back to initials, and take the file with it. */
+export const removeAvatar = withAction("auth.removeAvatar", async (): Promise<ActionResult> => {
+  const viewer = await requireViewer();
+  const supabase = await createClient();
+  const previous = avatarPathFromUrl(viewer.profile.avatarUrl);
+
+  const { error } = await supabase.from("profiles").update({ avatar_url: null }).eq("id", viewer.userId);
+  if (error) {
+    logger.warn("auth.removeAvatar.failed", { code: error.code });
+    return fail("unexpected", "Your photo could not be removed. Try again.");
+  }
+
+  if (previous) {
+    const removed = await supabase.storage.from(AVATAR_BUCKET).remove([previous]);
+    if (removed.error) logger.info("auth.removeAvatar.old_file_kept", { message: removed.error.message });
+  }
+
+  revalidatePath("/os", "layout");
   return ok(undefined);
 });

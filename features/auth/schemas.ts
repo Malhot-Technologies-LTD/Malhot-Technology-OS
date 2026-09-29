@@ -50,6 +50,17 @@ export const updateProfileSchema = z.object({
 export type UpdateProfileInput = z.input<typeof updateProfileSchema>;
 export type UpdateProfileOutput = z.output<typeof updateProfileSchema>;
 
+/**
+ * The photo is already in Storage by the time this runs — the browser uploads
+ * it directly, so the action is only told where it landed. The path is checked
+ * against the caller's own id in the action rather than here, because only the
+ * action knows who is calling.
+ */
+export const setAvatarSchema = z.object({
+  path: z.string().trim().min(1).max(300),
+});
+export type SetAvatarInput = z.infer<typeof setAvatarSchema>;
+
 export const changePasswordSchema = z
   .object({
     currentPassword: z.string().min(1, "Enter your current password").max(256),

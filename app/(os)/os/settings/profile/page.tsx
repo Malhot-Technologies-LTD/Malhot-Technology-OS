@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { ORG_ROLE_META, RoleBadge } from "@/components/os/role-badge";
+import { AvatarUpload } from "@/features/auth/components/avatar-upload.client";
 import { ProfileForm } from "@/features/auth/components/profile-form.client";
 import { requireViewer } from "@/lib/auth/context";
 
@@ -16,6 +17,8 @@ export default async function ProfileSettingsPage() {
         </h2>
         <p className="text-sm text-fg-muted">How you appear to the rest of the team.</p>
       </div>
+      <AvatarUpload fullName={viewer.profile.fullName} avatarUrl={viewer.profile.avatarUrl} />
+
       <ProfileForm
         fullName={viewer.profile.fullName}
         title={viewer.profile.title}
